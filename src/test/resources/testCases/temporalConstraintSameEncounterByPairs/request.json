@@ -1,0 +1,98 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      19176
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "orGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "andGroup",
+        "_id": -1,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 1,
+            "isInclusive": true,
+            "resourceType": "compositionAphp",
+            "filterSolr": "((type:\"*|crh-j\" OR type:\"*|crh-chir\" OR type:\"*|crh-eeg\" OR type:\"*|crh-evol\" OR type:\"*|crh-hemato\" OR type:\"*|crh-hospi\" OR type:\"*|crh-lt-sor\" OR type:\"*|crh-neonat\" OR type:\"*|crh-neurol\" OR type:\"*|crh-neurop\" OR type:\"*|crh-ortho\" OR type:\"*|crh-pedia\" OR type:\"*|crh-s\" OR type:\"*|cr-cons\" OR type:\"*|cr-cons-anesth\" OR type:\"*|cr-cons-nutri-sport\" OR type:\"*|cr-nutri\" OR type:\"*|cr-nutri-i\" OR type:\"*|lt-autr\" OR type:\"*|lt-cons\" OR type:\"*|lt-cons-i\" OR type:\"*|lt-cons-s\" OR type:\"*|lt-crt\" OR type:\"*|lt-crh\" OR type:\"*|lt-crhj\" OR type:\"*|lt-sor\" OR type:\"*|lt-type\") AND (status:\"*|final\") AND empty:false AND active:true AND -(type:\"*|doc-impor\")) AND ((_text_:(protoxyde) _text_:(d'azote)))",
+            "filterFhir": "status=final&type:not=doc-impor&empty=false&_text=protoxyde%20d'azote&type=crh-j,crh-chir,crh-eeg,crh-evol,crh-hemato,crh-hospi,crh-lt-sor,crh-neonat,crh-neurol,crh-neurop,crh-ortho,crh-pedia,crh-s,cr-cons,cr-cons-anesth,cr-cons-nutri-sport,cr-nutri,cr-nutri-i,lt-autr,lt-cons,lt-cons-i,lt-cons-s,lt-crt,lt-crh,lt-crhj,lt-sor,lt-type",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 2,
+            "isInclusive": true,
+            "resourceType": "compositionAphp",
+            "filterSolr": "((type:\"*|crh-j\" OR type:\"*|crh-chir\" OR type:\"*|crh-eeg\" OR type:\"*|crh-evol\" OR type:\"*|crh-hemato\" OR type:\"*|crh-hospi\" OR type:\"*|crh-lt-sor\" OR type:\"*|crh-neonat\" OR type:\"*|crh-neurol\" OR type:\"*|crh-neurop\" OR type:\"*|crh-ortho\" OR type:\"*|crh-pedia\" OR type:\"*|crh-s\" OR type:\"*|cr-cons\" OR type:\"*|cr-cons-anesth\" OR type:\"*|cr-cons-nutri-sport\" OR type:\"*|cr-nutri\" OR type:\"*|cr-nutri-i\" OR type:\"*|lt-autr\" OR type:\"*|lt-cons\" OR type:\"*|lt-cons-i\" OR type:\"*|lt-cons-s\" OR type:\"*|lt-crt\" OR type:\"*|lt-crh\" OR type:\"*|lt-crhj\" OR type:\"*|lt-sor\" OR type:\"*|lt-type\") AND (status:\"*|final\") AND empty:false AND active:true AND -(type:\"*|doc-impor\")) AND ((_text_:(proto)))",
+            "filterFhir": "status=final&type:not=doc-impor&empty=false&_text=proto&type=crh-j,crh-chir,crh-eeg,crh-evol,crh-hemato,crh-hospi,crh-lt-sor,crh-neonat,crh-neurol,crh-neurop,crh-ortho,crh-pedia,crh-s,cr-cons,cr-cons-anesth,cr-cons-nutri-sport,cr-nutri,cr-nutri-i,lt-autr,lt-cons,lt-cons-i,lt-cons-s,lt-crt,lt-crh,lt-crhj,lt-sor,lt-type",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "temporalConstraints": [
+          {
+            "idList": [1,2],
+            "constraintType": "sameEncounter"
+          }
+        ]
+      },
+      {
+        "_type": "andGroup",
+        "_id": -4,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 3,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "((codeList:G60 OR codeList:G61 OR codeList:G630 OR codeList:G631 OR codeList:G632 OR codeList:G635 OR codeList:G636)) AND active:true",
+            "filterFhir": "codeList=G60,G61,G630,G631,G632,G635,G636",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 4,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "((codeList:G60 OR codeList:G61 OR codeList:G630 OR codeList:G631 OR codeList:G632 OR codeList:G635 OR codeList:G636)) AND active:true",
+            "filterFhir": "codeList=G60,G61,G630,G631,G632,G635,G636",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "temporalConstraints": [
+          {
+            "idList": [3,4],
+            "constraintType": "sameEncounter"
+          }
+        ]
+      }
+    ]
+  },
+  "id": 713
+}

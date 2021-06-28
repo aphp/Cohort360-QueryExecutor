@@ -1,0 +1,3 @@
+[submodule "spark-jobserver"]
+	path = spark-jobserver
+	url = https://github.com/spark-jobserver/spark-jobserver.git

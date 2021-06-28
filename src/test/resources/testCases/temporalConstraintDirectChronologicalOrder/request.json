@@ -1,0 +1,57 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      69166,
+      42699
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "conditionAphp",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "filterFhir": "codeList=R26",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 2,
+        "isInclusive": true,
+        "resourceType": "observationAphp",
+        "filterSolr": "((part-of:A0283* OR part-of:E6954* OR part-of:F9934* OR part-of:G7716* OR part-of:J5184*))",
+        "filterFhir": "part-of=A0283,E6954,F9934,G7716,J5184",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      }
+    ],
+    "temporalConstraints": [
+      {
+        "idList": [1, 2],
+        "constraintType": "directChronologicalOrdering",
+        "timeRelationMinDuration": {
+          "hours": 2
+        },
+        "timeRelationMaxDuration": {
+          "days": 1
+        }
+      }
+    ]
+  },
+  "id": 1230
+}

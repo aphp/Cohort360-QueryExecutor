@@ -1,0 +1,54 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "orGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "procedureAphp",
+        "filterSolr": "((codeList:1014 OR codeList:1035 OR codeList:1053)) AND active:true",
+        "filterFhir": "codeList=1014,1035,1053",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        },
+        "encounterDateRange": {
+          "minDate": "2017-01-01T00:00:00.000Z",
+          "maxDate": "2017-12-31T00:00:00.000Z"
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 2,
+        "isInclusive": true,
+        "resourceType": "conditionAphp",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "filterFhir": "codeList=R26",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        },
+        "dateRangeList": [{
+          "minDate": "2017-01-01T00:00:00.000Z",
+          "maxDate": "2017-12-31T00:00:00.000Z",
+          "datePreference": ["event_date"]
+        }]
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 4
+}

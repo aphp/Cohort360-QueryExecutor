@@ -1,0 +1,133 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "andGroup",
+        "_id": -1,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "andGroup",
+            "_id": -2,
+            "isInclusive": true,
+            "criteria": [
+              {
+                "_type": "basicResource",
+                "_id": 1,
+                "isInclusive": true,
+                "resourceType": "patientAphp",
+                "filterSolr": "(gender:f OR gender:m) AND (deceased:false) AND ((age-day:[* TO 47846] AND age-day:[6573 TO *])) AND active:true",
+                "filterFhir": "gender=f,m&deceased=false&age-day=le47846&age-day=ge6573"
+              },
+              {
+                "_type": "basicResource",
+                "_id": 2,
+                "isInclusive": true,
+                "resourceType": "conditionAphp",
+                "filterSolr": "(codeList:C50) AND active:true",
+                "filterFhir": "codeList=C50",
+                "occurrence": {
+                  "n": 1,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                },
+                "dateRangeList": [
+                  {
+                    "minDate": "2022-01-01T00:00:00Z",
+                    "dateIsNotNull": false
+                  }
+                ]
+              },
+              {
+                "_type": "basicResource",
+                "_id": 3,
+                "isInclusive": false,
+                "resourceType": "conditionAphp",
+                "filterSolr": "((codeList:C00 OR codeList:C01 OR codeList:C02 OR codeList:C03 OR codeList:C04 OR codeList:C05 OR codeList:C06 OR codeList:C07 OR codeList:C08 OR codeList:C09 OR codeList:C10 OR codeList:C11 OR codeList:C12 OR codeList:C13 OR codeList:C14 OR codeList:C15 OR codeList:C16 OR codeList:C17 OR codeList:C18 OR codeList:C19 OR codeList:C20 OR codeList:C21 OR codeList:C22 OR codeList:C23 OR codeList:C24 OR codeList:C25 OR codeList:C26 OR codeList:C30 OR codeList:C31 OR codeList:C32 OR codeList:C33 OR codeList:C34 OR codeList:C37 OR codeList:C38 OR codeList:C39 OR codeList:C40 OR codeList:C41 OR codeList:C43 OR codeList:C44 OR codeList:C45 OR codeList:C46 OR codeList:C47 OR codeList:C48 OR codeList:C49 OR codeList:C51 OR codeList:C52 OR codeList:C53 OR codeList:C54 OR codeList:C55 OR codeList:C56 OR codeList:C57 OR codeList:C58 OR codeList:C60 OR codeList:C61 OR codeList:C62 OR codeList:C63 OR codeList:C64 OR codeList:C65 OR codeList:C66 OR codeList:C67 OR codeList:C68 OR codeList:C69 OR codeList:C70 OR codeList:C71 OR codeList:C72 OR codeList:C73 OR codeList:C74 OR codeList:C75 OR codeList:C76 OR codeList:C77 OR codeList:C80 OR codeList:C81 OR codeList:C82 OR codeList:C83 OR codeList:C84 OR codeList:C85 OR codeList:C86 OR codeList:C88 OR codeList:C90 OR codeList:C91 OR codeList:C92 OR codeList:C93 OR codeList:C94 OR codeList:C95 OR codeList:C96 OR codeList:C97 OR codeList:D00 OR codeList:D01 OR codeList:D02 OR codeList:D03 OR codeList:D04 OR codeList:D06 OR codeList:D09 OR codeList:D07)) AND active:true",
+                "filterFhir": "codeList=C00,C01,C02,C03,C04,C05,C06,C07,C08,C09,C10,C11,C12,C13,C14,C15,C16,C17,C18,C19,C20,C21,C22,C23,C24,C25,C26,C30,C31,C32,C33,C34,C37,C38,C39,C40,C41,C43,C44,C45,C46,C47,C48,C49,C51,C52,C53,C54,C55,C56,C57,C58,C60,C61,C62,C63,C64,C65,C66,C67,C68,C69,C70,C71,C72,C73,C74,C75,C76,C77,C80,C81,C82,C83,C84,C85,C86,C88,C90,C91,C92,C93,C94,C95,C96,C97,D00,D01,D02,D03,D04,D06,D09,D07",
+                "occurrence": {
+                  "n": 2,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                },
+                "dateRangeList": [
+                  {
+                    "minDate": "2019-01-01T00:00:00Z",
+                    "dateIsNotNull": false
+                  }
+                ]
+              },
+              {
+                "_type": "basicResource",
+                "_id": 4,
+                "isInclusive": true,
+                "resourceType": "conditionAphp",
+                "filterSolr": "((codeList:C78 OR codeList:C79)) AND active:true",
+                "filterFhir": "codeList=C78,C79",
+                "occurrence": {
+                  "n": 1,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                },
+                "dateRangeList": [
+                  {
+                    "minDate": "2022-01-01T00:00:00Z",
+                    "dateIsNotNull": false
+                  }
+                ]
+              },
+              {
+                "_type": "basicResource",
+                "_id": 5,
+                "isInclusive": true,
+                "resourceType": "conditionAphp",
+                "filterSolr": "(codeList:Z511) AND active:true",
+                "filterFhir": "codeList=Z511",
+                "occurrence": {
+                  "n": 12,
+                  "operator": "<=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                }
+              },
+              {
+                "_type": "basicResource",
+                "_id": 6,
+                "isInclusive": false,
+                "resourceType": "compositionAphp",
+                "filterSolr": "(status:\"*|final\" AND empty:false AND active:true AND -(type:\"*|doc-impor\")) AND ((_text_:(asunaprevir) _text_:(atorvastatin) _text_:(bosentan) _text_:(danoprevir) _text_:(fexofenadine) _text_:(glyburide) _text_:(nateglinide) _text_:(pitavaastatin) _text_:(pravastatin) _text_:(replaglinide) _text_:(rosuvastation) ))",
+                "filterFhir": "status=final&type:not=doc-impor&empty=false&_text=asunaprevir%20atorvastatin%20bosentan%20danoprevir%20fexofenadine%20glyburide%20nateglinide%20pitavaastatin%20pravastatin%20replaglinide%20rosuvastation%20",
+                "occurrence": {
+                  "n": 1,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                },
+                "dateRangeList": [
+                  {
+                    "minDate": "2022-08-01T00:00:00Z",
+                    "dateIsNotNull": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 922
+}

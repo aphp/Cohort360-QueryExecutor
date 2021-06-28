@@ -1,0 +1,92 @@
+stages:
+  - lint
+  - test
+  - package
+  - deploy
+
+image: harbor.eds.aphp.fr/cohort360/openjdk:11-jdk
+
+variables :
+  MAVEN_OPTS : "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -DproxySet=true -Dhttps.proxyHost=$HOST_PROXY -Dhttps.proxyPort=$PORT_PROXY"
+
+
+# this indicate this pipeline is active only for merge requests or some other rules (when the deploy is done)
+# also this enable the merge request pipeline : https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html#prerequisites
+# pipelines are now only run when a merge request exists (it was initially put in place to allow the use of the commit lint based on the MR title)
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH =~ /^feat_deploy_(\w*|\d*|-*|_*)+$/ || $CI_COMMIT_BRANCH =~ /^release_(\w*|\d*|-*|_*|\.*)+$/
+
+lint-job:
+  stage: lint
+  image: harbor.eds.aphp.fr/cohort360/commitlint:latest
+  script:
+    - echo "${CI_MERGE_REQUEST_TITLE}" | npx commitlint
+  rules:
+    # only run for the merge request pipeline
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+unit-test-job:
+  stage: test
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: cohort360_sjs_m2_cache
+    paths:
+      - .m2/repository
+  script:
+    - ./mvnw clean verify sonar:sonar -Dsonar.scala.coverage.reportPaths=target/scoverage.xml -Dsonar.projectKey=dev_cohort360_spark-job-server_AYi0kT4wFFXOqHRk8kKB -Dsonar.tests=src/test/scala -Dsonar.sources=src/main/scala
+  allow_failure: true
+
+package-job:
+  stage: package
+  artifacts:
+    paths:
+      - target/cohort-requester.jar
+    reports:
+      dotenv: build.env
+    expire_in: 1 day
+  script:
+    - ./mvnw package -DskipTests --fail-at-end
+    - echo "VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:1.6.0:exec)" > build.env
+    - echo "POSTGRES_VERSION=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${postgres.version}' --non-recursive org.codehaus.mojo:exec-maven-plugin:1.6.0:exec)" >> build.env
+  cache:
+    key: cohort360_sjs_m2_cache
+    paths:
+      - .m2/repository
+
+deploy-job:
+  image: harbor.eds.aphp.fr/cohort360/kaniko:debug
+  stage: deploy
+  needs:
+    - job: package-job
+      artifacts: true
+  script:
+    - mkdir -p /kaniko/.docker
+    - cp .m2/repository/org/postgresql/postgresql/${POSTGRES_VERSION}/postgresql-${POSTGRES_VERSION}.jar ./postgresql.jar
+    - |-
+      KANIKOPROXYARGS=""
+      KANIKOCFG="\"auths\":{\"${CI_REGISTRY}\":{\"username\":\"${BOT_NAME}\",\"password\":\"${BOT_TOKEN}\"}}"
+      if [ "x${http_proxy}" != "x" -o "x${https_proxy}" != "x" ]; then
+        KANIKOCFG="${KANIKOCFG}, \"proxies\" : { \"default\" : { \"httpProxy\" : \"${http_proxy}\", \"httpsProxy\" : \"${https_proxy}\", \"noProxy\" : \"${no_proxy}\" } }"
+        KANIKOPROXYARGS="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg no_proxy=${no_proxy}"
+      fi
+      KANIKOCFG="{ ${KANIKOCFG} }"
+      echo "${KANIKOCFG}" > /kaniko/.docker/config.json
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      $KANIKOPROXYARGS
+      --destination "${CI_REGISTRY_IMAGE}:${VERSION}"
+  cache:
+    key: cohort360_sjs_m2_cache
+    paths:
+      - .m2/repository
+  rules:
+    # this only builds when not a merge request event
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: always

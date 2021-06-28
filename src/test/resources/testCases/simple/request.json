@@ -1,0 +1,45 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "procedureAphp",
+        "filterSolr": "((codeList:1014 OR codeList:1035 OR codeList:1053)) AND active:true",
+        "filterFhir": "codeList=1014,1035,1053",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 2,
+        "isInclusive": true,
+        "resourceType": "conditionAphp",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "filterFhir": "codeList=R26",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 3
+}
