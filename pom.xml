@@ -301,51 +301,19 @@
       </plugin>
 
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.2.4</version>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>2.7.10</version>
         <executions>
           <execution>
-            <phase>package</phase>
             <goals>
-              <goal>shade</goal>
+              <goal>repackage</goal>
             </goals>
-            <configuration>
-              <finalName>${project.artifactId}</finalName>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <shadedClassifierName>shaded</shadedClassifierName>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>fr.aphp.id.eds.requester.Application</mainClass>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-              </transformers>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-<!--              <artifactSet>-->
-<!--                <excludes>-->
-<!--                  &lt;!&ndash;  begin removed for livy &ndash;&gt;-->
-<!--                  <exclude>org.scala-lang:scala-library</exclude>-->
-<!--                  <exclude>org.scala-lang:scala-reflect</exclude>-->
-<!--                  <exclude> org.scala-lang.modules:scala-parser-combinators_${scala.tools.version} </exclude>-->
-<!--&lt;!&ndash;                  <exclude>org.postgresql:postgresql</exclude>&ndash;&gt;-->
-<!--                  &lt;!&ndash;  end   removed for livy &ndash;&gt;-->
-<!--                  <exclude>log4j:log4j</exclude>-->
-<!--                  <exclude>org.slf4j:*</exclude>-->
-<!--                </excludes>-->
-<!--              </artifactSet>-->
-              <relocations> </relocations>
-            </configuration>
           </execution>
         </executions>
+        <configuration>
+          <finalName>${project.artifactId}</finalName>
+        </configuration>
       </plugin>
 
       <plugin>
