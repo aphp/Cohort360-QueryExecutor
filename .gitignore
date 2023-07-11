@@ -50,5 +50,6 @@ derby.log
 .cache-tests
 .cache-main
 bin/Makefile
-solr_auth.txt
+solr_auth*
 postgresql.jar
+log/
