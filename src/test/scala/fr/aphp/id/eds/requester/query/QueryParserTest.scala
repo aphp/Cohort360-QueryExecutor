@@ -10,9 +10,15 @@ import scala.io.Source
 class QueryParserTest extends AnyFunSuiteLike {
 
   test("testParse") {
-    val resource = QueryParser.parse(Source.fromFile(getClass.getResource("/testCases/temporalConstraintSameEncounter/request.json").getFile).getLines.mkString)
+    val resource = QueryParser.parse(
+      Source
+        .fromFile(
+          getClass.getResource("/testCases/temporalConstraintSameEncounter/request.json").getFile)
+        .getLines
+        .mkString)
     assert(resource._1.request.get.isInstanceOf[GroupResource])
-    assert(resource._1.request.get.asInstanceOf[GroupResource].criteria.head.isInstanceOf[BasicResource])
+    assert(
+      resource._1.request.get.asInstanceOf[GroupResource].criteria.head.isInstanceOf[BasicResource])
     assert(resource._2(1).isDateTimeAvailable)
     assert(resource._2(1).isEncounterAvailable)
     assert(resource._2(1).isInTemporalConstraint)

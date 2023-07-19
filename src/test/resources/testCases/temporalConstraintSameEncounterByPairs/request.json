@@ -9,6 +9,12 @@
     "_type": "orGroup",
     "_id": 0,
     "isInclusive": true,
+    "temporalConstraints": [
+      {
+        "idList": [3,4],
+        "constraintType": "sameEncounter"
+      }
+    ],
     "criteria": [
       {
         "_type": "andGroup",
@@ -83,12 +89,6 @@
               "sameEncounter": false,
               "sameDay": false
             }
-          }
-        ],
-        "temporalConstraints": [
-          {
-            "idList": [3,4],
-            "constraintType": "sameEncounter"
           }
         ]
       }

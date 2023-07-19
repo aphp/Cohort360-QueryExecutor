@@ -162,7 +162,9 @@ object QueryParser {
     (request, criterionTagsMap)
   }
 
-  protected def specJson(genericQuery: GenericQuery): Either[BaseQuery, Request] = {
+  protected def specJson(genericQuery: GenericQuery,
+                         parentTemporalConstraint: Option[List[TemporalConstraint]] = Option.empty)
+    : Either[BaseQuery, Request] = {
 
     def removeEmptyGroup(x: GenericQuery): Boolean = {
       !(!List("request", "basicResource").contains(x._type) &&
@@ -240,17 +242,41 @@ object QueryParser {
     }
 
     def loadGroupResource(genericQuery: GenericQuery): GroupResource = {
+      // build the temporal constraints objects and split them between id related or 'all'
+      val (tcForAll, tcWithIds): (Option[List[TemporalConstraint]],
+                                  Option[List[TemporalConstraint]]) =
+        if (genericQuery.temporalConstraints.isDefined) {
+          val tcByType = genericQuery.temporalConstraints.get
+            .map(x => convertToTemporalConstraint(x))
+            .groupBy(tc => tc.idList.isRight)
+          (tcByType.get(false), tcByType.get(true))
+        } else (None, None)
+
+      // feed the construction of sub criteria with tc with ids (in case they are related to them)
+      val criterion = genericQuery.criteria
+        .getOrElse(List[GenericQuery]())
+        .filter(x => removeEmptyGroup(x))
+        .map(x => specJson(x, tcWithIds).left.get)
+      val criterionIds = criterion.map((c) => c.i)
+
+      // filter the tc with ids (from parent and own) to match those who match sub criteria ids
+      val groupTcWithIds: List[TemporalConstraint] =
+        if (parentTemporalConstraint.isDefined || tcWithIds.isDefined) {
+          (parentTemporalConstraint.getOrElse(List()) ++ tcWithIds.getOrElse(List())).filter(tc =>
+            tc.idList.isRight && tc.idList.right.get.containsSlice(criterionIds))
+        } else {
+          List()
+        }
+
+      // join with global tc
+      val temporalConstraints = tcForAll.getOrElse(List()) ++ groupTcWithIds
+
       GroupResource(
         _type = genericQuery._type,
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,
-        criteria = genericQuery.criteria
-          .getOrElse(List[GenericQuery]())
-          .filter(x => removeEmptyGroup(x))
-          .map(x => specJson(x).left.get),
-        temporalConstraints = if (genericQuery.temporalConstraints.isDefined) {
-          Some(genericQuery.temporalConstraints.get.map(x => convertToTemporalConstraint(x)))
-        } else None,
+        criteria = criterion,
+        temporalConstraints = Some(temporalConstraints),
         nAmongMOptions = genericQuery.nAmongMOptions
       )
     }
@@ -276,4 +302,5 @@ object QueryParser {
         Left(loadGroupResource(genericQuery))
     }
   }
+
 }
