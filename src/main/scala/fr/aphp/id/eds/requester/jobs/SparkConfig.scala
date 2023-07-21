@@ -9,6 +9,7 @@ object SparkConfig {
   val sparkConf = new SparkConf()
 
   sparkConf.setJars(Seq("postgresql.jar"))
+  sparkConf.set("spark.scheduler.mode", "FAIR")
 
   val sparkSession: SparkSession = SparkSession
     .builder()
