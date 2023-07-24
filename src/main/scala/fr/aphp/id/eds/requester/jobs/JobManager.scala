@@ -37,7 +37,6 @@ case class JobInfo(status: String,
 class JobManager(val conf: Config = ConfigFactory.load) {
   val sparkSession: SparkSession = SparkConfig.sparkSession
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
-  private val jobConf = conf.getConfig("spark").getConfig("context-settings")
   private val logger = Logger.getLogger(this.getClass)
 
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {
@@ -53,7 +52,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
       jobExecutor.getClass.getCanonicalName,
       Future {
         sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", true)
-        jobExecutor.runJob(sparkSession, JobEnv(jobId, jobConf), jobData).asInstanceOf[AnyRef]
+        jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData).asInstanceOf[AnyRef]
       }.andThen {
         case Success(result) =>
           logger.info(s"Job ${jobId} successfully executed")

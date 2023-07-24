@@ -40,30 +40,30 @@ object JobUtils {
      criterionTagsMap,
      solrConf,
      omopTools,
-     runtime.contextConfig.getString(s"passthrough.cohort360.spark.enableCache") == "1")
+     runtime.contextConfig.getBoolean("app.enableCache"))
   }
 
   /** Read Postgresql passthrough parameters in SJS conf file */
   def getPgtool(spark: SparkSession, runtime: JobEnv): PGTool = {
     val pgHost =
       runtime.contextConfig.getString(
-        s"passthrough.cohort360.postgres.host"
+        "postgres.host"
       )
     val pgPort =
       runtime.contextConfig.getString(
-        s"passthrough.cohort360.postgres.port"
+        "postgres.port"
       )
     val pgDb =
       runtime.contextConfig.getString(
-        s"passthrough.cohort360.postgres.database"
+        "postgres.database"
       )
     val pgSchema =
       runtime.contextConfig.getString(
-        s"passthrough.cohort360.postgres.schema"
+        "postgres.schema"
       )
     val pgUser =
       runtime.contextConfig.getString(
-        s"passthrough.cohort360.postgres.user"
+        "postgres.user"
       )
     PGTool(
       spark,
@@ -74,10 +74,10 @@ object JobUtils {
 
   /** Read SolR passthrough parameters in SJS conf file */
   def getSolrConf(runtime: JobEnv): Map[String, String] = {
-    val zkHost = runtime.contextConfig.getString(s"passthrough.cohort360.solr.zk")
-    val maxSolrTry = runtime.contextConfig.getString(s"passthrough.cohort360.solr.max_try")
-    val rows = runtime.contextConfig.getString(s"passthrough.cohort360.solr.rows")
-    val commitWithin = runtime.contextConfig.getString(s"passthrough.cohort360.solr.commit_within")
+    val zkHost = runtime.contextConfig.getString("solr.zk")
+    val maxSolrTry = runtime.contextConfig.getString("solr.max_try")
+    val rows = runtime.contextConfig.getString("solr.rows")
+    val commitWithin = runtime.contextConfig.getString("solr.commit_within")
 
     val options = Map(
       "zkhost" -> zkHost,
