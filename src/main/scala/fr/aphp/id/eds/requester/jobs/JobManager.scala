@@ -52,6 +52,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
       jobExecutor.getClass.getCanonicalName,
       Future {
         sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", true)
+        sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
         jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData).asInstanceOf[AnyRef]
       }.andThen {
         case Success(result) =>
