@@ -7,7 +7,7 @@ stages:
 image: harbor.eds.aphp.fr/cohort360/openjdk:11-jdk
 
 variables :
-  MAVEN_OPTS : "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -DproxySet=true -Dhttps.proxyHost=$HOST_PROXY -Dhttps.proxyPort=$PORT_PROXY"
+  MAVEN_OPTS : "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
 
 
 # this indicate this pipeline is active only for merge requests or some other rules (when the deploy is done)
