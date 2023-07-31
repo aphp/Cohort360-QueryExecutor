@@ -1,7 +1,6 @@
 #!/bin/sh
 # enable OMOP pg access
 echo "$PG_HOST:$PG_PORT:$PG_DB:$PG_USER:$DB_OMOP_PASSWORD" >> /root/.pgpass
-echo "$SJS_PG_HOST:$SJS_PG_PORT:$SJS_PG_DB:$SJS_PG_USER:$SJS_PG_PASSWORD" >> /root/.pgpass
 chmod 0600 /root/.pgpass
 
 # load env var

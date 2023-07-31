@@ -7,10 +7,10 @@ import org.apache.spark.sql.SparkSession
 
 import java.time.{OffsetDateTime, ZoneId}
 import java.util.UUID
+import java.util.concurrent.Executors
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits._
-import scala.concurrent.{Future, future}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object JobExecutionStatus {
@@ -36,12 +36,21 @@ case class JobInfo(status: String,
 
 class JobManager(val conf: Config = ConfigFactory.load) {
   val sparkSession: SparkSession = SparkConfig.sparkSession
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(conf.getInt("app.jobs.threads")))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
+
+  sparkSession.sparkContext.addFile("solr_auth.txt")
 
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {
     val jobId = UUID.randomUUID().toString
     logger.info(s"Starting new job ${jobId}")
+    val jobExec = Future {
+      logger.info(s"Job ${jobId} started")
+      sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", true)
+      sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
+      jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData).asInstanceOf[AnyRef]
+    }
     jobs(jobId) = JobInfo(
       JobExecutionStatus.RUNNING,
       jobId,
@@ -50,20 +59,17 @@ class JobManager(val conf: Config = ConfigFactory.load) {
       "",
       Option.empty,
       jobExecutor.getClass.getCanonicalName,
-      Future {
-        sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", true)
-        sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
-        jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData).asInstanceOf[AnyRef]
-      }.andThen {
-        case Success(result) =>
-          logger.info(s"Job ${jobId} successfully executed")
-          updateJob(jobId, Right(result), jobExecutor, jobData.mode)
-        case Failure(wrapped: Throwable) =>
-          logger.error(s"Job ${jobId} failed", wrapped.getCause)
-          updateJob(jobId, Left(wrapped), jobExecutor, jobData.mode)
-      }
+      jobExec
     )
     val job = jobs(jobId)
+    jobExec.andThen {
+      case Success(result) =>
+        logger.info(s"Job ${jobId} successfully executed")
+        updateJob(jobId, Right(result), jobExecutor, jobData.mode)
+      case Failure(wrapped: Throwable) =>
+        logger.error(s"Job ${jobId} failed", wrapped.getCause)
+        updateJob(jobId, Left(wrapped), jobExecutor, jobData.mode)
+    }
     JobStatus(job.status,
               job.jobId,
               job.context,

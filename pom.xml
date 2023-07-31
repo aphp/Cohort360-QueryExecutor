@@ -300,6 +300,59 @@
         </configuration>
       </plugin>
 
+      <!--
+        this is used to create a fat jar with all dependencies
+        that will be sent to the spark executors
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <finalName>${project.artifactId}-libs</finalName>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>fr.aphp.id.eds.requester.Application</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <!--              <artifactSet>-->
+              <!--                <excludes>-->
+              <!--                  &lt;!&ndash;  begin removed for livy &ndash;&gt;-->
+              <!--                  <exclude>org.scala-lang:scala-library</exclude>-->
+              <!--                  <exclude>org.scala-lang:scala-reflect</exclude>-->
+              <!--                  <exclude> org.scala-lang.modules:scala-parser-combinators_${scala.tools.version} </exclude>-->
+              <!--&lt;!&ndash;                  <exclude>org.postgresql:postgresql</exclude>&ndash;&gt;-->
+              <!--                  &lt;!&ndash;  end   removed for livy &ndash;&gt;-->
+              <!--                  <exclude>log4j:log4j</exclude>-->
+              <!--                  <exclude>org.slf4j:*</exclude>-->
+              <!--                </excludes>-->
+              <!--              </artifactSet>-->
+              <relocations> </relocations>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -313,6 +366,29 @@
         </executions>
         <configuration>
           <finalName>${project.artifactId}</finalName>
+          <!--
+            There is a problem with jersey that will not find some jars within the fat jar spring boot creates.
+            This is a workaround to unpack the jars that are needed by jersey.
+            This is needed for the executors tab in spark ui to work.
+            https://github.com/spring-projects/spring-boot/issues/6598
+            https://stackoverflow.com/questions/50610998/boot-inf-classes-no-such-file-or-directory-on-spring-boot-java-project
+            https://github.com/spring-projects/spring-boot/issues/7496
+            https://docs.spring.io/spring-boot/docs/1.5.x/reference/htmlsingle/#howto-extract-specific-libraries-when-an-executable-jar-runs
+          -->
+          <requiresUnpack>
+            <dependency>
+              <groupId>org.apache.spark</groupId>
+              <artifactId>spark-sql_${scala.tools.version}</artifactId>
+            </dependency>
+            <dependency>
+              <groupId>org.apache.spark</groupId>
+              <artifactId>spark-core_${scala.tools.version}</artifactId>
+            </dependency>
+            <dependency>
+              <groupId>org.apache.spark</groupId>
+              <artifactId>spark-streaming_${scala.tools.version}</artifactId>
+            </dependency>
+          </requiresUnpack>
         </configuration>
       </plugin>
 

@@ -46,6 +46,7 @@ package-job:
   artifacts:
     paths:
       - target/cohort-requester.jar
+      - target/cohort-requester-libs.jar
     reports:
       dotenv: build.env
     expire_in: 1 day
