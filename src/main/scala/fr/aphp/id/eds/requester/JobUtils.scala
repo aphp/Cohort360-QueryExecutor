@@ -68,7 +68,7 @@ object JobUtils {
     PGTool(
       spark,
       s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=$pgSchema,public",
-      "postgres-spark-job"
+      "/tmp/postgres-spark-job"
     )
   }
 
