@@ -1,11 +1,8 @@
 package fr.aphp.id.eds.requester
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import fr.aphp.id.eds.requester.JobUtils.{initSparkJobRequest, addEmptyGroup}
+import fr.aphp.id.eds.requester.JobUtils.{addEmptyGroup, initSparkJobRequest}
 import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv}
 import fr.aphp.id.eds.requester.query._
-import fr.aphp.id.eds.requester.tools.HttpTools.{getBasicBearerTokenHeader, httpPatchRequest}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
@@ -16,8 +13,19 @@ object CreateQuery extends JobBase {
   val logger: Logger = Logger.getLogger(this.getClass)
 
   private val LIMIT = sys.env.getOrElse("COHORT_CREATION_LIMIT", 20000).toString.toInt
-  private val djangoUrl = sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
-  private val token = sys.env.getOrElse("SJS_TOKEN", throw new RuntimeException("No token provided"))
+  private val djangoUrl =
+    sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
+
+  override def callbackUrl(jobData: JobData): Option[String] = {
+    val overrideCallback = super.callbackUrl(jobData)
+    if (overrideCallback.isDefined) {
+      overrideCallback
+    } else if (jobData.cohortUuid.isDefined) {
+      Some(djangoUrl + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
+    } else {
+      Option.empty
+    }
+  }
 
   override def runJob(
       spark: SparkSession,
@@ -82,15 +90,6 @@ object CreateQuery extends JobBase {
         status = "failed"
         logger.error("Failed with error", e)
         throw e
-    } finally {
-      val result = getCreationResult(cohortDefinitionId, count, status)
-      logger.info(s"Result is ${result}")
-      if (djangoUrl.nonEmpty && data.cohortUuid.isDefined) {
-        val resultAsJson = new ObjectMapper()
-          .registerModule(DefaultScalaModule)
-          .writeValueAsString(result)
-        httpPatchRequest(djangoUrl + "/cohort/cohorts/" + data.cohortUuid.get + "/", getBasicBearerTokenHeader(token), resultAsJson)
-      }
     }
   }
 
@@ -112,7 +111,7 @@ object CreateQuery extends JobBase {
                                                          false,
                                                          false,
                                                          List[String](),
-        SolrCollection.PATIENT_APHP,
+                                                         SolrCollection.PATIENT_APHP,
                                                          List[String]()))
     (completeRequest, completeTagsPerIdMap)
   }

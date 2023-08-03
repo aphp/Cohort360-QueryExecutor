@@ -13,5 +13,7 @@ trait JobBase {
   type JobOutput
 
   def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): JobOutput
+
+  def callbackUrl(jobData: SparkJobParameter): Option[String] = jobData.callbackUrl
 }
 

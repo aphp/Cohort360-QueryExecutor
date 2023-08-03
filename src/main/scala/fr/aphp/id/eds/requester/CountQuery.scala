@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.JobUtils.{initSparkJobRequest, getDefaultSolrFilterQuery}
+import fr.aphp.id.eds.requester.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
 import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv}
 import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
@@ -8,18 +8,34 @@ import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
 
-object CountQuery extends JobBase{
+object CountQuery extends JobBase {
   type JobData = SparkJobParameter
   type JobOutput = Long
 
   private val logger = Logger.getLogger(this.getClass)
+  private val djangoUrl =
+    sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
 
+  override def callbackUrl(jobData: JobData): Option[String] = {
+    val overrideCallback = super.callbackUrl(jobData)
+    if (overrideCallback.isDefined) {
+      overrideCallback
+    } else if (jobData.cohortUuid.isDefined) {
+      Some(djangoUrl + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
+    } else {
+      Option.empty
+    }
+  }
   override def runJob(spark: SparkSession, runtime: JobEnv, data: JobData): JobOutput = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
-    val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) = initSparkJobRequest(logger, spark, runtime, data)
+    val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
+      initSparkJobRequest(logger, spark, runtime, data)
 
     def isGroupResourceAndHasCriteria =
-      request.request.get.isInstanceOf[GroupResource] && request.request.get.asInstanceOf[GroupResource].criteria.nonEmpty
+      request.request.get.isInstanceOf[GroupResource] && request.request.get
+        .asInstanceOf[GroupResource]
+        .criteria
+        .nonEmpty
 
     def isInstanceOfBasicResource = request.request.get.isInstanceOf[BasicResource]
 
@@ -29,13 +45,20 @@ object CountQuery extends JobBase{
 
     def countPatientsWithSpark() = {
       QueryBuilder
-          .processRequest(spark, solrConf, request, criterionTagsMap, omopTools, data.ownerEntityId, cacheEnabled)
-          .count()
+        .processRequest(spark,
+                        solrConf,
+                        request,
+                        criterionTagsMap,
+                        omopTools,
+                        data.ownerEntityId,
+                        cacheEnabled)
+        .count()
     }
 
     def countPatientsInSolr() = {
       val solr = getSolrClient(solrConf("zkhost"))
-      val query = new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(request.sourcePopulation))
+      val query =
+        new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(request.sourcePopulation))
       val res = solr.query(SolrCollection.PATIENT_APHP, query)
       solr.close()
       res.getResults.getNumFound

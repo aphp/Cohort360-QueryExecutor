@@ -11,6 +11,11 @@ import org.apache.http.{HttpEntity, HttpException}
 object HttpTools extends LazyLogging {
 
   private val httpClient = HttpClientBuilder.create().build()
+  private val token = sys.env.getOrElse("SJS_TOKEN", throw new RuntimeException("No token provided"))
+
+  def httpPatchRequest(url: String, requestBody: String): String = {
+    httpPatchRequest(url, getBasicBearerTokenHeader(token), requestBody)
+  }
 
   def httpPatchRequest(url: String, headerConfig: Map[String, String], requestBody: String): String = {
     logger.info(s"PATCH request on URL $url")

@@ -1,7 +1,11 @@
 package fr.aphp.id.eds.requester.jobs
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.{Config, ConfigFactory}
+import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
 import fr.aphp.id.eds.requester.{CountQuery, CreateQuery, SparkJobParameter}
+import org.apache.http.HttpException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
@@ -36,7 +40,8 @@ case class JobInfo(status: String,
 
 class JobManager(val conf: Config = ConfigFactory.load) {
   val sparkSession: SparkSession = SparkConfig.sparkSession
-  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(conf.getInt("app.jobs.threads")))
+  implicit val ec: ExecutionContext =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(conf.getInt("app.jobs.threads")))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
@@ -65,10 +70,10 @@ class JobManager(val conf: Config = ConfigFactory.load) {
     jobExec.andThen {
       case Success(result) =>
         logger.info(s"Job ${jobId} successfully executed")
-        updateJob(jobId, Right(result), jobExecutor, jobData.mode)
+        finalizeJob(jobId, Right(result), jobExecutor, jobData.mode, jobData)
       case Failure(wrapped: Throwable) =>
         logger.error(s"Job ${jobId} failed", wrapped.getCause)
-        updateJob(jobId, Left(wrapped), jobExecutor, jobData.mode)
+        finalizeJob(jobId, Left(wrapped), jobExecutor, jobData.mode, jobData)
     }
     JobStatus(job.status,
               job.jobId,
@@ -77,6 +82,41 @@ class JobManager(val conf: Config = ConfigFactory.load) {
               job.duration,
               job.result.getOrElse(""),
               job.classPath)
+  }
+
+  private def finalizeJob(jobId: String,
+                          result: Either[Throwable, AnyRef],
+                          jobExecutor: JobBase,
+                          jobMode: String,
+                          callbackUrl: SparkJobParameter): Unit = {
+    updateJob(jobId, result, jobExecutor, jobMode)
+    callCallback(jobExecutor, callbackUrl, jobId, result)
+  }
+
+  private def callCallback(jobExecutor: JobBase,
+                           jobData: SparkJobParameter,
+                           jobId: String,
+                           result: Either[Throwable, AnyRef]): Unit = {
+    val callBackUrlOpt = jobExecutor.callbackUrl(jobData)
+    if (callBackUrlOpt.isDefined) {
+      val callback = callBackUrlOpt.get
+      logger.info(s"Calling callback at ${callback} for job ${jobId}")
+      val callbackResult = result match {
+        case Left(wrappedError) => s"ERROR: ${wrappedError.getMessage}"
+        case Right(value) => {
+          new ObjectMapper()
+            .registerModule(DefaultScalaModule)
+            .writeValueAsString(value)
+        }
+      }
+      try {
+        httpPatchRequest(callback, callbackResult)
+      } catch {
+        case e: HttpException => {
+          logger.error(s"Failed to call callback ${callback} for job ${jobId}", e)
+        }
+      }
+    }
   }
 
   private def updateJob(jobId: String,

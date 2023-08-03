@@ -15,7 +15,8 @@ case class SparkJobParameter(
                               solrRows: String = "10000",
                               commitWithin: String = "10000",
                               mode: String = "count",
-                              cohortUuid: Option[String]
+                              cohortUuid: Option[String] = Option.empty,
+                              callbackUrl: Option[String] = Option.empty
 )
 
 object JobUtils {
