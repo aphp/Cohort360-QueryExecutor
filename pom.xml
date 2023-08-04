@@ -28,7 +28,7 @@
     <scalatra.version>2.7.1</scalatra.version>
     <solr.version>8.11.0</solr.version>
     <hadoop.version>2.6.5</hadoop.version>
-    <spark-jobserver.version>0.11.1</spark-jobserver.version>
+    <spark-solr.version>4.0.4</spark-solr.version>
     <!--  Sonar  -->
     <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
 
@@ -90,7 +90,7 @@
     <dependency>
       <groupId>com.lucidworks.spark</groupId>
       <artifactId>spark-solr</artifactId>
-      <version>4.0.0</version>
+      <version>${spark-solr.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.solr</groupId>
