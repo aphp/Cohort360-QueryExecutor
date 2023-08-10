@@ -1,17 +1,21 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
 import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
 
+import java.security.SecureRandom
+
 object CountQuery extends JobBase {
   type JobData = SparkJobParameter
   type JobOutput = Long
 
+  private val RANGE_MIN = 25
+  private val RANGE_MAX = 50
   private val logger = Logger.getLogger(this.getClass)
   private val djangoUrl =
     sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
@@ -26,7 +30,7 @@ object CountQuery extends JobBase {
       Option.empty
     }
   }
-  override def runJob(spark: SparkSession, runtime: JobEnv, data: JobData): JobOutput = {
+  override def runJob(spark: SparkSession, runtime: JobEnv, data: JobData): Map[String, String] = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
     val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
       initSparkJobRequest(logger, spark, runtime, data)
@@ -72,7 +76,22 @@ object CountQuery extends JobBase {
       throw new Exception(
         "INPUT JSON cannot be processed (missing input 'sourcePopulation' and/or 'request')")
 
-    countPatientsInQuery()
+    val countResult = countPatientsInQuery()
+    if (data.mode == "count_all") {
+      Map("status" -> JobExecutionStatus.FINISHED, "minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString)
+    } else {
+      Map("status" -> JobExecutionStatus.FINISHED, "count" -> countResult.toString)
+    }
+  }
+
+  private def getMaximum(count: Int) = new SecureRandom().nextInt(RANGE_MAX - RANGE_MIN) + count + RANGE_MIN
+
+  private def getMinimum(count: Int) = {
+    val limMax = if (count - RANGE_MIN <= 1) count
+    else count - RANGE_MIN
+    val lowBound = Math.max(count - RANGE_MAX, 0)
+    if (count <= 0) 0
+    else new SecureRandom().nextInt(limMax - lowBound) + lowBound
   }
 
 //  /** Check that all inputs are defined and have the right format. This method is required by the SJS. */

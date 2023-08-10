@@ -1,14 +1,13 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.JobUtils.{addEmptyGroup, initSparkJobRequest}
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
 import fr.aphp.id.eds.requester.query._
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
 object CreateQuery extends JobBase {
   type JobData = SparkJobParameter
-  type JobOutput = Map[String, String]
 
   val logger: Logger = Logger.getLogger(this.getClass)
 
@@ -31,7 +30,7 @@ object CreateQuery extends JobBase {
       spark: SparkSession,
       runtime: JobEnv,
       data: JobData
-  ): JobOutput = {
+  ): Map[String, String] = {
     implicit val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
       initSparkJobRequest(logger, spark, runtime, data)
 
@@ -73,7 +72,7 @@ object CreateQuery extends JobBase {
       count = cohort.dropDuplicates().count()
       val cohortSizeBiggerThanLimit = count > LIMIT
 
-      status = if (cohortSizeBiggerThanLimit) "long_pending" else "finished"
+      status = if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING else JobExecutionStatus.FINISHED
 
       //  upload into pg and solr
       omopTools.uploadCohort(
@@ -95,11 +94,12 @@ object CreateQuery extends JobBase {
 
   private def getCreationResult(cohortDefinitionId: Long,
                                 count: Long,
-                                status: String): JobOutput = {
+                                status: String): Map[String, String] = {
     Map(
       "group.id" -> cohortDefinitionId.toString,
       "group.count" -> count.toString,
-      "request_job_status" -> status
+      "request_job_status" -> status, // TODO remove this key when django is ready
+      "status" -> status
     )
   }
 

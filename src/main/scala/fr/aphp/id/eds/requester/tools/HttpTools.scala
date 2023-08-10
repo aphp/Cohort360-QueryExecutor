@@ -1,5 +1,7 @@
 package fr.aphp.id.eds.requester.tools
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.http.client.methods._
 import org.apache.http.entity.StringEntity
@@ -13,14 +15,17 @@ object HttpTools extends LazyLogging {
   private val httpClient = HttpClientBuilder.create().build()
   private val token = sys.env.getOrElse("SJS_TOKEN", throw new RuntimeException("No token provided"))
 
-  def httpPatchRequest(url: String, requestBody: String): String = {
-    httpPatchRequest(url, getBasicBearerTokenHeader(token), requestBody)
+  def httpPatchRequest(url: String, data: AnyRef): String = {
+    httpPatchRequest(url, getBasicBearerTokenHeader(token), data)
   }
 
-  def httpPatchRequest(url: String, headerConfig: Map[String, String], requestBody: String): String = {
+  def httpPatchRequest(url: String, headerConfig: Map[String, String], data: AnyRef): String = {
     logger.info(s"PATCH request on URL $url")
     val request = new HttpPatch(url)
-    processResponse(request, headerConfig, requestBody)
+    val body = new ObjectMapper()
+      .registerModule(DefaultScalaModule)
+      .writeValueAsString(data)
+    processResponse(request, headerConfig, body)
   }
 
   /**

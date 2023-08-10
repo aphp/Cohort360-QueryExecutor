@@ -6,16 +6,16 @@ import org.apache.spark.sql.SparkSession
 import org.scalatest.funsuite.AnyFunSuiteLike
 
 class JobManagerTest extends AnyFunSuiteLike {
-  val jobManager = new JobManager(ConfigFactory.load("application.test.conf"))
+  System.setProperty("config.resource", "application.test.conf")
+  val jobManager = new JobManager()
   val jobStart = new java.util.concurrent.CountDownLatch(1)
 
   class JobTest extends JobBase {
     override type JobData = SparkJobParameter
-    override type JobOutput = String
 
-    override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): String = {
+    override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): Map[String, String] = {
       jobStart.await()
-      "ok"
+      Map("ok"-> "ok")
     }
   }
 

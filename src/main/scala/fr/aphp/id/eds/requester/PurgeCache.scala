@@ -16,22 +16,21 @@
   */
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
 import fr.aphp.id.eds.requester.tools.SparkTools
 import org.apache.spark.sql.SparkSession
 
 object PurgeCache extends JobBase {
   type JobData = String
-  type JobOutput = String
 
   override def runJob(spark: SparkSession,
                       runtime: JobEnv,
-                      data: SparkJobParameter): JobOutput =
+                      data: SparkJobParameter): Map[String, String] =
     try {
       SparkTools.purgeCached(spark, None, None)
-      s"SUCCESS: SJS purge cache"
+      Map("status" -> JobExecutionStatus.FINISHED, "message" -> "SJS purge cache")
     } catch {
-      case _: Exception => s"FAILED: SJS purge caches"
+      case _: Exception => Map("status" -> JobExecutionStatus.ERROR, "message" -> "FAILED: SJS purge caches")
     }
 
 }

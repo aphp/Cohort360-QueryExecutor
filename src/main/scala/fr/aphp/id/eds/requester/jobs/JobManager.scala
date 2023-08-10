@@ -1,7 +1,5 @@
 package fr.aphp.id.eds.requester.jobs
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.{Config, ConfigFactory}
 import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
 import fr.aphp.id.eds.requester.{CountQuery, CreateQuery, SparkJobParameter}
@@ -17,17 +15,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object JobExecutionStatus {
-  type JobExecutionStatus = String
-  val PENDING = "PENDING"
-  val LONG_PENDING = "LONG_PENDING"
-  val STARTED = "STARTED"
-  val ERROR = "ERROR"
-  val KILLED = "KILLED"
-  val FINISHED = "FINISHED"
-  val RUNNING = "RUNNING"
-  val UNKNOWN = "UNKNOWN"
-}
+
 
 case class JobInfo(status: String,
                    jobId: String,
@@ -38,7 +26,8 @@ case class JobInfo(status: String,
                    classPath: String,
                    execution: Future[AnyRef])
 
-class JobManager(val conf: Config = ConfigFactory.load) {
+class JobManager() {
+  val conf: Config = ConfigFactory.load
   val sparkSession: SparkSession = SparkConfig.sparkSession
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(conf.getInt("app.jobs.threads")))
@@ -52,9 +41,9 @@ class JobManager(val conf: Config = ConfigFactory.load) {
     logger.info(s"Starting new job ${jobId}")
     val jobExec = Future {
       logger.info(s"Job ${jobId} started")
-      sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", true)
+      sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
       sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
-      jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData).asInstanceOf[AnyRef]
+      jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData)
     }
     jobs(jobId) = JobInfo(
       JobExecutionStatus.RUNNING,
@@ -72,7 +61,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
         logger.info(s"Job ${jobId} successfully executed")
         finalizeJob(jobId, Right(result), jobExecutor, jobData.mode, jobData)
       case Failure(wrapped: Throwable) =>
-        logger.error(s"Job ${jobId} failed", wrapped.getCause)
+        logger.error(s"Job ${jobId} failed", wrapped)
         finalizeJob(jobId, Left(wrapped), jobExecutor, jobData.mode, jobData)
     }
     JobStatus(job.status,
@@ -85,7 +74,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
   }
 
   private def finalizeJob(jobId: String,
-                          result: Either[Throwable, AnyRef],
+                          result: Either[Throwable, Map[String, String]],
                           jobExecutor: JobBase,
                           jobMode: String,
                           callbackUrl: SparkJobParameter): Unit = {
@@ -96,17 +85,15 @@ class JobManager(val conf: Config = ConfigFactory.load) {
   private def callCallback(jobExecutor: JobBase,
                            jobData: SparkJobParameter,
                            jobId: String,
-                           result: Either[Throwable, AnyRef]): Unit = {
+                           result: Either[Throwable, Map[String, String]]): Unit = {
     val callBackUrlOpt = jobExecutor.callbackUrl(jobData)
     if (callBackUrlOpt.isDefined) {
       val callback = callBackUrlOpt.get
       logger.info(s"Calling callback at ${callback} for job ${jobId}")
       val callbackResult = result match {
-        case Left(wrappedError) => s"ERROR: ${wrappedError.getMessage}"
+        case Left(_) => Map("status" ->  JobExecutionStatus.ERROR)
         case Right(value) => {
-          new ObjectMapper()
-            .registerModule(DefaultScalaModule)
-            .writeValueAsString(value)
+          value
         }
       }
       try {
@@ -120,7 +107,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
   }
 
   private def updateJob(jobId: String,
-                        result: Either[Throwable, AnyRef],
+                        result: Either[Throwable, Map[String, String]],
                         jobExecutor: JobBase,
                         jobMode: String): Unit = {
     val updatedJob = jobs(jobId)
@@ -142,7 +129,7 @@ class JobManager(val conf: Config = ConfigFactory.load) {
                           execution)
   }
 
-  private def buildResult(result: Either[Throwable, AnyRef],
+  private def buildResult(result: Either[Throwable, Map[String, String]],
                           jobMode: String,
                           jobExecutor: JobBase): JobResult = {
     val jobModeStr = jobMode.replace("count_all", "countAll")
@@ -151,9 +138,17 @@ class JobManager(val conf: Config = ConfigFactory.load) {
       case Right(value) =>
         jobExecutor match {
           case CountQuery =>
-            JobResult(jobModeStr, "", "", value.asInstanceOf[Long])
+            val count = try {
+              value("count").toLong
+            } catch {
+              case e: NumberFormatException => {
+                logger.warn("Failed to parse count query result count", e)
+                -1
+              }
+            }
+            JobResult(jobModeStr, "", "", count)
           case CreateQuery => {
-            val resMap = value.asInstanceOf[Map[String, String]]
+            val resMap = value
             val count = try {
               resMap("group.count").toLong
             } catch {

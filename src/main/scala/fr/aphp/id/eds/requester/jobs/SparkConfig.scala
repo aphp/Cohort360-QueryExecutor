@@ -19,7 +19,6 @@ object SparkConfig {
   val sparkSession: SparkSession = SparkSession
     .builder()
     .config(sparkConf)
-    //.master("local[*]")
     .master(conf.getString("spark.master"))
     .getOrCreate()
 
