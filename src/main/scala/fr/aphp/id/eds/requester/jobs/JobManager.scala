@@ -91,7 +91,7 @@ class JobManager() {
       val callback = callBackUrlOpt.get
       logger.info(s"Calling callback at ${callback} for job ${jobId}")
       val callbackResult = result match {
-        case Left(wrapped) => Map("request_job_status" ->  JobExecutionStatus.ERROR, "status" ->  JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
+        case Left(wrapped) => Map("request_job_status" ->  JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
         case Right(value) => {
           value
         }

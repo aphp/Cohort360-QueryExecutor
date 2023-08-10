@@ -78,9 +78,9 @@ object CountQuery extends JobBase {
 
     val countResult = countPatientsInQuery()
     if (data.mode == "count_all") {
-      Map("status" -> JobExecutionStatus.FINISHED, "minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString)
+      Map("request_job_status" -> JobExecutionStatus.FINISHED, "minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString)
     } else {
-      Map("status" -> JobExecutionStatus.FINISHED, "count" -> countResult.toString)
+      Map("request_job_status" -> JobExecutionStatus.FINISHED, "count" -> countResult.toString)
     }
   }
 

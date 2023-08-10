@@ -28,7 +28,7 @@ object PurgeCache extends JobBase {
                       data: SparkJobParameter): Map[String, String] =
     try {
       SparkTools.purgeCached(spark, None, None)
-      Map("status" -> JobExecutionStatus.FINISHED, "message" -> "SJS purge cache")
+      Map("request_job_status" -> JobExecutionStatus.FINISHED, "message" -> "SJS purge cache")
     } catch {
       case _: Exception => Map("status" -> JobExecutionStatus.ERROR, "message" -> "FAILED: SJS purge caches")
     }

@@ -39,57 +39,50 @@ object CreateQuery extends JobBase {
     var cohortDefinitionId: Long = -1
     var count: Long = -1
 
-    try {
-      val isRequestEmpty: Boolean = request.request.isEmpty
-      val (completeRequest, completedCriterionTagsMap): (Request, Map[Short, CriterionTags]) =
-        if (isRequestEmpty)
-          addOneEmptyGroupToRequest(request)
-        else (request, criterionTagsMap)
+    val isRequestEmpty: Boolean = request.request.isEmpty
+    val (completeRequest, completedCriterionTagsMap): (Request, Map[Short, CriterionTags]) =
+      if (isRequestEmpty)
+        addOneEmptyGroupToRequest(request)
+      else (request, criterionTagsMap)
 
-      var cohort = QueryBuilder.processRequest(spark,
-                                               solrConf,
-                                               completeRequest,
-                                               completedCriterionTagsMap,
-                                               omopTools,
-                                               data.ownerEntityId,
-                                               cacheEnabled)
+    var cohort = QueryBuilder.processRequest(spark,
+                                             solrConf,
+                                             completeRequest,
+                                             completedCriterionTagsMap,
+                                             omopTools,
+                                             data.ownerEntityId,
+                                             cacheEnabled)
 
-      // get a new cohortId
-      cohortDefinitionId = omopTools.getCohortDefinitionId(
-        data.cohortDefinitionName,
-        data.cohortDefinitionDescription,
-        data.cohortDefinitionSyntax,
-        data.ownerEntityId
-      )
+    // get a new cohortId
+    cohortDefinitionId = omopTools.getCohortDefinitionId(
+      data.cohortDefinitionName,
+      data.cohortDefinitionDescription,
+      data.cohortDefinitionSyntax,
+      data.ownerEntityId
+    )
 
-      // filter df columns
-      cohort = cohort.select(
-        List("subject_id", "encounter", "entryEvent", "exitEvent")
-          .filter(c => cohort.columns.contains(c))
-          .map(c => F.col(c)): _*)
+    // filter df columns
+    cohort = cohort.select(
+      List("subject_id", "encounter", "entryEvent", "exitEvent")
+        .filter(c => cohort.columns.contains(c))
+        .map(c => F.col(c)): _*)
 
-      cohort.cache()
-      count = cohort.dropDuplicates().count()
-      val cohortSizeBiggerThanLimit = count > LIMIT
+    cohort.cache()
+    count = cohort.dropDuplicates().count()
+    val cohortSizeBiggerThanLimit = count > LIMIT
 
-      status = if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING else JobExecutionStatus.FINISHED
+    status = if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING else JobExecutionStatus.FINISHED
 
-      //  upload into pg and solr
-      omopTools.uploadCohort(
-        cohortDefinitionId,
-        cohort,
-        completeRequest.sourcePopulation,
-        count,
-        cohortSizeBiggerThanLimit
-      )
+    //  upload into pg and solr
+    omopTools.uploadCohort(
+      cohortDefinitionId,
+      cohort,
+      completeRequest.sourcePopulation,
+      count,
+      cohortSizeBiggerThanLimit
+    )
 
-      getCreationResult(cohortDefinitionId, count, status)
-    } catch {
-      case e: Exception =>
-        status = "failed"
-        logger.error("Failed with error", e)
-        throw e
-    }
+    getCreationResult(cohortDefinitionId, count, status)
   }
 
   private def getCreationResult(cohortDefinitionId: Long,
@@ -98,8 +91,7 @@ object CreateQuery extends JobBase {
     Map(
       "group.id" -> cohortDefinitionId.toString,
       "group.count" -> count.toString,
-      "request_job_status" -> status, // TODO remove this key when django is ready
-      "status" -> status
+      "request_job_status" -> status
     )
   }
 
