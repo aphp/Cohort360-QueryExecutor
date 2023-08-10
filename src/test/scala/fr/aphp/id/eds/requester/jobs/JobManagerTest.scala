@@ -5,8 +5,13 @@ import fr.aphp.id.eds.requester.SparkJobParameter
 import org.apache.spark.sql.SparkSession
 import org.scalatest.funsuite.AnyFunSuiteLike
 
+import java.nio.file.Paths
+
 class JobManagerTest extends AnyFunSuiteLike {
   System.setProperty("config.resource", "application.test.conf")
+  if (!Paths.get("solr_auth.txt").toFile.exists()) {
+    Paths.get("solr_auth.txt").toFile.createNewFile()
+  }
   val jobManager = new JobManager()
   val jobStart = new java.util.concurrent.CountDownLatch(1)
 
