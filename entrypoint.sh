@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 # enable OMOP pg access
-echo "$PG_HOST:$PG_PORT:$PG_DB:$PG_USER:$DB_OMOP_PASSWORD" >> /root/.pgpass
-chmod 0600 /root/.pgpass
+echo "$PG_HOST:$PG_PORT:$PG_DB:$PG_USER:$DB_OMOP_PASSWORD" >> /home/spark/.pgpass
+chmod 0600 /home/spark/.pgpass
 
 # load env var
 #envsubst < env.conf > tmp_env.conf && mv tmp_env.conf env.conf
