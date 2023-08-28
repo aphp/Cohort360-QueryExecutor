@@ -284,8 +284,9 @@ object QueryParser {
     genericQuery._type match {
       case "request" =>
         val requestOption = genericQuery.request
+        val resourceType = genericQuery.resourceType.getOrElse("Patient")
         if (requestOption.isEmpty) {
-          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = None))
+          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = None, resourceType = resourceType))
         } else {
           val request: Option[BaseQuery] = requestOption.get._type match {
             case "basicResource" =>
@@ -294,7 +295,7 @@ object QueryParser {
               val group = loadGroupResource(requestOption.get)
               if (group.criteria.isEmpty) None else Some(group)
           }
-          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = request))
+          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = request, resourceType = resourceType))
         }
       case "basicResource" =>
         Left(loadBasicResource(genericQuery))

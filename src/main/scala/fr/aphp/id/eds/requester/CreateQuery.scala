@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.JobUtils.{addEmptyGroup, initSparkJobRequest}
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
+import fr.aphp.id.eds.requester.tools.JobUtils.{addEmptyGroup, initSparkJobRequest}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
@@ -97,7 +97,7 @@ object CreateQuery extends JobBase {
 
   private def addOneEmptyGroupToRequest(request: Request): (Request, Map[Short, CriterionTags]) = {
     val completeRequest: Request =
-      Request(sourcePopulation = request.sourcePopulation, request = Some(addEmptyGroup(List())))
+      Request(sourcePopulation = request.sourcePopulation, request = Some(addEmptyGroup(List())), resourceType = request.resourceType)
     val completeTagsPerIdMap: Map[Short, CriterionTags] = Map(
       completeRequest.request.get.i -> new CriterionTags(false,
                                                          false,

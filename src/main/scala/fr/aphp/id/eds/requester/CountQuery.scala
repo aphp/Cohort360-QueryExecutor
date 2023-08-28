@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
+import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import org.apache.log4j.Logger

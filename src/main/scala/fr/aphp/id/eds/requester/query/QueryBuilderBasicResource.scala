@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.JobUtils.getDefaultSolrFilterQuery
+import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.SolrColumn.Encounter.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE}
 import fr.aphp.id.eds.requester.{
   DATE_COL,

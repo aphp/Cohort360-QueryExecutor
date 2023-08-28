@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.jobs
 
 import com.typesafe.config.{Config, ConfigFactory}
 import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
-import fr.aphp.id.eds.requester.{CountQuery, CreateQuery, SparkJobParameter}
+import fr.aphp.id.eds.requester.{CountQuery, CreateQuery}
 import org.apache.http.HttpException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession

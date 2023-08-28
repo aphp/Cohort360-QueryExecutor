@@ -16,7 +16,7 @@
   */
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus}
+import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.tools.SparkTools
 import org.apache.spark.sql.SparkSession
 

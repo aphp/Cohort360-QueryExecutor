@@ -69,7 +69,7 @@ case class TemporalConstraintDuration(
 case class SourcePopulation(caresiteCohortList: Option[List[Int]],
                             providerCohortList: Option[List[Int]])
 
-case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery])
+case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery], resourceType: String = "Patient")
 
 /** The 4 classes below correspond to json obj {_id: ..., value: ...} */
 case class IdWithString(_id: Short, occurrenceChoice: String) {

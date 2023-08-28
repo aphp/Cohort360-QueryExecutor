@@ -425,6 +425,11 @@ object PGTool extends java.io.Serializable with LazyLogging {
       val schema = jdbcMetadataToStructType(rs.getMetaData)
 
       spark.createDataFrame(b, schema)
+    } catch {
+      case e: Exception => {
+        logger.error(e.getMessage)
+        throw e
+      }
     } finally {
       conn.close()
     }

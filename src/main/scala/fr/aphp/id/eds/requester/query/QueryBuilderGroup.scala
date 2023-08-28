@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.JobUtils.{getDefaultSolrFilterQuery, getRandomIdNotInTabooList}
+import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, getRandomIdNotInTabooList}
 import fr.aphp.id.eds.requester.tools.{OmopTools, SparkTools}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}

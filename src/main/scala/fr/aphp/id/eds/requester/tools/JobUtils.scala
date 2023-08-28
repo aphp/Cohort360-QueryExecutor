@@ -1,23 +1,12 @@
-package fr.aphp.id.eds.requester
+package fr.aphp.id.eds.requester.tools
 
 import fr.aphp.id.eds.requester.CreateQuery.JobData
 import fr.aphp.id.eds.requester.jobs.JobEnv
 import fr.aphp.id.eds.requester.query._
-import fr.aphp.id.eds.requester.tools.{OmopTools, PGTool}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
-case class SparkJobParameter(
-                              cohortDefinitionName: String,
-                              cohortDefinitionDescription: Option[String],
-                              cohortDefinitionSyntax: String,
-                              ownerEntityId: String,
-                              solrRows: String = "10000",
-                              commitWithin: String = "10000",
-                              mode: String = "count",
-                              cohortUuid: Option[String] = Option.empty,
-                              callbackUrl: Option[String] = Option.empty
-)
+
 
 object JobUtils {
   def initSparkJobRequest(logger: Logger,
