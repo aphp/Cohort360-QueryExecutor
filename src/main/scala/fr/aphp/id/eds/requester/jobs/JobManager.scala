@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester.jobs
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
 import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
-import fr.aphp.id.eds.requester.{CountQuery, CreateQuery}
+import fr.aphp.id.eds.requester.{AppConfig, CountQuery, CreateQuery}
 import org.apache.http.HttpException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -27,10 +27,9 @@ case class JobInfo(status: String,
                    execution: Future[AnyRef])
 
 class JobManager() {
-  val conf: Config = ConfigFactory.load
   val sparkSession: SparkSession = SparkConfig.sparkSession
   implicit val ec: ExecutionContext =
-    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(conf.getInt("app.jobs.threads")))
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(AppConfig.conf.getInt("app.jobs.threads")))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
@@ -43,7 +42,7 @@ class JobManager() {
       logger.info(s"Job ${jobId} started")
       sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
       sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
-      jobExecutor.runJob(sparkSession, JobEnv(jobId, conf), jobData)
+      jobExecutor.runJob(sparkSession, JobEnv(jobId, AppConfig.conf), jobData)
     }
     jobs(jobId) = JobInfo(
       JobExecutionStatus.RUNNING,

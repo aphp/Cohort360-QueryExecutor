@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
 import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
+import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
@@ -12,20 +12,17 @@ import java.security.SecureRandom
 
 object CountQuery extends JobBase {
   type JobData = SparkJobParameter
-  type JobOutput = Long
 
   private val RANGE_MIN = 25
   private val RANGE_MAX = 50
   private val logger = Logger.getLogger(this.getClass)
-  private val djangoUrl =
-    sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
 
   override def callbackUrl(jobData: JobData): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
     } else if (jobData.cohortUuid.isDefined) {
-      Some(djangoUrl + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
+      Some(AppConfig.djangoUrl + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }

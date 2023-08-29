@@ -3,6 +3,7 @@ package fr.aphp.id.eds.requester.tools
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.scalalogging.LazyLogging
+import fr.aphp.id.eds.requester.AppConfig
 import org.apache.http.client.methods._
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClientBuilder
@@ -13,10 +14,9 @@ import org.apache.http.{HttpEntity, HttpException}
 object HttpTools extends LazyLogging {
 
   private val httpClient = HttpClientBuilder.create().build()
-  private val token = sys.env.getOrElse("SJS_TOKEN", throw new RuntimeException("No token provided"))
 
   def httpPatchRequest(url: String, data: AnyRef): String = {
-    httpPatchRequest(url, getBasicBearerTokenHeader(token), data)
+    httpPatchRequest(url, getBasicBearerTokenHeader(AppConfig.backAuthToken), data)
   }
 
   def httpPatchRequest(url: String, headerConfig: Map[String, String], data: AnyRef): String = {

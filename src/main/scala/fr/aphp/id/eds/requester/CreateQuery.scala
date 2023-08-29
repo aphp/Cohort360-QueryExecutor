@@ -1,26 +1,23 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.tools.JobUtils.{addEmptyGroup, initSparkJobRequest}
 import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
+import fr.aphp.id.eds.requester.tools.JobUtils.{addEmptyGroup, initSparkJobRequest}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
 object CreateQuery extends JobBase {
   type JobData = SparkJobParameter
 
-  val logger: Logger = Logger.getLogger(this.getClass)
-
-  private val LIMIT = sys.env.getOrElse("COHORT_CREATION_LIMIT", 20000).toString.toInt
-  private val djangoUrl =
-    sys.env.getOrElse("DJANGO_CALLBACK_URL", throw new RuntimeException("No Django URL provided"))
+  private val logger: Logger = Logger.getLogger(this.getClass)
+  private val LIMIT = AppConfig.conf.getInt("app.cohortCreationLimit")
 
   override def callbackUrl(jobData: JobData): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
     } else if (jobData.cohortUuid.isDefined) {
-      Some(djangoUrl + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
+      Some(AppConfig.djangoUrl + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }
