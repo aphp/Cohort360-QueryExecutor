@@ -2,22 +2,22 @@ package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
-import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, initSparkJobRequest}
+import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
 
 import java.security.SecureRandom
 
-object CountQuery extends JobBase {
-  type JobData = SparkJobParameter
+case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService: JobUtilsService = JobUtils) extends JobBase {
 
   private val RANGE_MIN = 25
   private val RANGE_MAX = 50
   private val logger = Logger.getLogger(this.getClass)
 
-  override def callbackUrl(jobData: JobData): Option[String] = {
+  override def callbackUrl(jobData: SparkJobParameter): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
@@ -27,10 +27,10 @@ object CountQuery extends JobBase {
       Option.empty
     }
   }
-  override def runJob(spark: SparkSession, runtime: JobEnv, data: JobData): Map[String, String] = {
+  override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): Map[String, String] = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
     val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
-      initSparkJobRequest(logger, spark, runtime, data)
+      jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     def isGroupResourceAndHasCriteria =
       request.request.get.isInstanceOf[GroupResource] && request.request.get
@@ -45,7 +45,7 @@ object CountQuery extends JobBase {
     }
 
     def countPatientsWithSpark() = {
-      QueryBuilder
+      queryBuilder
         .processRequest(spark,
                         solrConf,
                         request,

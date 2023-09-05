@@ -171,7 +171,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource = new Que
       cacheNestedGroup
     )
 
-    val groupIdColumnName = qbUtils.getPatientColumn(groupId)
+    val groupIdColumnName = qbUtils.getSubjectColumn(groupId)
     var dfGroup =
       if (temporalConstraints.isEmpty) {
         QueryBuilderLogicalConstraint.processGroupWithoutTemporalConstraint(

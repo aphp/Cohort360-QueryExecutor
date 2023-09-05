@@ -1,10 +1,24 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.tools.OmopTools
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{functions => F}
 
-object QueryBuilder {
+trait QueryBuilder {
+
+      def processRequest(implicit spark: SparkSession,
+                            solrConf: Map[String, String],
+                            request: Request,
+                            criterionTagsMap: Map[Short, CriterionTags],
+                            omopTools: OmopTools,
+                            ownerEntityId: String,
+                            cacheEnabled: Boolean,
+                            recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup()
+                          ): DataFrame
+}
+
+object QueryBuilder extends QueryBuilder {
 
   val qbUtils = new QueryBuilderConfigs()
 
@@ -16,7 +30,7 @@ object QueryBuilder {
     * @param omopTools instance of object to interact with cache
     * @param ownerEntityId the id of the user to name the cache
     * */
-  def processRequest(implicit spark: SparkSession,
+  override def processRequest(implicit spark: SparkSession,
                      solrConf: Map[String, String],
                      request: Request,
                      criterionTagsMap: Map[Short, CriterionTags],
@@ -40,8 +54,7 @@ object QueryBuilder {
 
     // need to rename final column to uniformize any results being processed after (count and/or upload in databases).
     cohortDataFrame
-      .withColumnRenamed(qbUtils.getPatientColumn(request.request.get.i), "subject_id")
+      .withColumnRenamed(qbUtils.getSubjectColumn(request.request.get.i, isPatient = request.resourceType == ResourceType.patient), "subject_id")
       .select(F.col("subject_id"))
   }
-
 }

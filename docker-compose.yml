@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  app:
+    image: sjs:latest
+    container_name: sjs-app
+    ports:
+      - 8090:8090
+      - 4040:4040
+      - 5005:5005
+    env_file:
+      - cre.env
+
+  spark-master:
+    image: apache/spark:3.4.1-scala2.12-java11-ubuntu
+    container_name: spark-master
+    ports:
+      - 7077:7077
+    command: bash -c "/opt/spark/sbin/start-master.sh && sleep infinity"
+
+  worker-1:
+    image: apache/spark:3.4.1-scala2.12-java11-ubuntu
+    container_name: spark-worker-1
+    depends_on:
+      - spark-master
+    command: bash -c "/opt/spark/sbin/start-worker.sh -c 10 spark://spark-master:7077 && sleep infinity"
+
+  worker-2:
+    image: apache/spark:3.4.1-scala2.12-java11-ubuntu
+    container_name: spark-worker-2
+    depends_on:
+      - spark-master
+    command: bash -c "/opt/spark/sbin/start-worker.sh -c 10 spark://spark-master:7077 && sleep infinity"

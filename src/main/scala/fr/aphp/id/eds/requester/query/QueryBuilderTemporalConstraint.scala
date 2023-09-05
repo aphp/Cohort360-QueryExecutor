@@ -101,8 +101,8 @@ class QueryBuilderTemporalConstraint {
                                                       groupId: Short): Option[DataFrame] = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
-    val groupIdColumName = qbConfigs.getPatientColumn(groupId)
-    val criterionIdColumnName = qbConfigs.getPatientColumn(firstCriterionId)
+    val groupIdColumName = qbConfigs.getSubjectColumn(groupId)
+    val criterionIdColumnName = qbConfigs.getSubjectColumn(firstCriterionId)
     var patientListDataFrame =
       temporalConstraintDataFrame
         .select(criterionIdColumnName)
@@ -148,8 +148,8 @@ class QueryBuilderTemporalConstraint {
         .flatMap(x1 => joinEncounterCol.map(x2 => dfGroup(x1) <=> dfJoin(x2)))
         .reduce(_ && _)
       // @todo : the following line useless if one patient per encounter
-      joinOn = dfGroup(qbConfigs.getPatientColumn(firstId)) <=> dfJoin(
-        qbConfigs.getPatientColumn(id_)) && joinOn
+      joinOn = dfGroup(qbConfigs.getSubjectColumn(firstId)) <=> dfJoin(
+        qbConfigs.getSubjectColumn(id_)) && joinOn
       if (logger.isDebugEnabled) logger.debug(s"joinOn: $joinOn")
       dfGroup = dfGroup.join(dfJoin, joinOn, joinType = "leftsemi")
     }
@@ -208,8 +208,8 @@ class QueryBuilderTemporalConstraint {
       idList.tail.foreach(
         criterionId =>
           groupDf = groupDf.join(dataFrameWithDateTimeColumnsPerIdMap(criterionId),
-                                 F.col(qbConfigs.getPatientColumn(firstId)) === F.col(
-                                   qbConfigs.getPatientColumn(criterionId)),
+                                 F.col(qbConfigs.getSubjectColumn(firstId)) === F.col(
+                                   qbConfigs.getSubjectColumn(criterionId)),
                                  "inner"))
       if (logger.isDebugEnabled)
         logger.debug(
@@ -305,8 +305,8 @@ class QueryBuilderTemporalConstraint {
       criteriaToAddIsList: List[Short]): DataFrame = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
-    val groupIdColumnName = qbConfigs.getPatientColumn(groupId)
-    val initialDataFrameIdColumnName = qbConfigs.getPatientColumn(initialDataFrameId)
+    val groupIdColumnName = qbConfigs.getSubjectColumn(groupId)
+    val initialDataFrameIdColumnName = qbConfigs.getSubjectColumn(initialDataFrameId)
     if (logger.isDebugEnabled)
       logger.debug(
         s"dfGroup.columns:${initialDataFrame.columns.toList}, groupIdColumnName:$groupIdColumnName, initialDataFrameIdColumnName:$initialDataFrameIdColumnName")
@@ -318,7 +318,7 @@ class QueryBuilderTemporalConstraint {
       .filter(x => x != initialDataFrameId)
       .foreach(id_ => {
         val joinDataFrame = dataFramePerIdMap(id_)
-        val joinColumnName = qbConfigs.getPatientColumn(id_)
+        val joinColumnName = qbConfigs.getSubjectColumn(id_)
         resultDataFrame = resultDataFrame
           .join(joinDataFrame,
                 resultDataFrame(groupIdColumnName) <=> joinDataFrame(joinColumnName),

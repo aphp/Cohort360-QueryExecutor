@@ -12,6 +12,7 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
+  private final val fhirResourceVocabulary = "Domain"
 
   /**
     * @param cohortDefinitionName        : The name of the cohort
@@ -24,14 +25,16 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       cohortDefinitionName: String,
       cohortDefinitionDescription: Option[String],
       cohortDefinitionSyntax: String,
-      ownerEntityId: String
+      ownerEntityId: String,
+      resourceType: String
   ): Long = {
+    val resourceConceptId = getResourceTypeConceptId(resourceType)
     val cohortHash = "DEPRECATED"
     val stmt =
       s"""
          |insert into cohort_definition
          |(hash, cohort_definition_name, cohort_definition_description, cohort_definition_syntax, cohort_hash, owner_entity_id, cohort_initiation_datetime, cohort_active, subject_concept_id, owner_domain_id)
-         |values (-1, ?, ?, ?, ?, ? , now(), false, 56, 'Provider')
+         |values (-1, ?, ?, ?, ?, ? , now(), false, ?, 'Provider')
          |returning cohort_definition_id
          |""".stripMargin
     val result = pg
@@ -42,9 +45,34 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
           cohortDefinitionDescription,
           cohortDefinitionSyntax,
           cohortHash,
-          ownerEntityId
+          ownerEntityId,
+          resourceConceptId
         )
       )
+      .collect()
+      .map(_.getLong(0))
+    result(0)
+  }
+
+  def getResourceTypeConceptId(resourceType: String): Long = {
+    // TODO remove this when the correct vocabulary is used
+    // -> https://gitlab.eds.aphp.fr/bigdata/terminology/-/issues/98
+    val resourceNameMapping = Map(
+      "Patient" -> "Person",
+      "Encounter" -> "Visit",
+      "DocumentReference" -> "Note"
+    )
+    val renamedResourceType = resourceNameMapping.getOrElse(resourceType, resourceType)
+    // --
+    val stmt =
+      s"""
+         |select concept_id
+         |from concept
+         |where concept_name = ?
+         |and vocabulary_id = '${fhirResourceVocabulary}'
+         |""".stripMargin
+    val result = pg
+      .sqlExecWithResult(stmt, List(renamedResourceType))
       .collect()
       .map(_.getLong(0))
     result(0)

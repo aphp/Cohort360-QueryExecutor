@@ -15,8 +15,6 @@ class JobManagerTest extends AnyFunSuiteLike {
   val jobStart = new java.util.concurrent.CountDownLatch(1)
 
   class JobTest extends JobBase {
-    override type JobData = SparkJobParameter
-
     override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): Map[String, String] = {
       jobStart.await()
       Map("ok"-> "ok")

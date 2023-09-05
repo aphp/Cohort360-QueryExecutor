@@ -1,25 +1,22 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.CreateQuery.JobData
-import fr.aphp.id.eds.requester.jobs.JobEnv
+import fr.aphp.id.eds.requester.jobs.{JobEnv, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
 
-
-object JobUtils {
+trait JobUtilsService {
   def initSparkJobRequest(logger: Logger,
                           spark: SparkSession,
                           runtime: JobEnv,
-                          data: JobData)
-    : (Request, Map[Short, CriterionTags], Map[String, String], OmopTools, Boolean) = {
+                          data: SparkJobParameter)
+  : (Request, Map[Short, CriterionTags], Map[String, String], OmopTools, Boolean) = {
     logger.debug(s"Received data: ${data.toString}")
 
     // init db connectors
-    val pgTool = getPgtool(spark, runtime)
-    implicit val solrConf: Map[String, String] = getSolrConf(runtime)
-    val omopTools = new OmopTools(pgTool, solrConf)
+    val solrConf: Map[String, String] = getSolrConf(runtime)
+    val omopTools = getOmopTools(spark, runtime, solrConf)
 
     // load input json into object
     val (request, criterionTagsMap) = QueryParser.parse(data.cohortDefinitionSyntax)
@@ -27,14 +24,21 @@ object JobUtils {
     logger.info(s"ENTER NEW QUERY JOB : ${data.toString}. Parsed criterionIdWithTcList: $criterionTagsMap")
 
     (request,
-     criterionTagsMap,
-     solrConf,
-     omopTools,
-     runtime.contextConfig.getBoolean("app.enableCache"))
+      criterionTagsMap,
+      solrConf,
+      omopTools,
+      runtime.contextConfig.getBoolean("app.enableCache"))
   }
 
+  def getOmopTools(session: SparkSession, env: JobEnv, stringToString: Map[String, String]): OmopTools
+
+  def getSolrConf(env: JobEnv): Map[String, String]
+}
+
+object JobUtils extends JobUtilsService {
+
   /** Read Postgresql passthrough parameters in SJS conf file */
-  def getPgtool(spark: SparkSession, runtime: JobEnv): PGTool = {
+  override def getOmopTools(spark: SparkSession, runtime: JobEnv, solrConf: Map[String, String]): OmopTools = {
     val pgHost =
       runtime.contextConfig.getString(
         "postgres.host"
@@ -55,15 +59,19 @@ object JobUtils {
       runtime.contextConfig.getString(
         "postgres.user"
       )
-    PGTool(
-      spark,
-      s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=$pgSchema,public",
-      "/tmp/postgres-spark-job"
+    new OmopTools(
+      PGTool(
+        spark,
+        s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=$pgSchema,public",
+        "/tmp/postgres-spark-job"
+      ),
+      solrConf
     )
+
   }
 
   /** Read SolR passthrough parameters in SJS conf file */
-  def getSolrConf(runtime: JobEnv): Map[String, String] = {
+  override def getSolrConf(runtime: JobEnv): Map[String, String] = {
     val zkHost = runtime.contextConfig.getString("solr.zk")
     val maxSolrTry = runtime.contextConfig.getString("solr.max_try")
     val rows = runtime.contextConfig.getString("solr.rows")

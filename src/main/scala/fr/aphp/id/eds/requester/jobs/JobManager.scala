@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester.jobs
 
-import com.typesafe.config.Config
-import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
 import fr.aphp.id.eds.requester.{AppConfig, CountQuery, CreateQuery}
+import fr.aphp.id.eds.requester.config.JobsConfig
+import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
 import org.apache.http.HttpException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -14,8 +14,6 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-
-
 
 case class JobInfo(status: String,
                    jobId: String,
@@ -29,7 +27,8 @@ case class JobInfo(status: String,
 class JobManager() {
   val sparkSession: SparkSession = SparkConfig.sparkSession
   implicit val ec: ExecutionContext =
-    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(AppConfig.conf.getInt("app.jobs.threads")))
+    ExecutionContext.fromExecutor(
+      Executors.newFixedThreadPool(AppConfig.conf.getInt("app.jobs.threads")))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
@@ -90,7 +89,8 @@ class JobManager() {
       val callback = callBackUrlOpt.get
       logger.info(s"Calling callback at ${callback} for job ${jobId}")
       val callbackResult = result match {
-        case Left(wrapped) => Map("request_job_status" ->  JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
+        case Left(wrapped) =>
+          Map("request_job_status" -> JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
         case Right(value) => {
           value
         }
@@ -136,7 +136,7 @@ class JobManager() {
       case Left(wrappedError) => JobResult(jobModeStr, wrappedError.getMessage)
       case Right(value) =>
         jobExecutor match {
-          case CountQuery =>
+          case _: CountQuery =>
             val count = try {
               value("count").toLong
             } catch {
@@ -146,7 +146,7 @@ class JobManager() {
               }
             }
             JobResult(jobModeStr, "", "", count)
-          case CreateQuery => {
+          case _: CreateQuery => {
             val resMap = value
             val count = try {
               resMap("group.count").toLong

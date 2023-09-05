@@ -20,9 +20,7 @@ import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, Spark
 import fr.aphp.id.eds.requester.tools.SparkTools
 import org.apache.spark.sql.SparkSession
 
-object PurgeCache extends JobBase {
-  type JobData = String
-
+class PurgeCache extends JobBase {
   override def runJob(spark: SparkSession,
                       runtime: JobEnv,
                       data: SparkJobParameter): Map[String, String] =

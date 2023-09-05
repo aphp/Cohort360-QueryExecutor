@@ -1,18 +1,17 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs._
 import fr.aphp.id.eds.requester.query._
-import fr.aphp.id.eds.requester.tools.JobUtils.{addEmptyGroup, initSparkJobRequest}
+import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
-object CreateQuery extends JobBase {
-  type JobData = SparkJobParameter
-
+case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService: JobUtilsService = JobUtils) extends JobBase {
   private val logger: Logger = Logger.getLogger(this.getClass)
   private val LIMIT = AppConfig.conf.getInt("app.cohortCreationLimit")
 
-  override def callbackUrl(jobData: JobData): Option[String] = {
+  override def callbackUrl(jobData: SparkJobParameter): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
@@ -26,10 +25,12 @@ object CreateQuery extends JobBase {
   override def runJob(
       spark: SparkSession,
       runtime: JobEnv,
-      data: JobData
+      data: SparkJobParameter
   ): Map[String, String] = {
     implicit val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
-      initSparkJobRequest(logger, spark, runtime, data)
+      jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
+
+    validateRequestOrThrow(request)
 
     // Init values here because we are in an object (i.e a singleton) and not a class
     var status: String = ""
@@ -42,7 +43,7 @@ object CreateQuery extends JobBase {
         addOneEmptyGroupToRequest(request)
       else (request, criterionTagsMap)
 
-    var cohort = QueryBuilder.processRequest(spark,
+    var cohort = queryBuilder.processRequest(spark,
                                              solrConf,
                                              completeRequest,
                                              completedCriterionTagsMap,
@@ -55,7 +56,8 @@ object CreateQuery extends JobBase {
       data.cohortDefinitionName,
       data.cohortDefinitionDescription,
       data.cohortDefinitionSyntax,
-      data.ownerEntityId
+      data.ownerEntityId,
+      request.resourceType
     )
 
     // filter df columns
@@ -105,27 +107,18 @@ object CreateQuery extends JobBase {
     (completeRequest, completeTagsPerIdMap)
   }
 
-  /** Check that all inputs are defined and have the right format. This method is required by the SJS. */
-//  override def validate(
-//      sc: SparkSession,
-//      runtime: JobEnvironment,
-//      config: Config
-//  ): JobData Or Every[ValidationProblem] = {
-//    try {
-//      val res: JobData = SparkJobParameter(
-//        cohortDefinitionName = config.getString("input.cohortDefinitionName"),
-//        cohortDefinitionDescription =
-//          Try(Some(config.getString("input.cohortDefinitionDescription")))
-//            .getOrElse(None),
-//        cohortDefinitionSyntax = config.getString("input.cohortDefinitionSyntax"),
-//        ownerEntityId = config.getString("input.ownerEntityId"),
-//        cohortUuid = Some(config.getString("input.cohortUuid"))
-//      )
-//      Good(res)
-//    } catch {
-//      case e: Exception =>
-//        Bad(One(SingleProblem(e.getMessage)))
-//    }
-//  }
+  private def validateRequestOrThrow(data: Request): Unit = {
+    if (!ResourceType.all.contains(data.resourceType)) {
+      throw new RuntimeException("Resource type not supported")
+    }
+
+    if (data.resourceType != ResourceType.patient && data.request.isEmpty) {
+      throw new RuntimeException("Request is empty")
+    }
+
+    if (data.resourceType != ResourceType.patient && !data.request.get.isInstanceOf[BasicResource]) {
+      throw new RuntimeException("Non-patient resource filter request should be a basic resource")
+    }
+  }
 
 }

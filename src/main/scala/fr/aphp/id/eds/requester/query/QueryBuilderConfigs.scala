@@ -65,7 +65,7 @@ class QueryBuilderConfigs {
       "default" -> List(SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE, EVENT_DATE)
     )
 
-  def getPatientColumn(id: Short): String = buildColName(id, SolrColumn.PATIENT)
+  def getSubjectColumn(id: Short, isPatient: Boolean = true): String = buildColName(id, if (isPatient) SolrColumn.PATIENT else SolrColumn.ID)
 
   def getEncounterColumn(id: Short): String = buildColName(id, SolrColumn.ENCOUNTER)
 

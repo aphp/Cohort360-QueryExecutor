@@ -65,7 +65,7 @@ object QueryBuilderLogicalConstraint {
 
     def initFilteringDataFrame(groupDataFrame: DataFrame): Option[DataFrame] = {
       if (doWeNeedAFilteringDataFrame) {
-        val firstCol = qbUtils.getPatientColumn(firstId)
+        val firstCol = qbUtils.getSubjectColumn(firstId)
         Some(
           groupDataFrame
             .select(groupIdColumnName)
@@ -171,7 +171,7 @@ object QueryBuilderLogicalConstraint {
       criterionTagsMap: Map[Short, CriterionTags]): DataFrame = {
     // build groupDataFrame
     val firstId = inclusionCriteriaId.head
-    val firstCriterionIdColumnName = qbUtils.getPatientColumn(firstId)
+    val firstCriterionIdColumnName = qbUtils.getSubjectColumn(firstId)
     val isGroupInTemporalConstraint: Boolean = criterionTagsMap(groupId).isInTemporalConstraint
     val doWeNeedLongInsteadOfWideDataFrame: Boolean =
       criterionTagsMap(groupId).temporalConstraintTypeList.contains("directChronologicalOrdering")
@@ -188,12 +188,12 @@ object QueryBuilderLogicalConstraint {
     def updateGroupDataFrame(groupDataFrame: DataFrame, criterionId: Short): DataFrame = {
       val dfTmpJoin: DataFrame =
         if (doWeNeedLongInsteadOfWideDataFrame)
-          dataFramePerIdMap(criterionId).select(qbUtils.getPatientColumn(criterionId))
+          dataFramePerIdMap(criterionId).select(qbUtils.getSubjectColumn(criterionId))
         else dataFramePerIdMap(criterionId)
 
       groupDataFrame.join(
         dfTmpJoin,
-        groupDataFrame(groupIdColumnName) === dfTmpJoin(qbUtils.getPatientColumn(criterionId)),
+        groupDataFrame(groupIdColumnName) === dfTmpJoin(qbUtils.getSubjectColumn(criterionId)),
         "inner")
     }
 
@@ -216,7 +216,7 @@ object QueryBuilderLogicalConstraint {
             patientListDataFrame,
             dataFramePerIdMap(criterionId)(
               qbUtils
-                .getPatientColumn(criterionId)) === patientListDataFrame(groupIdColumnName),
+                .getSubjectColumn(criterionId)) === patientListDataFrame(groupIdColumnName),
             "left_semi")
         additionalDataFrame = normalizeColumnNamesInGroupDataFrame(additionalDataFrame,
                                                                    criterionId,
@@ -267,7 +267,7 @@ object QueryBuilderLogicalConstraint {
       logger.debug(
         s"JOIN EXCLUSION CRITERIA : modifyingGroupDataFrame.count=${modifyingGroupDataFrame.count()}, ")
     for (exclusionCriterion <- exclusionCriteria) {
-      val patientColumnName = qbUtils.getPatientColumn(exclusionCriterion.i)
+      val patientColumnName = qbUtils.getSubjectColumn(exclusionCriterion.i)
       var joiningDataFrame = dataFramePerIdMap(exclusionCriterion.i)
       // @todo : not clean, temporal constraint on exclusion criteria is forbidden for now
       if (!criterionTagsMap(exclusionCriterion.i).isInTemporalConstraint) {
@@ -297,8 +297,8 @@ object QueryBuilderLogicalConstraint {
         dataFrame.withColumnRenamed(sourceColumnName, targetColumnName)
       else dataFrame
     }
-    val sourcePatientCol: String = qbUtils.getPatientColumn(sourceId)
-    val targetPatientCol: String = qbUtils.getPatientColumn(targetId)
+    val sourcePatientCol: String = qbUtils.getSubjectColumn(sourceId)
+    val targetPatientCol: String = qbUtils.getSubjectColumn(targetId)
     var targetDataframe: DataFrame =
       sourceDataframe.withColumnRenamed(sourcePatientCol, targetPatientCol)
     targetDataframe = renameColumn(targetDataframe,

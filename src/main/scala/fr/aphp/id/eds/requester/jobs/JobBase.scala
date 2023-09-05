@@ -8,8 +8,6 @@ case class JobEnv(jobId: String, contextConfig: Config) {
 }
 
 trait JobBase {
-  type JobData
-
   def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): Map[String, String]
 
   def callbackUrl(jobData: SparkJobParameter): Option[String] = jobData.callbackUrl

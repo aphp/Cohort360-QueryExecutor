@@ -26,6 +26,7 @@ package object requester {
   }
 
   object SolrColumn {
+    final val ID = "id"
     final val PATIENT = "patient"
     final val SUBJECT = "subject"
     final val AGE = "age"

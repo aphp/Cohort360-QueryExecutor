@@ -340,7 +340,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
           .join(renamedPatientListDataFrame, joinExprs, "right")
           .drop(groupByColumns.map(x => x.split('_').last).toList: _*)
       } else {
-        val joinId: String = qbConfigs.getPatientColumn(criterionId)
+        val joinId: String = qbConfigs.getSubjectColumn(criterionId)
         criterionDataFrame.join(patientListDataFrame,
                                 criterionDataFrame(joinId) <=> patientListDataFrame(joinId),
                                 "left_semi")
@@ -358,7 +358,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
 
         operator = if (operator == "=") "==" else operator
 
-        var groupByColumns = ListBuffer[String](qbConfigs.getPatientColumn(criterionId))
+        var groupByColumns = ListBuffer[String](qbConfigs.getSubjectColumn(criterionId))
         val criterionDataFrameWithSameDayColumn: DataFrame =
           addSameDayConstraintColumns(criterionDataFrame, sameDay)
 
@@ -489,11 +489,11 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
 
   private def cleanCriterionDataFrame(criterionDataFrame: DataFrame,
                                       criterionId: Short,
-                                      isInTemporalConstraint: Boolean): DataFrame = {
-    if (!isInTemporalConstraint) {
+                                      keepAllColumns: Boolean): DataFrame = {
+    if (!keepAllColumns) {
       criterionDataFrame
-        .select(F.col(qbConfigs.getPatientColumn(criterionId)))
-        .dropDuplicates(qbConfigs.getPatientColumn(criterionId))
+        .select(F.col(qbConfigs.getSubjectColumn(criterionId)))
+        .dropDuplicates(qbConfigs.getSubjectColumn(criterionId))
     } else criterionDataFrame
   }
 
@@ -505,6 +505,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     val criterionId: Short = basicResource._id
     val collectionName: String = basicResource.resourceType
     val isInTemporalConstraint: Boolean = criterionTags.isInTemporalConstraint
+    val isResourceFilter: Boolean = criterionTags.isResourceFilter
 
     val solrFilterList = getSolrFilterList(criterionTags, basicResource.patientAge.isDefined)
     val solrFilterQuery = getSolrFilterQuery(sourcePopulation, basicResource)
@@ -529,7 +530,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                                                   criterionId,
                                                   isInTemporalConstraint)
     criterionDataFrame =
-      cleanCriterionDataFrame(criterionDataFrame, criterionId, isInTemporalConstraint)
+      cleanCriterionDataFrame(criterionDataFrame, criterionId, isInTemporalConstraint || isResourceFilter)
 
     if (logger.isDebugEnabled) {
       logger.debug(
