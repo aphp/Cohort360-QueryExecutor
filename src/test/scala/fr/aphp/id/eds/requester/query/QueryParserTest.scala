@@ -22,7 +22,7 @@ class QueryParserTest extends AnyFunSuiteLike {
     assert(resource._2(1).isDateTimeAvailable)
     assert(resource._2(1).isEncounterAvailable)
     assert(resource._2(1).isInTemporalConstraint)
-    resource._2(1).requiredSolrFieldList should Matchers.equal(List("encounter"))
+    resource._2(1).requiredSolrFieldList should Matchers.equal(List("_visit"))
     assert(resource._2(1).temporalConstraintTypeList == List("sameEncounter"))
   }
 
