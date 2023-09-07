@@ -3,13 +3,18 @@ package fr.aphp.id.eds.requester.query
 import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, EVENT_DATE, IPP_LIST, LOCAL_DATE, PATIENT_COL, SolrCollection, SolrColumn}
 
 class QueryBuilderConfigs {
-  def buildMap(dateColListTarget: List[String]): Map[String, List[String]] = {
+
+  def buildMap(patientCol: List[String], dateColListTarget: List[String]): Map[String, List[String]] = {
     Map(
-      PATIENT_COL -> List(SolrColumn.PATIENT),
+      PATIENT_COL -> patientCol,
       DATE_COL -> dateColListTarget,
       ENCOUNTER_COL -> List(SolrColumn.ENCOUNTER),
       ENCOUNTER_DATES_COL -> List(SolrColumn.ENCOUNTER_START_DATE, SolrColumn.ENCOUNTER_END_DATE)
     )
+  }
+
+  def buildMap(dateColListTarget: List[String]): Map[String, List[String]] = {
+    buildMap(List(SolrColumn.PATIENT), dateColListTarget)
   }
 
   def buildColName(id: Short, colName: String): String = {
@@ -32,6 +37,7 @@ class QueryBuilderConfigs {
       SolrCollection.GROUP_APHP -> Map(PATIENT_COL -> List(SolrColumn.Group.RESOURCE_ID)),
       SolrCollection.CLAIM_APHP -> buildMap(List(SolrColumn.Claim.CREATED)),
       SolrCollection.PROCEDURE_APHP -> buildMap(List(SolrColumn.Procedure.DATE)),
+      SolrCollection.IMAGINGSTUDY_APHP -> buildMap(List(SolrColumn.SUBJECT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)),
       "default" -> Map(DATE_COL -> List[String](), ENCOUNTER_COL -> List[String](), ENCOUNTER_DATES_COL -> List[String]())
     )
 
@@ -61,6 +67,7 @@ class QueryBuilderConfigs {
       SolrCollection.MEDICATIONADMINISTRATION_APHP -> List(EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE),
       SolrCollection.MEDICATIONREQUEST_APHP -> List(EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE),
       SolrCollection.OBSERVATION_APHP -> List(EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE),
+      SolrCollection.IMAGINGSTUDY_APHP -> List(EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE),
       IPP_LIST -> List[String](),
       "default" -> List(SolrColumn.Encounter.ENCOUNTER_START_DATE, SolrColumn.Encounter.ENCOUNTER_END_DATE, EVENT_DATE)
     )

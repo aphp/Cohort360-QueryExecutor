@@ -10,18 +10,11 @@ package object requester {
     final val DOCUMENTREFERENCE_APHP = "documentReferenceAphp"
     final val CLAIM_APHP = "claimAphp"
     final val COMPOSITION_APHP = "compositionAphp"
-    final val VALUESET_APHP = "valueSetAphp"
-    final val ORGANIZATION_APHP = "organizationAphp"
     final val GROUP_APHP = "groupAphp"
     final val MEDICATIONREQUEST_APHP = "medicationRequestAphp"
     final val MEDICATIONADMINISTRATION_APHP = "medicationAdministrationAphp"
-    final val IMAGINGSERIES_APHP = "imagingSeriesAphp"
     final val IMAGINGSTUDY_APHP = "imagingStudyAphp"
-    final val CONCEPT_MAP_APHP = "conceptMapAphp"
     final val DEFAULT = "default"
-    final val LIST_HIVE_FHIR_TABLE = List(PATIENT_APHP, ENCOUNTER_APHP, OBSERVATION_APHP,
-      CONDITION_APHP, PROCEDURE_APHP, DOCUMENTREFERENCE_APHP, CLAIM_APHP, COMPOSITION_APHP, VALUESET_APHP,
-      ORGANIZATION_APHP, GROUP_APHP, MEDICATIONREQUEST_APHP, MEDICATIONADMINISTRATION_APHP, CONCEPT_MAP_APHP)
 
   }
 
@@ -79,6 +72,11 @@ package object requester {
 
     object Group {
       final val RESOURCE_ID = "resourceId"
+    }
+
+    object ImagingStudy {
+      final val STARTED = "started"
+      final val SERIES_STARTED = "series.started"
     }
   }
 
