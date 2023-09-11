@@ -131,8 +131,8 @@ class QueryBuilderTemporalConstraint {
         .filter(
           columnName =>
             columnName.contains(s"_::_${SolrColumn.ENCOUNTER}") &&
-              !(columnName.contains(SolrColumn.Encounter.ENCOUNTER_START_DATE) ||
-                columnName.contains(SolrColumn.Encounter.ENCOUNTER_END_DATE))
+              !(columnName.contains(SolrColumn.ENCOUNTER_START_DATE) ||
+                columnName.contains(SolrColumn.ENCOUNTER_END_DATE))
         )
         .toList
     }

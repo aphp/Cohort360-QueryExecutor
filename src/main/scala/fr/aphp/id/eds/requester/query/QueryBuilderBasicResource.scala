@@ -1,16 +1,9 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
-import fr.aphp.id.eds.requester.SolrColumn.Encounter.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE}
-import fr.aphp.id.eds.requester.{
-  DATE_COL,
-  ENCOUNTER_DATES_COL,
-  EVENT_DATE,
-  IPP_LIST,
-  PATIENT_COL,
-  SolrCollection,
-  SolrColumn
-}
+import fr.aphp.id.eds.requester.SolrColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE}
+import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_DATES_COL, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
@@ -49,23 +42,25 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
         collection match {
           case SolrCollection.ENCOUNTER_APHP =>
             column_name match {
-              case SolrColumn.Encounter.PERIOD_START => SolrColumn.Encounter.ENCOUNTER_START_DATE
-              case SolrColumn.Encounter.PERIOD_END   => SolrColumn.Encounter.ENCOUNTER_END_DATE
+              case SolrColumn.Encounter.PERIOD_START => QueryColumn.ENCOUNTER_START_DATE
+              case SolrColumn.Encounter.PERIOD_END   => QueryColumn.ENCOUNTER_END_DATE
+              case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
               case `dateField`                      => EVENT_DATE
-              case `patientField`                   => SolrColumn.PATIENT
+              case `patientField`                   => QueryColumn.PATIENT
               case _                                 => column_name.replace(".", "_")
             }
           case SolrCollection.PATIENT_APHP =>
             column_name match {
-              case SolrColumn.Patient.BIRTHDATE => SolrColumn.Patient.PATIENT_BIRTHDATE
-              case `dateField`                 => EVENT_DATE
-              case `patientField`              => SolrColumn.PATIENT
+              case SolrColumn.Patient.BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
+              case `dateField`                 => QueryColumn.EVENT_DATE
+              case `patientField`              => QueryColumn.PATIENT
               case _                            => column_name.replace(".", "_")
             }
           case _ =>
             column_name match {
-              case `dateField`    => EVENT_DATE
-              case `patientField` => SolrColumn.PATIENT
+              case `dateField`    => QueryColumn.EVENT_DATE
+              case `patientField` => QueryColumn.PATIENT
+              case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
               case _               => column_name.replace(".", "_")
             }
         }
@@ -178,7 +173,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     def dropTemporaryAgeColumns(criterionDataFrameWithAgeColumn: DataFrame): DataFrame = {
       val selectedColumns = criterionDataFrameWithAgeColumn.columns
         .filter(c =>
-          !List(SolrColumn.AGE, qbConfigs.getPatientBirthColumn(criterionId)).contains(c))
+          !List(QueryColumn.AGE, qbConfigs.getPatientBirthColumn(criterionId)).contains(c))
         .map(x => F.col(x))
         .toList
       criterionDataFrameWithAgeColumn.select(selectedColumns: _*)
@@ -195,12 +190,12 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     def addAgeColumn(dataFrame: DataFrame, patientAge: PatientAge): DataFrame = {
       val (year_min, _, _, year_max, _, _) = getDecomposedAgeMinAndMax(patientAge)
       if (year_max == 0 & year_min == 0) {
-        dataFrame.withColumn(SolrColumn.AGE,
+        dataFrame.withColumn(QueryColumn.AGE,
                              F.datediff(F.col(s"${qbConfigs.getDateColumn(criterionId)}"),
                                         F.col(qbConfigs.getPatientBirthColumn(criterionId))))
       } else {
         dataFrame.withColumn(
-          colName = SolrColumn.AGE,
+          colName = QueryColumn.AGE,
           F.datediff(F.col(s"${qbConfigs.getDateColumn(criterionId)}"),
                      F.col(qbConfigs.getPatientBirthColumn(criterionId))) / 365.25)
       }
@@ -212,18 +207,18 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       var sparkFilterList = new ListBuffer[Column]()
       sparkFilterList = if (year_max == 0 & year_min == 0) {
         if (patientAge.maxAge.isDefined) {
-          sparkFilterList += F.col(SolrColumn.AGE) <= month_max * 30 + day_max
+          sparkFilterList += F.col(QueryColumn.AGE) <= month_max * 30 + day_max
         }
         if (patientAge.minAge.isDefined) {
-          sparkFilterList += F.col(SolrColumn.AGE) >= month_min * 30 + day_min
+          sparkFilterList += F.col(QueryColumn.AGE) >= month_min * 30 + day_min
         }
         sparkFilterList
       } else {
         if (patientAge.maxAge.isDefined) {
-          sparkFilterList += F.col(SolrColumn.AGE) <= year_max
+          sparkFilterList += F.col(QueryColumn.AGE) <= year_max
         }
         if (patientAge.minAge.isDefined) {
-          sparkFilterList += F.col(SolrColumn.AGE) >= year_min
+          sparkFilterList += F.col(QueryColumn.AGE) >= year_min
         }
         sparkFilterList
       }
@@ -470,7 +465,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       if (isPatientAgeConstraint) {
         collectionName match {
           case SolrCollection.PATIENT_APHP => SolrColumn.Patient.BIRTHDATE :: requestedAttributes
-          case _                           => s"${SolrColumn.PATIENT}.${SolrColumn.Patient.BIRTHDATE}" :: requestedAttributes
+          case _                           => SolrColumn.PATIENT_BIRTHDATE :: requestedAttributes
         }
       } else requestedAttributes
     }
@@ -583,7 +578,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     solr.close()
     import spark.implicits._
 
-    rdd.toDF(qbConfigs.buildColName(localId, SolrColumn.PATIENT))
+    rdd.toDF(qbConfigs.buildColName(localId, QueryColumn.PATIENT))
   }
 
   /** Compute the resulting df of a criteria which is a group of criteria.

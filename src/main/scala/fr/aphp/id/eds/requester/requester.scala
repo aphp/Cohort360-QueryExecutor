@@ -18,36 +18,45 @@ package object requester {
 
   }
 
+  object QueryColumn {
+    final val PATIENT = "patient"
+    final val ENCOUNTER = "encounter"
+    final val ENCOUNTER_START_DATE = "encounter_start_date"
+    final val ENCOUNTER_END_DATE = "encounter_end_date"
+    final val PATIENT_BIRTHDATE = "patient_birthdate"
+    final val EVENT_DATE = "event_date"
+    final val LOCAL_DATE = "localDate"
+    final val AGE = "age"
+  }
+
   object SolrColumn {
     final val ID = "id"
-    final val PATIENT = "patient"
-    final val SUBJECT = "subject"
-    final val AGE = "age"
+    final val PATIENT = "_subject"
     final val ENCOUNTER = "_visit"
-    final val ENCOUNTER_PREFIX = "Encounter."
+    final val PATIENT_PREFIX = "_ref.patient."
+    final val PATIENT_BIRTHDATE = PATIENT_PREFIX + Patient.BIRTHDATE
+    final val ENCOUNTER_PREFIX = "_ref.encounter."
     final val ENCOUNTER_START_DATE = ENCOUNTER_PREFIX + Encounter.PERIOD_START
     final val ENCOUNTER_END_DATE = ENCOUNTER_PREFIX + Encounter.PERIOD_END
 
     object Patient {
-      final val PREFIX = "patient_"
       final val BIRTHDATE = "birthdate"
-      final val PATIENT_BIRTHDATE = PREFIX + BIRTHDATE
-
       final val IDENTIFIER_VALUE = "identifier.value"
 
     }
 
     object Encounter {
-      final val PREFIX = "encounter_"
       final val PERIOD_START = "period.start"
       final val PERIOD_END = "period.end"
-      final val ENCOUNTER_START_DATE = PREFIX + "period_start"
-      final val ENCOUNTER_END_DATE = PREFIX + "period_end"
     }
 
-    object Medication {
-      final val PERIOD_START = "Period-start"
-      final val PERIOD_END = "Period-end"
+    object MedicationAdministration {
+      final val PERIOD_START = "effectivePeriod.start"
+    }
+
+    object MedicationRequest {
+      final val PERIOD_START = "dispenseRequest.validityPeriod.start"
+      final val PERIOD_END = "dispenseRequest.validityPeriod.end"
     }
 
     object Observation {
@@ -59,11 +68,11 @@ package object requester {
     }
 
     object Condition {
-      final val RECORDED_DATE = "recorded-date"
+      final val RECORDED_DATE = "recordedDate"
     }
 
     object Procedure {
-      final val DATE = "date"
+      final val DATE = "performedDateTime"
     }
 
     object Document {
@@ -86,8 +95,5 @@ package object requester {
   final val ENCOUNTER_ID = "encounter_id"
   final val ENCOUNTER_COL = "encounter_col"
   final val ENCOUNTER_DATES_COL = "encounter_dates_col"
-  final val EVENT_DATE = "event_date"
-  final val LOCAL_DATE = "localDate"
-
 
 }
