@@ -2,16 +2,13 @@ package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
-import fr.aphp.id.eds.requester.SolrColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE}
-import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_DATES_COL, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
+import fr.aphp.id.eds.requester._
+import org.apache.log4j.Logger
+import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
-import org.apache.log4j.Logger
-import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
-
-import scala.util.matching.Regex
 
 class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBuilderConfigs(),
                                 val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
@@ -39,6 +36,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
           requestKeyPerCollection(collection).getOrElse(DATE_COL, List[String]("")).head
         val patientField =
           requestKeyPerCollection(collection).getOrElse(PATIENT_COL, List[String]("")).head
+        val encounterField = requestKeyPerCollection(collection).getOrElse(ENCOUNTER_COL, List("")).head
         collection match {
           case SolrCollection.ENCOUNTER_APHP =>
             column_name match {
@@ -47,6 +45,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
               case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
               case `dateField`                      => EVENT_DATE
               case `patientField`                   => QueryColumn.PATIENT
+              case `encounterField`                 => QueryColumn.ENCOUNTER
               case _                                 => column_name.replace(".", "_")
             }
           case SolrCollection.PATIENT_APHP =>
@@ -61,6 +60,9 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
               case `dateField`    => QueryColumn.EVENT_DATE
               case `patientField` => QueryColumn.PATIENT
               case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
+              case SolrColumn.ENCOUNTER_START_DATE => QueryColumn.ENCOUNTER_START_DATE
+              case SolrColumn.ENCOUNTER_END_DATE => QueryColumn.ENCOUNTER_END_DATE
+              case `encounterField`                 => QueryColumn.ENCOUNTER
               case _               => column_name.replace(".", "_")
             }
         }
@@ -89,14 +91,14 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
         if (encounterDateRange.minDate.isDefined) {
           logger.info(s"****** Encounter date range min: ${encounterDateRange.minDate} ")
           encounterRangeList += DateRange(minDate = encounterDateRange.minDate,
-                                          datePreference = Some(List(ENCOUNTER_START_DATE)),
+                                          datePreference = Some(List(QueryColumn.ENCOUNTER_START_DATE)),
                                           dateIsNotNull = encounterDateRange.dateIsNotNull,
                                           maxDate = None)
         }
         if (encounterDateRange.maxDate.isDefined) {
           logger.info(s"****** Encounter date range max: ${encounterDateRange.maxDate} ")
           encounterRangeList += DateRange(maxDate = encounterDateRange.maxDate,
-                                          datePreference = Some(List(ENCOUNTER_END_DATE)),
+                                          datePreference = Some(List(QueryColumn.ENCOUNTER_END_DATE)),
                                           dateIsNotNull = encounterDateRange.dateIsNotNull,
                                           minDate = None)
         }

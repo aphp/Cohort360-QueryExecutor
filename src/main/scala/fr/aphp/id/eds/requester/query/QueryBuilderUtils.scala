@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
-import fr.aphp.id.eds.requester.SolrColumn
+import fr.aphp.id.eds.requester.{QueryColumn, SolrColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.{MapType, ShortType, StringType, StructType}
@@ -30,7 +30,7 @@ class QueryBuilderUtils {
       datePreference.filter(x =>
         x match {
           case EVENT_DATE => qbConfigs.listCollectionWithEventDatetimeFields.contains(collection)
-          case SolrColumn.ENCOUNTER_START_DATE | SolrColumn.ENCOUNTER_END_DATE =>
+          case QueryColumn.ENCOUNTER_START_DATE | QueryColumn.ENCOUNTER_END_DATE =>
             qbConfigs.listCollectionWithEncounterFields.contains(collection)
           case _ => false
       })

@@ -1,4 +1,4 @@
-patient;encounter.period.start;encounter.period.end;recorded-date
+patient;_ref.encounter.period.start;_ref.encounter.period.end;recordedDate
 22;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z
 23;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z
 24;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z;2016-03-06T12:04:00Z

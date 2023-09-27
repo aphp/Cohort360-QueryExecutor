@@ -1,4 +1,4 @@
-patient;encounter.period.start;encounter.period.end;effectiveDatetime
+patient;_ref.encounter.period.start;_ref.encounter.period.end;effectiveDatetime
 22;2016-03-06T11:04:00Z;2016-03-06T11:04:00Z;2016-03-06T11:04:00Z
 23;2016-03-06T13:04:00Z;2016-03-06T13:04:00Z;2016-03-06T13:04:00Z
 24;2016-03-07T09:04:00Z;2016-03-07T09:04:00Z;2016-03-07T09:04:00Z

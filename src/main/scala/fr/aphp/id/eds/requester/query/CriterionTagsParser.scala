@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
+import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EVENT_DATE}
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, ENCOUNTER_ID, SolrCollection, SolrColumn}
 import fr.aphp.id.eds.requester.query.QueryParser.{DataValueShortList, DataValueString, GenericQuery, GenericTemporalConstraint}
@@ -308,7 +308,7 @@ object CriterionTagsParser {
     datePreferenceList.foreach {
       case EVENT_DATE => dateTimeSolrFieldList ++= translationMap.getOrElse(DATE_COL, List[String]())
       case ENCOUNTER_ID => dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_COL, List[String]())
-      case SolrColumn.ENCOUNTER_START_DATE | SolrColumn.ENCOUNTER_END_DATE =>
+      case ENCOUNTER_START_DATE | ENCOUNTER_END_DATE =>
         dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_DATES_COL, List[String]())
       case alreadyGoodString: String => dateTimeSolrFieldList ::= alreadyGoodString
     }

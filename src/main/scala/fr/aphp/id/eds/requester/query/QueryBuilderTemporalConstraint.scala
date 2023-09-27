@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.SolrColumn
+import fr.aphp.id.eds.requester.{QueryColumn, SolrColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.catalyst.util.IntervalUtils.makeInterval
 import org.apache.spark.sql.functions.expr
@@ -130,9 +130,9 @@ class QueryBuilderTemporalConstraint {
       dataFrame.columns
         .filter(
           columnName =>
-            columnName.contains(s"_::_${SolrColumn.ENCOUNTER}") &&
-              !(columnName.contains(SolrColumn.ENCOUNTER_START_DATE) ||
-                columnName.contains(SolrColumn.ENCOUNTER_END_DATE))
+            columnName.contains(s"_::_${QueryColumn.ENCOUNTER}") &&
+              !(columnName.contains(QueryColumn.ENCOUNTER_START_DATE) ||
+                columnName.contains(QueryColumn.ENCOUNTER_END_DATE))
         )
         .toList
     }
