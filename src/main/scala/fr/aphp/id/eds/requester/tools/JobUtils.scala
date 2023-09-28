@@ -90,7 +90,7 @@ object JobUtils extends JobUtilsService {
   }
 
   def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
-    s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})&fq=is_deleted:false"
+    s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})"
   }
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {
