@@ -45,7 +45,8 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
     }
 
     def countPatientsWithSpark() = {
-      queryBuilder
+      val t0 = System.nanoTime()
+      val count = queryBuilder
         .processRequest(spark,
                         solrConf,
                         request,
@@ -54,6 +55,9 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
                         data.ownerEntityId,
                         cacheEnabled)
         .count()
+      val t1 = System.nanoTime()
+      logger.info("Query Count processed in: " + (t1 - t0) / 1000 + "ms")
+      count
     }
 
     def countPatientsInSolr() = {
