@@ -60,7 +60,7 @@ package object requester {
     }
 
     object Observation {
-      final val EFFECTIVE_DATETIME = "effectiveDatetime"
+      final val EFFECTIVE_DATETIME = "effectiveDateTime"
     }
 
     object Claim {
