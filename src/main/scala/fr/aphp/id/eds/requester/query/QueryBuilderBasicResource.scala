@@ -559,7 +559,10 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     val localId = res._id
     val ippList: List[String] = extractIdsIpp(res.filter)
     val ippListFilter: String = ippList.mkString(",")
-    val ippFilter = s"{!terms f=${SolrColumn.Patient.IDENTIFIER_VALUE}}$ippListFilter"
+    // because we do not retrieve the full query translated by the CRB process
+    // we need to add back this filter to the query
+    val opposedSubject = "-(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
+    val ippFilter = s"({!terms f=${SolrColumn.Patient.IDENTIFIER_VALUE}}$ippListFilter) AND ${opposedSubject}"
     val ippRessource: BasicResource = BasicResource(
       localId,
       isInclusive = res.isInclusive,
