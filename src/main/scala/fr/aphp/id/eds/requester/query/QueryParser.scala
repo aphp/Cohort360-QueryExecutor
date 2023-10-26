@@ -148,6 +148,7 @@ object QueryParser {
     implicit lazy val sourcePopulationReads = Json.reads[SourcePopulation]
     implicit lazy val dateRange = Json.reads[DateRange]
     implicit lazy val queryRead = Json.reads[GenericQuery]
+    logger.info(s"Trying to parse query ${cohortDefinitionSyntaxJsonString}")
     val cohortRequestOption =
       Json.parse(cohortDefinitionSyntaxJsonString).validate[GenericQuery]
     val cohortRequest = cohortRequestOption.get
