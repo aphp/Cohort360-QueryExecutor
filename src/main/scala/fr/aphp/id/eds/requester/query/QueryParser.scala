@@ -262,8 +262,11 @@ object QueryParser {
       // filter the tc with ids (from parent and own) to match those who match sub criteria ids
       val groupTcWithIds: List[TemporalConstraint] =
         if (parentTemporalConstraint.isDefined || tcWithIds.isDefined) {
-          (parentTemporalConstraint.getOrElse(List()) ++ tcWithIds.getOrElse(List())).filter(tc =>
-            tc.idList.isRight && tc.idList.right.get.containsSlice(criterionIds))
+          (parentTemporalConstraint.getOrElse(List()) ++ tcWithIds.getOrElse(List())).filter(
+            tc =>
+              tc.idList.isRight && criterionIds.distinct
+                .intersect(tc.idList.right.get.distinct)
+                .size == tc.idList.right.get.distinct.size)
         } else {
           List()
         }
@@ -286,7 +289,10 @@ object QueryParser {
         val requestOption = genericQuery.request
         val resourceType = genericQuery.resourceType.getOrElse("Patient")
         if (requestOption.isEmpty) {
-          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = None, resourceType = resourceType))
+          Right(
+            Request(sourcePopulation = genericQuery.sourcePopulation.get,
+                    request = None,
+                    resourceType = resourceType))
         } else {
           val request: Option[BaseQuery] = requestOption.get._type match {
             case "basicResource" =>
@@ -295,7 +301,10 @@ object QueryParser {
               val group = loadGroupResource(requestOption.get)
               if (group.criteria.isEmpty) None else Some(group)
           }
-          Right(Request(sourcePopulation = genericQuery.sourcePopulation.get, request = request, resourceType = resourceType))
+          Right(
+            Request(sourcePopulation = genericQuery.sourcePopulation.get,
+                    request = request,
+                    resourceType = resourceType))
         }
       case "basicResource" =>
         Left(loadBasicResource(genericQuery))
