@@ -57,6 +57,12 @@ case class GroupResource(_type: String,
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
 }
 
+object GroupResourceType {
+    final val AND = "andGroup"
+    final val OR = "orGroup"
+    final val N_AMONG_M = "nAmongM"
+}
+
 case class TemporalConstraintDuration(
                                        years: Option[Int],
                                        months: Option[Int],
@@ -70,6 +76,8 @@ case class SourcePopulation(caresiteCohortList: Option[List[Int]],
                             providerCohortList: Option[List[Int]])
 
 case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery], resourceType: String = "Patient")
+
+case class QueryParsingOptions(withOrganizationDetails: Boolean = false)
 
 /** The 4 classes below correspond to json obj {_id: ..., value: ...} */
 case class IdWithString(_id: Short, occurrenceChoice: String) {

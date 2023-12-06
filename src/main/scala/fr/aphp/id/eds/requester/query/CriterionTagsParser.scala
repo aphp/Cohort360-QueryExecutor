@@ -2,16 +2,28 @@ package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EVENT_DATE}
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, ENCOUNTER_ID, SolrCollection, SolrColumn}
-import fr.aphp.id.eds.requester.query.QueryParser.{DataValueShortList, DataValueString, GenericQuery, GenericTemporalConstraint}
+import fr.aphp.id.eds.requester.{
+  DATE_COL,
+  ENCOUNTER_COL,
+  ENCOUNTER_DATES_COL,
+  ENCOUNTER_ID,
+  SolrCollection,
+  SolrColumn
+}
+import fr.aphp.id.eds.requester.query.QueryParser.{
+  DataValueShortList,
+  DataValueString,
+  GenericQuery,
+  GenericTemporalConstraint
+}
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
- *
- * @param isDateTimeAvailable  tells if the criterion contains datetime information
- * @param isEncounterAvailable tells if the criterion contains encounter information
- * @param resourceType         criterion resource name - 'default' for groups
- */
+  *
+  * @param isDateTimeAvailable  tells if the criterion contains datetime information
+  * @param isEncounterAvailable tells if the criterion contains encounter information
+  * @param resourceType         criterion resource name - 'default' for groups
+  */
 class CriterionTags(val isDateTimeAvailable: Boolean,
                     val isEncounterAvailable: Boolean,
                     val isInTemporalConstraint: Boolean,
@@ -19,35 +31,43 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
                     val resourceType: String = "default",
                     val requiredSolrFieldList: List[String] = List[String](),
                     val isResourceFilter: Boolean = false,
-                   )
+                    val withOrganizations: Boolean = false,
+)
 
 object CriterionTagsParser {
   private val logger = Logger.getLogger(this.getClass)
   private val queryBuilderConfigs = new QueryBuilderConfigs()
 
   /** Extracts a map that links all criteria id concerned by a temporal constraint with the required dataPreference list.
-   *
-   * @param genericQuery the request query
-   */
+    *
+    * @param genericQuery the request query
+    */
   def getCriterionTagsMap(
-                           genericQuery: GenericQuery,
-                           criterionTagsMap: Map[Short, CriterionTags],
-                           inheritedTemporalConstraintList: List[GenericTemporalConstraint] =
-                           List[GenericTemporalConstraint](),
-                           isResourceFilter: Boolean = false
-                         ): Map[Short, CriterionTags] = {
+      genericQuery: GenericQuery,
+      criterionTagsMap: Map[Short, CriterionTags],
+      inheritedTemporalConstraintList: List[GenericTemporalConstraint] =
+        List[GenericTemporalConstraint](),
+      isResourceFilter: Boolean = false,
+      requestOrganizations: Boolean = false
+  ): Map[Short, CriterionTags] = {
 
     val resultingCriterionTagsMap: Map[Short, CriterionTags] = genericQuery._type match {
       case "request" =>
         if (genericQuery.request.isEmpty)
           criterionTagsMap
         else {
-          getCriterionTagsMap(genericQuery.request.get, criterionTagsMap, List(), genericQuery.resourceType.getOrElse(ResourceType.patient) != ResourceType.patient)
+          getCriterionTagsMap(
+            genericQuery.request.get,
+            criterionTagsMap,
+            List(),
+            genericQuery.resourceType.getOrElse(ResourceType.patient) != ResourceType.patient,
+            requestOrganizations)
         }
 
       case "basicResource" =>
         val criterionId = genericQuery._id.get
-        val criterionTags = getBasicRessourceTags(genericQuery, isResourceFilter)
+        val criterionTags =
+          getBasicRessourceTags(genericQuery, isResourceFilter, requestOrganizations)
         val criterionTagsMapTmp: Map[Short, CriterionTags] =
           Map[Short, CriterionTags](criterionId -> criterionTags)
         mergeCriterionTagsMap(criterionTagsMap, criterionTagsMapTmp)
@@ -68,22 +88,29 @@ object CriterionTagsParser {
               tc.datePreferenceList,
               tc.filteredCriteriaIdList,
               tc.dateIsNotNullList
-            ))
+          ))
         for (criterion <- criteria) {
           criterionTagsMapTmp = mergeCriterionTagsMap(
             criterionTagsMapTmp,
-            getCriterionTagsMap(criterion, criterionTagsMapTmp, temporalConstraints)
+            getCriterionTagsMap(criterion,
+                                criterionTagsMapTmp,
+                                temporalConstraints,
+                                isResourceFilter,
+                                requestOrganizations)
           )
         }
         criterionTagsMapTmp = mergeCriterionTagsMap(
           criterionTagsMapTmp,
           processTemporalConstraintToGetTagsPerId(genericQuery,
-            temporalConstraints,
-            criterionTagsMapTmp)
+                                                  temporalConstraints,
+                                                  criterionTagsMapTmp)
         )
         criterionTagsMapTmp = mergeCriterionTagsMap(
           criterionTagsMapTmp,
-          Map(genericQuery._id.get -> getGroupTags(criteria, criterionTagsMapTmp)))
+          Map(
+            genericQuery._id.get -> getGroupTags(criteria,
+                                                 criterionTagsMapTmp,
+                                                 requestOrganizations)))
         criterionTagsMapTmp
     }
     if (logger.isDebugEnabled)
@@ -95,17 +122,17 @@ object CriterionTagsParser {
   }
 
   /** Increment the map with criteria concerned by temporal constraint of a group
-   *
-   * @param genericQuery group of criteria */
+    *
+    * @param genericQuery group of criteria */
   private def processTemporalConstraintToGetTagsPerId(
-                                                       genericQuery: GenericQuery,
-                                                       temporalConstraints: List[GenericTemporalConstraint],
-                                                       criterionTagsMap: Map[Short, CriterionTags]
-                                                     ): Map[Short, CriterionTags] = {
+      genericQuery: GenericQuery,
+      temporalConstraints: List[GenericTemporalConstraint],
+      criterionTagsMap: Map[Short, CriterionTags]
+  ): Map[Short, CriterionTags] = {
 
     def getConcernedCriteriaByTemporalConstraint(
-                                                  temporalConstraint: GenericTemporalConstraint,
-                                                  criteria: List[GenericQuery]): List[GenericQuery] = {
+        temporalConstraint: GenericTemporalConstraint,
+        criteria: List[GenericQuery]): List[GenericQuery] = {
       temporalConstraint.idList match {
         case DataValueString(_) => criteria.filter(x => x.isInclusive.get)
         case DataValueShortList(idList) =>
@@ -144,7 +171,8 @@ object CriterionTagsParser {
         val isTemporalConstraintAboutEncounter: Boolean =
           List[String]("sameEncounter", "differentEncounter").contains(constraintType)
 
-        val concernedCriteria = getConcernedCriteriaByTemporalConstraint(temporalConstraint, criteria)
+        val concernedCriteria =
+          getConcernedCriteriaByTemporalConstraint(temporalConstraint, criteria)
 
         concernedCriteria.foreach(
           criterion => {
@@ -158,11 +186,15 @@ object CriterionTagsParser {
             var constraintTypeList: List[String] =
               criterionTagsMapTmp(criterionId).temporalConstraintTypeList
 
-            val isInTemporalConstraint: Boolean = (isEncounterAvailable && isTemporalConstraintAboutEncounter) || (isDateTimeAvailable && isTemporalConstraintAboutDateTime)
+            val isInTemporalConstraint
+              : Boolean = (isEncounterAvailable && isTemporalConstraintAboutEncounter) || (isDateTimeAvailable && isTemporalConstraintAboutDateTime)
 
-            constraintTypeList = if (isInTemporalConstraint) constraintTypeList ++ List(constraintType) else constraintTypeList
+            constraintTypeList =
+              if (isInTemporalConstraint) constraintTypeList ++ List(constraintType)
+              else constraintTypeList
 
-            requiredSolrFieldList = getCriterionTemporalConstraintDatePreference(isTemporalConstraintAboutDateTime,
+            requiredSolrFieldList = getCriterionTemporalConstraintDatePreference(
+              isTemporalConstraintAboutDateTime,
               temporalConstraint,
               collection,
               criterion) ++ requiredSolrFieldList
@@ -175,7 +207,8 @@ object CriterionTagsParser {
               collection,
               requiredSolrFieldList
             )
-            criterionTagsMapTmp = mergeCriterionTagsMap(criterionTagsMapTmp, Map(criterionId -> criterionTags))
+            criterionTagsMapTmp =
+              mergeCriterionTagsMap(criterionTagsMapTmp, Map(criterionId -> criterionTags))
           }
         )
       }
@@ -196,15 +229,25 @@ object CriterionTagsParser {
             (mergedMap(i._1).temporalConstraintTypeList ++ i._2.temporalConstraintTypeList).distinct,
             mergedMap(i._1).resourceType,
             (mergedMap(i._1).requiredSolrFieldList ++ i._2.requiredSolrFieldList).distinct,
-            mergedMap(i._1).isResourceFilter || i._2.isResourceFilter
+            mergedMap(i._1).isResourceFilter || i._2.isResourceFilter,
+            mergedMap(i._1).withOrganizations || i._2.withOrganizations,
           ))
         else mergedMap + (i._1 -> i._2)
     })
     mergedMap
   }
 
-  private def getBasicRessourceTags(genericQuery: GenericQuery, isResourceFilter: Boolean): CriterionTags = {
-    var requiredSolrFieldList: List[String] = if (isResourceFilter) List[String](SolrColumn.ID) else List[String]()
+  private def getBasicRessourceTags(genericQuery: GenericQuery,
+                                    isResourceFilter: Boolean,
+                                    requestOrganization: Boolean): CriterionTags = {
+    var requiredSolrFieldList =
+      Map(
+        isResourceFilter -> SolrColumn.ID,
+        requestOrganization -> SolrColumn.ORGANIZATIONS
+      ).foldLeft(List[String]()) {
+        case (acc, (key, value)) =>
+          if (key) value :: acc else acc
+      }
     val collection = genericQuery.resourceType.get
 
     def getEncounterDateRangeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
@@ -271,15 +314,26 @@ object CriterionTagsParser {
     requiredSolrFieldList = getPatientAgeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameDayOccurrenceDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameEncounterOccurrenceFieldList(requiredSolrFieldList)
-    requiredSolrFieldList = convertDatePreferenceToDateTimeSolrField(requiredSolrFieldList, collection)
+    requiredSolrFieldList =
+      convertDatePreferenceToDateTimeSolrField(requiredSolrFieldList, collection)
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
-    new CriterionTags(isDateTimeAvailable, isEncounterAvailable, false, List[String](), collection, requiredSolrFieldList, isResourceFilter)
+    new CriterionTags(isDateTimeAvailable,
+                      isEncounterAvailable,
+                      false,
+                      List[String](),
+                      collection,
+                      requiredSolrFieldList,
+                      isResourceFilter,
+                      requestOrganization)
   }
 
-  private def getGroupTags(criteria: List[GenericQuery], criterionTagsMap: Map[Short, CriterionTags]): CriterionTags = {
+  private def getGroupTags(criteria: List[GenericQuery],
+                           criterionTagsMap: Map[Short, CriterionTags],
+                           requestOrganization: Boolean): CriterionTags = {
 
-    val inclusionCriteriaIdList: List[Short] = criteria.filter(x => x.isInclusive.get).map(x => x._id.get)
+    val inclusionCriteriaIdList: List[Short] =
+      criteria.filter(x => x.isInclusive.get).map(x => x._id.get)
 
     def getIsDateTimeAvailable: Boolean = {
       inclusionCriteriaIdList
@@ -297,7 +351,10 @@ object CriterionTagsParser {
 
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
-    new CriterionTags(isDateTimeAvailable, isEncounterAvailable, false)
+    new CriterionTags(isDateTimeAvailable,
+                      isEncounterAvailable,
+                      false,
+                      withOrganizations = requestOrganization)
   }
 
   private def convertDatePreferenceToDateTimeSolrField(datePreferenceList: List[String],
@@ -306,8 +363,10 @@ object CriterionTagsParser {
     val translationMap = queryBuilderConfigs.requestKeyPerCollectionMap
       .getOrElse(collection, Map[String, List[String]]())
     datePreferenceList.foreach {
-      case EVENT_DATE => dateTimeSolrFieldList ++= translationMap.getOrElse(DATE_COL, List[String]())
-      case ENCOUNTER_ID => dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_COL, List[String]())
+      case EVENT_DATE =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(DATE_COL, List[String]())
+      case ENCOUNTER_ID =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_COL, List[String]())
       case ENCOUNTER_START_DATE | ENCOUNTER_END_DATE =>
         dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_DATES_COL, List[String]())
       case alreadyGoodString: String => dateTimeSolrFieldList ::= alreadyGoodString

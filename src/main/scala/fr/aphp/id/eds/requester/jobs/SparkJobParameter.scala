@@ -7,10 +7,19 @@ case class SparkJobParameter(
     ownerEntityId: String,
     solrRows: String = "10000",
     commitWithin: String = "10000",
-    mode: String = "count",
+    mode: String = JobType.count,
     cohortUuid: Option[String] = Option.empty,
     callbackUrl: Option[String] = Option.empty
 )
+
+object JobType extends Enumeration {
+  type JobType = String
+  val count = "count"
+  val countAll = "count_all"
+  val countWithDetails = "count_with_details"
+  val create = "create"
+  val purgeCache = "purge_cache"
+}
 
 object ResourceType extends Enumeration {
   type ResourceType = String

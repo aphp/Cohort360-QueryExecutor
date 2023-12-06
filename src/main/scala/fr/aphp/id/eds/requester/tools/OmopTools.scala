@@ -2,6 +2,7 @@ package fr.aphp.id.eds.requester.tools
 
 import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
+import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.query.SourcePopulation
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, functions => F}
@@ -102,7 +103,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       val dataframe = cohort
         .withColumn("cohort_definition_id", lit(cohortDefinitionId))
         .withColumn("cohort_type_source_value", lit("QueryBuilder"))
-        .select(F.col("subject_id"),
+        .select(F.col(ResultColumn.SUBJECT),
           F.col("cohort_type_source_value"),
           F.col("cohort_definition_id"))
 
@@ -197,7 +198,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
     require(
       List(
         "cohort_definition_id",
-        "subject_id",
+        ResultColumn.SUBJECT,
         "cohort_type_source_value"
       ).toSet == df.columns.toSet,
       "cohort dataframe shall have cohort_definition_id and subject_id"
@@ -209,10 +210,10 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
     // Change in the dataframe are not saved, its purpose is only to format the dataframe for Solr
     df.withColumn(
       "id",
-      concat(col("cohort_definition_id"), lit("_"), col("subject_id"))
+      concat(col("cohort_definition_id"), lit("_"), col(ResultColumn.SUBJECT))
     )
       .withColumnRenamed("cohort_definition_id", "groupId")
-      .withColumnRenamed("subject_id", "resourceId")
+      .withColumnRenamed(ResultColumn.SUBJECT, "resourceId")
       .withColumn("_lastUpdated", current_timestamp())
       .write
       // Give solr connection configuration to the dataframe

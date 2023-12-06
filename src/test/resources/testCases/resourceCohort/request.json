@@ -1,0 +1,23 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "resourceType": "Condition",
+  "_type": "request",
+  "request": {
+    "_type": "basicResource",
+    "_id": 1,
+    "isInclusive": true,
+    "resourceType": "conditionAphp",
+    "filterSolr": "(codeList:R26) AND active:true",
+    "filterFhir": "codeList=R26",
+    "occurrence": {
+      "n": 1,
+      "operator": ">=",
+      "sameEncounter": false,
+      "sameDay": false
+    }
+  }
+}

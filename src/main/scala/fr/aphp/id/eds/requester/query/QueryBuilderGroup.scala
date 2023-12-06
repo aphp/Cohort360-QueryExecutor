@@ -1,6 +1,9 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, getRandomIdNotInTabooList}
+import fr.aphp.id.eds.requester.tools.JobUtils.{
+  getDefaultSolrFilterQuery,
+  getRandomIdNotInTabooList
+}
 import fr.aphp.id.eds.requester.tools.{OmopTools, SparkTools}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -8,10 +11,15 @@ import org.apache.spark.sql.{functions => F}
 
 import scala.language.postfixOps
 
-class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource = new QueryBuilderBasicResource()) {
+case class QueryExecutionOptions(withOrganizations: Boolean = false)
+
+class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
+                          new QueryBuilderBasicResource(),
+                        val options: QueryExecutionOptions = QueryExecutionOptions()) {
   private val logger = Logger.getLogger(this.getClass)
   private val qbUtils = new QueryBuilderConfigs()
-  private val qbTc = new QueryBuilderTemporalConstraint()
+  private val qbTc = new QueryBuilderTemporalConstraint(options)
+  private val qbLc = new QueryBuilderLogicalConstraint(options)
 
   /** The recursive function that can process nested basicResource or group criteria.
     *
@@ -174,14 +182,15 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource = new Que
     val groupIdColumnName = qbUtils.getSubjectColumn(groupId)
     var dfGroup =
       if (temporalConstraints.isEmpty) {
-        QueryBuilderLogicalConstraint.processGroupWithoutTemporalConstraint(
+        qbLc.processGroupWithoutTemporalConstraint(
           dataFramePerIdMap,
           completedCriterionTagsMap,
           groupResource,
           groupIdColumnName,
           groupId,
           inclusionCriteriaIdList)
-      } else if (List("orGroup", "nAmongM").contains(groupResource._type)) {
+      } else if (List(GroupResourceType.OR, GroupResourceType.N_AMONG_M).contains(
+                   groupResource._type)) {
         throw new Exception("Cannot use temporal constraints within orGroup and nAmongM groups")
       } else { // andGroup + temporal constraint
         qbTc.joinAndGroupWithTemporalConstraint(spark,
@@ -195,7 +204,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource = new Que
       }
 
     // step 4: exclude patients of each exclusion criteria
-    dfGroup = QueryBuilderLogicalConstraint.joinExclusionCriteria(groupIdColumnName,
+    dfGroup = qbLc.joinExclusionCriteria(groupIdColumnName,
                                                                   dfGroup,
                                                                   exclusionCriteria,
                                                                   dataFramePerIdMap,

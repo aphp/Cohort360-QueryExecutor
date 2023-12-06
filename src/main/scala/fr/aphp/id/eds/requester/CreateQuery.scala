@@ -7,7 +7,9 @@ import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
-case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService: JobUtilsService = JobUtils) extends JobBase {
+case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder,
+                       jobUtilsService: JobUtilsService = JobUtils)
+    extends JobBase {
   private val logger: Logger = Logger.getLogger(this.getClass)
   private val LIMIT = AppConfig.conf.getInt("app.cohortCreationLimit")
 
@@ -26,7 +28,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
       spark: SparkSession,
       runtime: JobEnv,
       data: SparkJobParameter
-  ): Map[String, String] = {
+  ): JobBaseResult = {
     implicit val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
@@ -49,7 +51,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
                                              completedCriterionTagsMap,
                                              omopTools,
                                              data.ownerEntityId,
-                                             cacheEnabled)
+                                             cacheEnabled,
+                                             withOrganizationDetails = false)
 
     // get a new cohortId
     cohortDefinitionId = omopTools.getCohortDefinitionId(
@@ -62,7 +65,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
 
     // filter df columns
     cohort = cohort.select(
-      List("subject_id", "encounter", "entryEvent", "exitEvent")
+      List(ResultColumn.SUBJECT, "encounter", "entryEvent", "exitEvent")
         .filter(c => cohort.columns.contains(c))
         .map(c => F.col(c)): _*)
 
@@ -70,7 +73,9 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
     count = cohort.dropDuplicates().count()
     val cohortSizeBiggerThanLimit = count > LIMIT
 
-    status = if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING else JobExecutionStatus.FINISHED
+    status =
+      if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING
+      else JobExecutionStatus.FINISHED
 
     //  upload into pg and solr
     omopTools.uploadCohort(
@@ -86,17 +91,18 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
 
   private def getCreationResult(cohortDefinitionId: Long,
                                 count: Long,
-                                status: String): Map[String, String] = {
-    Map(
+                                status: String): JobBaseResult = {
+    JobBaseResult(status, Map(
       "group.id" -> cohortDefinitionId.toString,
       "group.count" -> count.toString,
-      "request_job_status" -> status
-    )
+    ))
   }
 
   private def addOneEmptyGroupToRequest(request: Request): (Request, Map[Short, CriterionTags]) = {
     val completeRequest: Request =
-      Request(sourcePopulation = request.sourcePopulation, request = Some(addEmptyGroup(List())), resourceType = request.resourceType)
+      Request(sourcePopulation = request.sourcePopulation,
+              request = Some(addEmptyGroup(List())),
+              resourceType = request.resourceType)
     val completeTagsPerIdMap: Map[Short, CriterionTags] = Map(
       completeRequest.request.get.i -> new CriterionTags(false,
                                                          false,
@@ -116,7 +122,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsServic
       throw new RuntimeException("Request is empty")
     }
 
-    if (data.resourceType != ResourceType.patient && !data.request.get.isInstanceOf[BasicResource]) {
+    if (data.resourceType != ResourceType.patient && !data.request.get
+          .isInstanceOf[BasicResource]) {
       throw new RuntimeException("Non-patient resource filter request should be a basic resource")
     }
   }

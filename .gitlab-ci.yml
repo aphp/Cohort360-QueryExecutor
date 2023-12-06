@@ -39,7 +39,7 @@ unit-test-job:
       - .m2/repository
   script:
     - ./mvnw clean verify sonar:sonar -Dsonar.scala.coverage.reportPaths=target/scoverage.xml -Dsonar.projectKey=dev_cohort360_spark-job-server_AYi0kT4wFFXOqHRk8kKB -Dsonar.tests=src/test/scala -Dsonar.sources=src/main/scala
-  allow_failure: true
+  allow_failure: false
 
 package-job:
   stage: package

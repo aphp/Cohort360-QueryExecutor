@@ -1,8 +1,7 @@
 package fr.aphp.id.eds.requester.jobs
 
-import fr.aphp.id.eds.requester.{AppConfig, CountQuery, CreateQuery}
-import fr.aphp.id.eds.requester.config.JobsConfig
 import fr.aphp.id.eds.requester.tools.HttpTools.httpPatchRequest
+import fr.aphp.id.eds.requester.{AppConfig, CountQuery, CreateQuery}
 import org.apache.http.HttpException
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -72,7 +71,7 @@ class JobManager() {
   }
 
   private def finalizeJob(jobId: String,
-                          result: Either[Throwable, Map[String, String]],
+                          result: Either[Throwable, JobBaseResult],
                           jobExecutor: JobBase,
                           jobMode: String,
                           callbackUrl: SparkJobParameter): Unit = {
@@ -83,7 +82,7 @@ class JobManager() {
   private def callCallback(jobExecutor: JobBase,
                            jobData: SparkJobParameter,
                            jobId: String,
-                           result: Either[Throwable, Map[String, String]]): Unit = {
+                           result: Either[Throwable, JobBaseResult]): Unit = {
     val callBackUrlOpt = jobExecutor.callbackUrl(jobData)
     if (callBackUrlOpt.isDefined) {
       val callback = callBackUrlOpt.get
@@ -92,7 +91,7 @@ class JobManager() {
         case Left(wrapped) =>
           Map("request_job_status" -> JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
         case Right(value) => {
-          value
+          Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
         }
       }
       try {
@@ -106,7 +105,7 @@ class JobManager() {
   }
 
   private def updateJob(jobId: String,
-                        result: Either[Throwable, Map[String, String]],
+                        result: Either[Throwable, JobBaseResult],
                         jobExecutor: JobBase,
                         jobMode: String): Unit = {
     val updatedJob = jobs(jobId)
@@ -128,7 +127,7 @@ class JobManager() {
                           execution)
   }
 
-  private def buildResult(result: Either[Throwable, Map[String, String]],
+  private def buildResult(result: Either[Throwable, JobBaseResult],
                           jobMode: String,
                           jobExecutor: JobBase): JobResult = {
     val jobModeStr = jobMode.replace("count_all", "countAll")
@@ -138,25 +137,25 @@ class JobManager() {
         jobExecutor match {
           case _: CountQuery =>
             val count = try {
-              value("count").toLong
+              value.data("count").toLong
             } catch {
               case e: NumberFormatException => {
                 logger.warn("Failed to parse count query result count", e)
                 -1
               }
             }
-            JobResult(jobModeStr, "", "", count)
+            JobResult(jobModeStr, value.status, "", count, extra = value.extra)
           case _: CreateQuery => {
             val resMap = value
             val count = try {
-              resMap("group.count").toLong
+              resMap.data("group.count").toLong
             } catch {
               case e: NumberFormatException => {
                 logger.warn("Failed to parse create query result group count", e)
                 -1
               }
             }
-            JobResult(jobModeStr, resMap("request_job_status"), resMap("group.id"), count)
+            JobResult(jobModeStr, resMap.status, resMap.data("group.id"), count)
           }
           case _ => JobResult(jobModeStr, result.right.get.toString)
         }

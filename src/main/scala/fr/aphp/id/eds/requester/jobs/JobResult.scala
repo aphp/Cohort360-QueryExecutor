@@ -14,5 +14,6 @@ case class JobResult(_type: String,
                      message: String,
                      groupId: String = "",
                      count: Long = -1,
+                     extra: Map[String, String] = Map.empty,
                      stack: String = "",
                      source: String = "")

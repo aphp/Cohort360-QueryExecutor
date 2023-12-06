@@ -14,9 +14,9 @@
         "_type": "basicResource",
         "_id": 1,
         "isInclusive": true,
-        "resourceType": "procedureAphp",
-        "filterSolr": "((codeList:1014 OR codeList:1035 OR codeList:1053)) AND active:true",
-        "filterFhir": "codeList=1014,1035,1053",
+        "resourceType": "patientAphp",
+        "filterSolr": "active:true",
+        "filterFhir": "",
         "occurrence": {
           "n": 1,
           "operator": ">=",

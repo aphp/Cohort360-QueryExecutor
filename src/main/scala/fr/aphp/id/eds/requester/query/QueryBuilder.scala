@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.tools.OmopTools
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -14,6 +15,7 @@ trait QueryBuilder {
                             omopTools: OmopTools,
                             ownerEntityId: String,
                             cacheEnabled: Boolean,
+                            withOrganizationDetails: Boolean,
                             recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup()
                           ): DataFrame
 }
@@ -37,6 +39,7 @@ object QueryBuilder extends QueryBuilder {
                      omopTools: OmopTools,
                      ownerEntityId: String,
                      cacheEnabled: Boolean,
+                     withOrganizationDetails: Boolean,
                      recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup()
                     ): DataFrame = {
 
@@ -53,8 +56,13 @@ object QueryBuilder extends QueryBuilder {
     )
 
     // need to rename final column to uniformize any results being processed after (count and/or upload in databases).
-    cohortDataFrame
-      .withColumnRenamed(qbUtils.getSubjectColumn(request.request.get.i, isPatient = request.resourceType == ResourceType.patient), "subject_id")
-      .select(F.col("subject_id"))
+    val renamedDf = cohortDataFrame
+      .withColumnRenamed(qbUtils.getSubjectColumn(request.request.get.i, isPatient = request.resourceType == ResourceType.patient), ResultColumn.SUBJECT)
+      .withColumnRenamed(qbUtils.getOrganizationsColumn(request.request.get.i), ResultColumn.ORGANIZATIONS)
+    if (withOrganizationDetails) {
+      renamedDf.select(F.col(ResultColumn.SUBJECT), F.col(ResultColumn.ORGANIZATIONS))
+    } else {
+      renamedDf.select(F.col(ResultColumn.SUBJECT))
+    }
   }
 }

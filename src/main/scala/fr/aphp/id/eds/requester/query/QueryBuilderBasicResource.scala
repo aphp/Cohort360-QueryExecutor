@@ -36,34 +36,38 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
           requestKeyPerCollection(collection).getOrElse(DATE_COL, List[String]("")).head
         val patientField =
           requestKeyPerCollection(collection).getOrElse(PATIENT_COL, List[String]("")).head
-        val encounterField = requestKeyPerCollection(collection).getOrElse(ENCOUNTER_COL, List("")).head
+        val encounterField =
+          requestKeyPerCollection(collection).getOrElse(ENCOUNTER_COL, List("")).head
         collection match {
           case SolrCollection.ENCOUNTER_APHP =>
             column_name match {
               case SolrColumn.Encounter.PERIOD_START => QueryColumn.ENCOUNTER_START_DATE
               case SolrColumn.Encounter.PERIOD_END   => QueryColumn.ENCOUNTER_END_DATE
-              case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
-              case `dateField`                      => EVENT_DATE
-              case `patientField`                   => QueryColumn.PATIENT
-              case `encounterField`                 => QueryColumn.ENCOUNTER
+              case SolrColumn.PATIENT_BIRTHDATE      => QueryColumn.PATIENT_BIRTHDATE
+              case SolrColumn.ORGANIZATIONS          => QueryColumn.ORGANIZATIONS
+              case `dateField`                       => EVENT_DATE
+              case `patientField`                    => QueryColumn.PATIENT
+              case `encounterField`                  => QueryColumn.ENCOUNTER
               case _                                 => column_name.replace(".", "_")
             }
           case SolrCollection.PATIENT_APHP =>
             column_name match {
               case SolrColumn.Patient.BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
-              case `dateField`                 => QueryColumn.EVENT_DATE
-              case `patientField`              => QueryColumn.PATIENT
+              case SolrColumn.ORGANIZATIONS     => QueryColumn.ORGANIZATIONS
+              case `dateField`                  => QueryColumn.EVENT_DATE
+              case `patientField`               => QueryColumn.PATIENT
               case _                            => column_name.replace(".", "_")
             }
           case _ =>
             column_name match {
-              case `dateField`    => QueryColumn.EVENT_DATE
-              case `patientField` => QueryColumn.PATIENT
-              case SolrColumn.PATIENT_BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
+              case `dateField`                     => QueryColumn.EVENT_DATE
+              case `patientField`                  => QueryColumn.PATIENT
+              case SolrColumn.PATIENT_BIRTHDATE    => QueryColumn.PATIENT_BIRTHDATE
               case SolrColumn.ENCOUNTER_START_DATE => QueryColumn.ENCOUNTER_START_DATE
-              case SolrColumn.ENCOUNTER_END_DATE => QueryColumn.ENCOUNTER_END_DATE
-              case `encounterField`                 => QueryColumn.ENCOUNTER
-              case _               => column_name.replace(".", "_")
+              case SolrColumn.ENCOUNTER_END_DATE   => QueryColumn.ENCOUNTER_END_DATE
+              case SolrColumn.ORGANIZATIONS        => QueryColumn.ORGANIZATIONS
+              case `encounterField`                => QueryColumn.ENCOUNTER
+              case _                               => column_name.replace(".", "_")
             }
         }
       }
@@ -90,17 +94,21 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
         val encounterDateRange = basicResource.encounterDateRange.get
         if (encounterDateRange.minDate.isDefined) {
           logger.info(s"****** Encounter date range min: ${encounterDateRange.minDate} ")
-          encounterRangeList += DateRange(minDate = encounterDateRange.minDate,
-                                          datePreference = Some(List(QueryColumn.ENCOUNTER_START_DATE)),
-                                          dateIsNotNull = encounterDateRange.dateIsNotNull,
-                                          maxDate = None)
+          encounterRangeList += DateRange(
+            minDate = encounterDateRange.minDate,
+            datePreference = Some(List(QueryColumn.ENCOUNTER_START_DATE)),
+            dateIsNotNull = encounterDateRange.dateIsNotNull,
+            maxDate = None
+          )
         }
         if (encounterDateRange.maxDate.isDefined) {
           logger.info(s"****** Encounter date range max: ${encounterDateRange.maxDate} ")
-          encounterRangeList += DateRange(maxDate = encounterDateRange.maxDate,
-                                          datePreference = Some(List(QueryColumn.ENCOUNTER_END_DATE)),
-                                          dateIsNotNull = encounterDateRange.dateIsNotNull,
-                                          minDate = None)
+          encounterRangeList += DateRange(
+            maxDate = encounterDateRange.maxDate,
+            datePreference = Some(List(QueryColumn.ENCOUNTER_END_DATE)),
+            dateIsNotNull = encounterDateRange.dateIsNotNull,
+            minDate = None
+          )
         }
       }
       if (dateRangeList.isDefined) {
@@ -484,16 +492,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     requestedSolrFields.mkString(",")
   }
 
-  private def cleanCriterionDataFrame(criterionDataFrame: DataFrame,
-                                      criterionId: Short,
-                                      keepAllColumns: Boolean): DataFrame = {
-    if (!keepAllColumns) {
-      criterionDataFrame
-        .select(F.col(qbConfigs.getSubjectColumn(criterionId)))
-        .dropDuplicates(qbConfigs.getSubjectColumn(criterionId))
-    } else criterionDataFrame
-  }
-
   def processFhirRessource(implicit spark: SparkSession,
                            solrConf: Map[String, String],
                            sourcePopulation: SourcePopulation,
@@ -502,7 +500,13 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     val criterionId: Short = basicResource._id
     val collectionName: String = basicResource.resourceType
     val isInTemporalConstraint: Boolean = criterionTags.isInTemporalConstraint
-    val isResourceFilter: Boolean = criterionTags.isResourceFilter
+    val subjectColumn =
+      qbConfigs.getSubjectColumn(criterionId, isPatient = !criterionTags.isResourceFilter)
+    val selectedColumns = List(subjectColumn) ++ (if (criterionTags.withOrganizations)
+                                                    List(
+                                                      qbConfigs
+                                                        .getOrganizationsColumn(criterionId))
+                                                  else List())
 
     val solrFilterList = getSolrFilterList(criterionTags, basicResource.patientAge.isDefined)
     val solrFilterQuery = getSolrFilterQuery(sourcePopulation, basicResource)
@@ -526,8 +530,10 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                                                   basicResource,
                                                   criterionId,
                                                   isInTemporalConstraint)
-    criterionDataFrame =
-      cleanCriterionDataFrame(criterionDataFrame, criterionId, isInTemporalConstraint || isResourceFilter)
+    criterionDataFrame = qbUtils.cleanDataFrame(criterionDataFrame,
+                                                isInTemporalConstraint,
+                                                selectedColumns,
+                                                subjectColumn)
 
     if (logger.isDebugEnabled) {
       logger.debug(
@@ -554,15 +560,18 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
   def processIppList(implicit spark: SparkSession,
                      solrConf: Map[String, String],
                      sourcePopulation: SourcePopulation,
-                     res: BasicResource): DataFrame = {
+                     res: BasicResource,
+                     withOrganizations: Boolean): DataFrame = {
     val solr = getSolrClient(solrConf("zkhost"))
     val localId = res._id
     val ippList: List[String] = extractIdsIpp(res.filter)
     val ippListFilter: String = ippList.mkString(",")
     // because we do not retrieve the full query translated by the CRB process
     // we need to add back this filter to the query
-    val opposedSubject = "-(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
-    val ippFilter = s"({!terms f=${SolrColumn.Patient.IDENTIFIER_VALUE}}$ippListFilter) AND ${opposedSubject}"
+    val opposedSubject =
+      "-(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
+    val ippFilter =
+      s"({!terms f=${SolrColumn.Patient.IDENTIFIER_VALUE}}$ippListFilter) AND ${opposedSubject}"
     val ippRessource: BasicResource = BasicResource(
       localId,
       isInclusive = res.isInclusive,
@@ -583,7 +592,15 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     solr.close()
     import spark.implicits._
 
-    rdd.toDF(qbConfigs.buildColName(localId, QueryColumn.PATIENT))
+    val selectedCols = List(qbConfigs.buildColName(localId, QueryColumn.PATIENT)) ++ (if (withOrganizations) {
+                                                                                        List(
+                                                                                          qbConfigs.buildColName(
+                                                                                            localId,
+                                                                                            QueryColumn.ORGANIZATIONS))
+                                                                                      } else {
+                                                                                        List()
+                                                                                      })
+    rdd.toDF(selectedCols: _*)
   }
 
   /** Compute the resulting df of a criteria which is a group of criteria.
@@ -598,7 +615,8 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                                   sourcePopulation: SourcePopulation,
                                   res: BasicResource): DataFrame = {
 
-    if (res.resourceType.equals(IPP_LIST)) processIppList(spark, solrConf, sourcePopulation, res)
+    if (res.resourceType.equals(IPP_LIST))
+      processIppList(spark, solrConf, sourcePopulation, res, criterionTags.withOrganizations)
     else processFhirRessource(spark, solrConf, sourcePopulation, criterionTags, res)
   }
 }

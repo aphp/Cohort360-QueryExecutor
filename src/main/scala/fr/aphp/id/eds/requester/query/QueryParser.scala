@@ -134,7 +134,7 @@ object QueryParser {
     * (required for naming the cache properly).
     * Extracts also the "request" object.
     * */
-  def parse(cohortDefinitionSyntaxJsonString: String): (Request, Map[Short, CriterionTags]) = {
+  def parse(cohortDefinitionSyntaxJsonString: String, options: QueryParsingOptions = QueryParsingOptions()): (Request, Map[Short, CriterionTags]) = {
     import play.api.libs.json._
     import org.json4s._
     implicit val formats = Serialization.formats(NoTypeHints)
@@ -155,7 +155,8 @@ object QueryParser {
     val criterionTagsMap =
       CriterionTagsParser.getCriterionTagsMap(
         cohortRequest,
-        Map[Short, CriterionTags]()
+        Map[Short, CriterionTags](),
+        requestOrganizations = options.withOrganizationDetails
       )
     val request = specJson(cohortRequest).right.get
     if (logger.isDebugEnabled)

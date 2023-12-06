@@ -26,4 +26,32 @@ class QueryParserTest extends AnyFunSuiteLike {
     assert(resource._2(1).temporalConstraintTypeList == List("sameEncounter"))
   }
 
+
+  test("testParseWithOrganizations") {
+    val resource = QueryParser.parse(
+      Source
+        .fromFile(
+          getClass.getResource("/testCases/withOrganizationDetails/request.json").getFile)
+        .getLines
+        .mkString,
+      QueryParsingOptions(withOrganizationDetails = true)
+    )
+    assert(resource._1.request.get.isInstanceOf[GroupResource])
+    assert(resource._2.map((x) => x._2.withOrganizations).seq.forall((x) => x))
+    assert(resource._2.filter((x) => List(1,3).contains(x._1)).head._2.requiredSolrFieldList == List("_list.organization", "_visit"))
+  }
+
+  test("testParseWithResourceFilter") {
+    val resource = QueryParser.parse(
+      Source
+        .fromFile(
+          getClass.getResource("/testCases/resourceCohort/request.json").getFile)
+        .getLines
+        .mkString
+    )
+    assert(resource._1.request.get.isInstanceOf[BasicResource])
+    assert(resource._2.map((x) => x._2.isResourceFilter).seq.forall((x) => x))
+    assert(resource._2.filter((x) => List(1).contains(x._1)).head._2.requiredSolrFieldList == List("id"))
+  }
+
 }

@@ -81,6 +81,8 @@ class QueryBuilderConfigs {
 
   def getEventDateColumn(id: Short): String = buildColName(id, EVENT_DATE)
 
+  def getOrganizationsColumn(id: Short): String = buildColName(id, QueryColumn.ORGANIZATIONS)
+
   def getEncounterStartDateColumn(id: Short): String = buildColName(id, QueryColumn.ENCOUNTER_START_DATE)
 
   def getEncounterEndDateColumn(id: Short): String = buildColName(id, QueryColumn.ENCOUNTER_END_DATE)

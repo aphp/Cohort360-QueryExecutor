@@ -27,6 +27,13 @@ package object requester {
     final val EVENT_DATE = "event_date"
     final val LOCAL_DATE = "localDate"
     final val AGE = "age"
+    final val ORGANIZATIONS = "organizations"
+  }
+
+  object ResultColumn {
+    final val SUBJECT = "subject_id"
+    final val ORGANIZATIONS = "organization_ids"
+    final val ORGANIZATION = "organization_id"
   }
 
   object SolrColumn {
@@ -38,6 +45,7 @@ package object requester {
     final val ENCOUNTER_PREFIX = "_ref.encounter."
     final val ENCOUNTER_START_DATE = ENCOUNTER_PREFIX + Encounter.PERIOD_START
     final val ENCOUNTER_END_DATE = ENCOUNTER_PREFIX + Encounter.PERIOD_END
+    final val ORGANIZATIONS = "_list.organization"
 
     object Patient {
       final val BIRTHDATE = "birthdate"

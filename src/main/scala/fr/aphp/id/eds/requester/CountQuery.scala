@@ -1,13 +1,14 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.jobs.{JobBase, JobEnv, JobExecutionStatus, SparkJobParameter}
-import fr.aphp.id.eds.requester.query.{BasicResource, GroupResource, QueryBuilder}
+import fr.aphp.id.eds.requester.jobs._
+import fr.aphp.id.eds.requester.query._
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{col, explode}
 
 import java.security.SecureRandom
 
@@ -27,7 +28,8 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
       Option.empty
     }
   }
-  override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): Map[String, String] = {
+
+  override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): JobBaseResult = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
     val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
@@ -44,17 +46,28 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
       request.request.isDefined && (isInstanceOfBasicResource || isGroupResourceAndHasCriteria)
     }
 
+    def processQueryWithSpark(withOrganizationsDetails: Boolean) = {
+      val t0 = System.nanoTime()
+      val resultDf = queryBuilder
+        .processRequest(spark,
+          solrConf,
+          request,
+          criterionTagsMap,
+          omopTools,
+          data.ownerEntityId,
+          cacheEnabled,
+          withOrganizationsDetails,
+          new QueryBuilderGroup(options = QueryExecutionOptions(withOrganizations = withOrganizationsDetails))
+        )
+      val t1 = System.nanoTime()
+      logger.info("Query Count final dataframe processed in: " + (t1 - t0) / 1000 + "ms")
+      resultDf
+    }
+
     def countPatientsWithSpark() = {
       val t0 = System.nanoTime()
-      val count = queryBuilder
-        .processRequest(spark,
-                        solrConf,
-                        request,
-                        criterionTagsMap,
-                        omopTools,
-                        data.ownerEntityId,
-                        cacheEnabled)
-        .count()
+      val resultDf = processQueryWithSpark(withOrganizationsDetails = false)
+      val count = resultDf.count()
       val t1 = System.nanoTime()
       logger.info("Query Count processed in: " + (t1 - t0) / 1000 + "ms")
       count
@@ -77,11 +90,26 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
       throw new Exception(
         "INPUT JSON cannot be processed (missing input 'sourcePopulation' and/or 'request')")
 
+    if (data.mode == JobType.countWithDetails) {
+      val result = processQueryWithSpark(withOrganizationsDetails = true)
+      val counts = result
+          // unless option("flatten_multivalued", "false") is used in solr query
+          //.withColumn(ResultColumn.ORGANIZATIONS, functions.split(col(ResultColumn.ORGANIZATIONS), ","))
+          .withColumn(ResultColumn.ORGANIZATION, explode(col(ResultColumn.ORGANIZATIONS)))
+          .groupBy(ResultColumn.ORGANIZATION)
+          .count()
+          .collect().foldLeft(Map[String, String]()) {
+            case (map, row) => map + (row.getLong(0).toString -> row.getLong(1).toString)
+          }
+      val total = result.count()
+      return JobBaseResult(JobExecutionStatus.FINISHED, Map("count" -> total.toString), extra = counts)
+    }
+
     val countResult = countPatientsInQuery()
-    if (data.mode == "count_all") {
-      Map("request_job_status" -> JobExecutionStatus.FINISHED, "minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString)
+    if (data.mode == JobType.countAll) {
+      JobBaseResult(JobExecutionStatus.FINISHED, Map("minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString))
     } else {
-      Map("request_job_status" -> JobExecutionStatus.FINISHED, "count" -> countResult.toString)
+      JobBaseResult(JobExecutionStatus.FINISHED, Map("count" -> countResult.toString))
     }
   }
 
@@ -94,23 +122,4 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
     if (count <= 0) 0
     else new SecureRandom().nextInt(limMax - lowBound) + lowBound
   }
-
-//  /** Check that all inputs are defined and have the right format. This method is required by the SJS. */
-//  override def validate(sc: SparkSession, runtime: JobEnvironment, config: Config): JobData Or Every[ValidationProblem] = {
-//    try {
-//      val res: JobData = SparkJobParameter(
-//        cohortDefinitionName = config.getString("input.cohortDefinitionName"),
-//        cohortDefinitionDescription =
-//          Try(Some(config.getString("input.cohortDefinitionDescription")))
-//            .getOrElse(None),
-//        cohortDefinitionSyntax = config.getString("input.cohortDefinitionSyntax"),
-//        ownerEntityId = config.getString("input.ownerEntityId"),
-//        mode = config.getString("input.mode"),
-//        cohortUuid = None
-//      )
-//      Good(res)
-//    } catch {
-//      case e: Exception => Bad(One(SingleProblem(e.getMessage)))
-//    }
-//  }
 }

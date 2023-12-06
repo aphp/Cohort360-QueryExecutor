@@ -1,9 +1,10 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.config.JobsConfig
-import fr.aphp.id.eds.requester.jobs.{JobEnv, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.QueryBuilder
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SparkSession, functions}
+import org.apache.spark.sql.functions.col
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.Mockito.when
 import org.mockito.MockitoSugar.mock
@@ -57,6 +58,7 @@ class CountQueryTest extends AnyFunSuiteLike {
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*
       )
     ).thenReturn(expectedResult)
@@ -70,11 +72,63 @@ class CountQueryTest extends AnyFunSuiteLike {
         None,
         queryData,
         "someOwnerId",
-        mode = "count_all"
+        mode = JobType.countAll
       )
     )
-    assert(res("request_job_status") == "FINISHED")
-    assert(res("count") == "2")
+    assert(res.status == "FINISHED")
+    assert(res.data("count") == "2")
+  }
+
+  test("testRunCountWithDetails") {
+    val sparkSession: SparkSession = SparkSession
+      .builder()
+      .master("local[*]")
+      .getOrCreate()
+
+    val queryBuilderMock = mock[QueryBuilder]
+    val queryData =
+      """
+        {"cohortUuid":"ecd89963-ac90-470d-a397-c846882615a6","sourcePopulation":{"caresiteCohortList":[31558]},"_type":"request","request":{"_type":"andGroup","_id":0,"isInclusive":true,"criteria":[{"_type":"basicResource","_id":1,"isInclusive":true,"resourceType":"patientAphp","filterSolr":"fq=gender:f&fq=deceased:false&fq=active:true","filterFhir":"active=true&gender=f&deceased=false&age-day=ge0&age-day=le130"}],"temporalConstraints":[]}}"
+      """.stripMargin
+
+
+    val expected = getClass.getResource(s"/testCases/withOrganizationDetails/expected.csv")
+    val expectedResult = sparkSession.read.format("csv")
+      .option("delimiter", ";")
+      .option("header", "true")
+      .load(expected.getPath)
+      .withColumn(ResultColumn.ORGANIZATIONS, functions.split(col(ResultColumn.ORGANIZATIONS), ","))
+      .withColumn(ResultColumn.ORGANIZATIONS, col(ResultColumn.ORGANIZATIONS).cast("array<long>"))
+    when(
+      queryBuilderMock.processRequest(
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*
+      )
+    ).thenReturn(expectedResult)
+
+    val countJob = CountQuery(queryBuilderMock)
+    val res = countJob.runJob(
+      sparkSession,
+      JobEnv("someid", AppConfig.conf),
+      SparkJobParameter(
+        "testCohort",
+        None,
+        queryData,
+        "someOwnerId",
+        mode = JobType.countWithDetails
+      )
+    )
+    assert(res.status == "FINISHED")
+    assert(res.data("count") == "3")
+    assert(res.extra("7") == "1")
+    assert(res.extra("3") == "2")
   }
 
 }

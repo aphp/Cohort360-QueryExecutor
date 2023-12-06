@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.jobs.{JobEnv, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -19,7 +19,10 @@ trait JobUtilsService {
     val omopTools = getOmopTools(spark, runtime, solrConf)
 
     // load input json into object
-    val (request, criterionTagsMap) = QueryParser.parse(data.cohortDefinitionSyntax)
+    val (request, criterionTagsMap) = QueryParser.parse(
+      data.cohortDefinitionSyntax,
+      QueryParsingOptions(withOrganizationDetails = data.mode == JobType.countWithDetails)
+    )
 
     logger.info(s"ENTER NEW QUERY JOB : ${data.toString}. Parsed criterionIdWithTcList: $criterionTagsMap")
 
@@ -82,6 +85,7 @@ object JobUtils extends JobUtilsService {
       "batch_size" -> "10000",
       "timezone_id" -> "Europe/Paris",
       "request_handler" -> "/export",
+      "flatten_multivalued" -> "false",
       "rows" -> rows,
       "commit_within" -> commitWithin,
       "max_solr_try" -> maxSolrTry
@@ -104,7 +108,7 @@ object JobUtils extends JobUtilsService {
   }
 
   def addEmptyGroup(allTabooId: List[Short]): BaseQuery = {
-    GroupResource(_type = "andGroup",
+    GroupResource(_type = GroupResourceType.AND,
                   _id = getRandomIdNotInTabooList(allTabooId),
                   isInclusive = true,
                   criteria = List())

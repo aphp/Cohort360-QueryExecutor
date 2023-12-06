@@ -59,4 +59,20 @@ class QueryBuilderUtils {
 
     }
   }
+
+  /**
+   * Remove unecessary columns and deduplicate dataframe (if needed)
+   * @param groupDataFrame the dataframe to clean
+   * @param keepAll weither or not to keep all columns
+   * @param selectedColumns the list of columns to keep
+   * @param deduplicationCol the column to use for deduplication
+   * @return the cleaned dataframe
+   */
+  def cleanDataFrame(groupDataFrame: DataFrame, keepAll: Boolean, selectedColumns: List[String], deduplicationCol: String): DataFrame = {
+    if (keepAll) {
+      groupDataFrame
+    } else {
+      groupDataFrame.select(selectedColumns.map(F.col): _*).dropDuplicates(deduplicationCol)
+    }
+  }
 }

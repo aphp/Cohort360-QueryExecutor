@@ -10,7 +10,7 @@ import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class QueryBuilderTemporalConstraint {
+class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
   private val logger = Logger.getLogger(this.getClass)
   private val qbConfigs = new QueryBuilderConfigs()
   private val qbUtils = new QueryBuilderUtils()
@@ -95,19 +95,30 @@ class QueryBuilderTemporalConstraint {
     datePreferenceMap
   }
 
-  private def applyTemporalConstraintOnGroupDataFrame(groupDataFrame: Option[DataFrame],
-                                                      temporalConstraintDataFrame: DataFrame,
-                                                      firstCriterionId: Short,
-                                                      groupId: Short): Option[DataFrame] = {
+  private def applyTemporalConstraintOnGroupDataFrame(
+      groupDataFrame: Option[DataFrame],
+      temporalConstraintDataFrame: DataFrame,
+      firstCriterionId: Short,
+      groupId: Short,
+      withOrganizations: Boolean): Option[DataFrame] = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
     val groupIdColumName = qbConfigs.getSubjectColumn(groupId)
     val criterionIdColumnName = qbConfigs.getSubjectColumn(firstCriterionId)
+    val organizationColumnName = qbConfigs.getOrganizationsColumn(firstCriterionId)
+    val selectedColumns = List(criterionIdColumnName) ++ (if (withOrganizations)
+                                                            List(organizationColumnName)
+                                                          else List())
     var patientListDataFrame =
       temporalConstraintDataFrame
-        .select(criterionIdColumnName)
+        .select(selectedColumns.map(F.col): _*)
         .withColumnRenamed(criterionIdColumnName, groupIdColumName)
-        .dropDuplicates()
+        .dropDuplicates(groupIdColumName)
+    if (withOrganizations) {
+      patientListDataFrame = patientListDataFrame
+        .withColumnRenamed(qbConfigs.getOrganizationsColumn(firstCriterionId),
+                           qbConfigs.getOrganizationsColumn(groupId))
+    }
     patientListDataFrame = if (groupDataFrame.isEmpty) {
       patientListDataFrame
     } else {
@@ -234,8 +245,8 @@ class QueryBuilderTemporalConstraint {
       for (i_ <- 0 to idList.size - 2) {
         val (id1, id2, dt1, dt2) =
           (idList(i_), idList(i_ + 1), dateTimeColumnList(i_), dateTimeColumnList(i_ + 1))
-        val criterion1DateTimeColumnName = qbConfigs.buildColName(id1,dt1)
-        val criterion2DateTimeColumnName =  qbConfigs.buildColName(id2,dt2)
+        val criterion1DateTimeColumnName = qbConfigs.buildColName(id1, dt1)
+        val criterion2DateTimeColumnName = qbConfigs.buildColName(id2, dt2)
         val defaultFilter: Column = F.col(criterion1DateTimeColumnName) <= F.col(
           criterion2DateTimeColumnName)
         if (minDuration.isDefined || maxDuration.isDefined) {
@@ -268,11 +279,12 @@ class QueryBuilderTemporalConstraint {
     def addDateIsNotNullSparkFilter(sparkFilter: Column): Column = {
       var modifiedSparkFilter = sparkFilter
       idList.zipWithIndex.foreach(
-        i => if (!dateIsNotNull.getOrElse(i._1, false)) {
+        i =>
+          if (!dateIsNotNull.getOrElse(i._1, false)) {
             modifiedSparkFilter = modifiedSparkFilter || F
               .col(s"${i._1}_::_${dateTimeColumnList(i._2)}")
               .isNull
-          }
+        }
       )
       modifiedSparkFilter
     }
@@ -311,8 +323,9 @@ class QueryBuilderTemporalConstraint {
       logger.debug(
         s"dfGroup.columns:${initialDataFrame.columns.toList}, groupIdColumnName:$groupIdColumnName, initialDataFrameIdColumnName:$initialDataFrameIdColumnName")
     var resultDataFrame = initialDataFrame
-      .select(initialDataFrameIdColumnName)
       .withColumnRenamed(initialDataFrameIdColumnName, groupIdColumnName)
+      .withColumnRenamed(qbConfigs.getOrganizationsColumn(initialDataFrameId),
+                         qbConfigs.getOrganizationsColumn(groupId))
       .dropDuplicates()
     criteriaToAddIsList
       .filter(x => x != initialDataFrameId)
@@ -375,6 +388,7 @@ class QueryBuilderTemporalConstraint {
       throw new Exception(
         "Not Implemented: a group with temporal constraints inside cannot be concerned by a temporal constraint itself")
 
+    val withOrganizations = criterionTagsMap(groupId).withOrganizations
     // tagsPerId is updated for the criteria with id "group_id"
     // dict_df is filtered for the temporal criterion (to be used only locally so in_dict_df is returned)
     var criterionConcernedByATemporalConstraintIdList: List[Short] = List()
@@ -412,13 +426,19 @@ class QueryBuilderTemporalConstraint {
         applyTemporalConstraintOnGroupDataFrame(criterionConcernedByATemporalConstraintDataFrame,
                                                 patientListOfTemporalConstraintDataFrame,
                                                 idList.head,
-                                                groupId)
+                                                groupId,
+                                                withOrganizations)
       } else criterionConcernedByATemporalConstraintDataFrame
     })
 
     val criterionNotConcernedByATemporalConstraintIdList: List[Short] =
-      criteria.filter(x => x.IsInclusive && !criterionConcernedByATemporalConstraintIdList.contains(x.i))
+      criteria
+        .filter(x => x.IsInclusive && !criterionConcernedByATemporalConstraintIdList.contains(x.i))
         .map(x => x.i)
+
+    val selectedColumns = List(groupIdColumnName) ++ (if (withOrganizations)
+      List(qbConfigs.getOrganizationsColumn(groupId))
+    else List())
 
     joinAllCriteriaConcernedOrNotByATemporalConstraint(
       criterionConcernedByATemporalConstraintDataFrame: Option[DataFrame],
@@ -426,6 +446,7 @@ class QueryBuilderTemporalConstraint {
       criterionConcernedByATemporalConstraintIdList,
       criterionNotConcernedByATemporalConstraintIdList,
       dataFramePerIdMap
-    )
+    ).select(selectedColumns.map(F.col): _*)
+
   }
 }

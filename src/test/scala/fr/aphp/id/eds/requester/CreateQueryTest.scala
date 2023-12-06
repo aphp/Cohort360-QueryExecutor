@@ -117,6 +117,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*
       )
     ).thenReturn(expectedResult)
@@ -134,9 +135,9 @@ class CreateQueryTest extends AnyFunSuiteLike {
         "someOwnerId"
       )
     )
-    assert(res("request_job_status") == "FINISHED")
-    assert(res("group.count") == "2")
-    assert(res("group.id") == "0")
+    assert(res.status == "FINISHED")
+    assert(res.data("group.count") == "2")
+    assert(res.data("group.id") == "0")
   }
 
 }

@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.server
 
 import com.typesafe.config.ConfigFactory
 import fr.aphp.id.eds.requester.config.JobsConfig
-import fr.aphp.id.eds.requester.jobs.{JobManager, JobResultSerializer, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobManager, JobResultSerializer, JobType, SparkJobParameter}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
@@ -40,9 +40,10 @@ class JobController(implicit val swagger: Swagger) extends ScalatraServlet with 
     val jobData = parseInput(request.body)
 
     jobData.mode match {
-      case "count" => jobManager.execJob(JobsConfig.countJob, jobData)
-      case "count_all" => jobManager.execJob(JobsConfig.countJob, jobData)
-      case "create" => jobManager.execJob(JobsConfig.createJob, jobData)
+      case JobType.count => jobManager.execJob(JobsConfig.countJob, jobData)
+      case JobType.countAll => jobManager.execJob(JobsConfig.countJob, jobData)
+      case JobType.countWithDetails => jobManager.execJob(JobsConfig.countJob, jobData)
+      case JobType.create => jobManager.execJob(JobsConfig.createJob, jobData)
     }
   }
 
