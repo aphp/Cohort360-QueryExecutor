@@ -62,28 +62,5 @@ object SparkTools {
     df.persist(StorageLevel.DISK_ONLY)
       .createOrReplaceTempView(s"${hash.toLowerCase()}_$user")
   }
-
-  /** purge un dataframe du cache
-    *
-    *  */
-  def purgeCached(spark: SparkSession,
-                  hash: Option[String],
-                  user: Option[String]): Any = {
-    if (hash.isDefined & user.isDefined) {
-      spark
-        .sql(s"select * from `${hash.get.toLowerCase()}_${user.get}`")
-        .unpersist
-    } else {
-      var listTables =
-        spark.catalog.listTables.toDF().collect().map(_.getString(0)).toList
-      listTables =
-        if (user.isDefined)
-          listTables.filter(x => x.contains(user.get.toString))
-        else listTables
-      for (table <- listTables) {
-        spark.sql(s"select * from `$table`").unpersist
-        spark.sql(s"DROP TABLE IF EXISTS `$table`")
-      }
-    }
-  }
+  
 }

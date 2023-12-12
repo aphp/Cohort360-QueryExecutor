@@ -43,7 +43,6 @@ class JobController(implicit val swagger: Swagger) extends ScalatraServlet with 
       case "count" => jobManager.execJob(JobsConfig.countJob, jobData)
       case "count_all" => jobManager.execJob(JobsConfig.countJob, jobData)
       case "create" => jobManager.execJob(JobsConfig.createJob, jobData)
-      case "purge_cache" => jobManager.execJob(JobsConfig.purgeCache, jobData)
     }
   }
 
