@@ -14,6 +14,7 @@ package object requester {
     final val MEDICATIONREQUEST_APHP = "medicationRequestAphp"
     final val MEDICATIONADMINISTRATION_APHP = "medicationAdministrationAphp"
     final val IMAGINGSTUDY_APHP = "imagingStudyAphp"
+    final val QUESTIONNAIRE_RESPONSE_APHP = "questionnaireResponseAphp"
     final val DEFAULT = "default"
 
   }
@@ -21,6 +22,7 @@ package object requester {
   object QueryColumn {
     final val PATIENT = "patient"
     final val ENCOUNTER = "encounter"
+    final val EPISODE_OF_CARE = "episodeOfCare"
     final val ENCOUNTER_START_DATE = "encounter_start_date"
     final val ENCOUNTER_END_DATE = "encounter_end_date"
     final val PATIENT_BIRTHDATE = "patient_birthdate"
@@ -40,6 +42,7 @@ package object requester {
     final val ID = "id"
     final val PATIENT = "_subject"
     final val ENCOUNTER = "_visit"
+    final val EPISODE_OF_CARE = "episodeOfCare"
     final val PATIENT_PREFIX = "_ref.patient."
     final val PATIENT_BIRTHDATE = PATIENT_PREFIX + Patient.BIRTHDATE
     final val ENCOUNTER_PREFIX = "_ref.encounter."
@@ -95,12 +98,17 @@ package object requester {
       final val STARTED = "started"
       final val SERIES_STARTED = "series.started"
     }
+
+    object QuestionnaireResponse {
+      final val AUTHORED = "authored"
+    }
   }
 
   final val IPP_LIST = "IPPList"
   final val PATIENT_COL = "patient_col"
   final val DATE_COL = "date_col"
   final val ENCOUNTER_ID = "encounter_id"
+  final val EPISODE_OF_CARE_COL = "episode_of_care_col"
   final val ENCOUNTER_COL = "encounter_col"
   final val ENCOUNTER_DATES_COL = "encounter_dates_col"
 

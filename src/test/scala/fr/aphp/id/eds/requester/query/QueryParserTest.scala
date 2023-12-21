@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.query.TemporalConstraintType.SAME_ENCOUNTER
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
@@ -23,7 +24,7 @@ class QueryParserTest extends AnyFunSuiteLike {
     assert(resource._2(1).isEncounterAvailable)
     assert(resource._2(1).isInTemporalConstraint)
     resource._2(1).requiredSolrFieldList should Matchers.equal(List("_visit"))
-    assert(resource._2(1).temporalConstraintTypeList == List("sameEncounter"))
+    assert(resource._2(1).temporalConstraintTypeList == List(SAME_ENCOUNTER))
   }
 
 

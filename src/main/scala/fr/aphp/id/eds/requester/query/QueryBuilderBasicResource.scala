@@ -66,6 +66,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
               case SolrColumn.ENCOUNTER_START_DATE => QueryColumn.ENCOUNTER_START_DATE
               case SolrColumn.ENCOUNTER_END_DATE   => QueryColumn.ENCOUNTER_END_DATE
               case SolrColumn.ORGANIZATIONS        => QueryColumn.ORGANIZATIONS
+              case SolrColumn.EPISODE_OF_CARE      => QueryColumn.EPISODE_OF_CARE
               case `encounterField`                => QueryColumn.ENCOUNTER
               case _                               => column_name.replace(".", "_")
             }

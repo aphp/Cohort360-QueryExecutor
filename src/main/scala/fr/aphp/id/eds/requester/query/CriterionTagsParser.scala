@@ -1,21 +1,25 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EVENT_DATE}
-import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.{
-  DATE_COL,
-  ENCOUNTER_COL,
-  ENCOUNTER_DATES_COL,
-  ENCOUNTER_ID,
-  SolrCollection,
-  SolrColumn
+import fr.aphp.id.eds.requester.QueryColumn.{
+  ENCOUNTER_END_DATE,
+  ENCOUNTER_START_DATE,
+  EPISODE_OF_CARE,
+  EVENT_DATE
 }
+import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.QueryParser.{
   DataValueShortList,
   DataValueString,
   GenericQuery,
   GenericTemporalConstraint
 }
+import fr.aphp.id.eds.requester.query.TemporalConstraintType.{
+  DIFFERENT_ENCOUNTER,
+  DIRECT_CHRONOLOGICAL_ORDERING,
+  SAME_ENCOUNTER,
+  SAME_EPISODE_OF_CARE
+}
+import fr.aphp.id.eds.requester._
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
@@ -144,7 +148,7 @@ object CriterionTagsParser {
                                                      temporalConstraint: GenericTemporalConstraint,
                                                      collection: String,
                                                      criterion: GenericQuery): List[String] = {
-      val normalizedDatePreferenceList: List[String] =
+      var normalizedDatePreferenceList: List[String] =
         if (collection == SolrCollection.DEFAULT) List[String]()
         else if (!isTemporalConstraintAboutDateTime) List(ENCOUNTER_ID)
         else {
@@ -156,6 +160,11 @@ object CriterionTagsParser {
             else localDatePreference.head.datePreference
           } else queryBuilderConfigs.defaultDatePreferencePerCollection(collection)
         }
+      normalizedDatePreferenceList = normalizedDatePreferenceList ++ (if (temporalConstraint.constraintType == SAME_EPISODE_OF_CARE) {
+                                                                        List(EPISODE_OF_CARE_COL)
+                                                                      } else {
+                                                                        List()
+                                                                      })
       convertDatePreferenceToDateTimeSolrField(normalizedDatePreferenceList, collection)
     }
 
@@ -167,9 +176,11 @@ object CriterionTagsParser {
         val constraintType = temporalConstraint.constraintType
 
         val isTemporalConstraintAboutDateTime: Boolean =
-          List[String]("directChronologicalOrdering").contains(constraintType)
+          List[String](DIRECT_CHRONOLOGICAL_ORDERING).contains(constraintType)
         val isTemporalConstraintAboutEncounter: Boolean =
-          List[String]("sameEncounter", "differentEncounter").contains(constraintType)
+          List[String](SAME_ENCOUNTER, DIFFERENT_ENCOUNTER).contains(constraintType)
+        val isTemporalConstraintAboutEpisodeOfCare: Boolean =
+          List[String](SAME_EPISODE_OF_CARE).contains(constraintType)
 
         val concernedCriteria =
           getConcernedCriteriaByTemporalConstraint(temporalConstraint, criteria)
@@ -187,7 +198,7 @@ object CriterionTagsParser {
               criterionTagsMapTmp(criterionId).temporalConstraintTypeList
 
             val isInTemporalConstraint
-              : Boolean = (isEncounterAvailable && isTemporalConstraintAboutEncounter) || (isDateTimeAvailable && isTemporalConstraintAboutDateTime)
+              : Boolean = (isEncounterAvailable && isTemporalConstraintAboutEncounter) || (isDateTimeAvailable && isTemporalConstraintAboutDateTime) || (isTemporalConstraintAboutEpisodeOfCare)
 
             constraintTypeList =
               if (isInTemporalConstraint) constraintTypeList ++ List(constraintType)
@@ -369,6 +380,8 @@ object CriterionTagsParser {
         dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_COL, List[String]())
       case ENCOUNTER_START_DATE | ENCOUNTER_END_DATE =>
         dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_DATES_COL, List[String]())
+      case EPISODE_OF_CARE_COL =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(EPISODE_OF_CARE_COL, List[String]())
       case alreadyGoodString: String => dateTimeSolrFieldList ::= alreadyGoodString
     }
     dateTimeSolrFieldList.distinct

@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
-import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
+import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, EPISODE_OF_CARE_COL, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
 
 class QueryBuilderConfigs {
 
@@ -39,6 +39,7 @@ class QueryBuilderConfigs {
       SolrCollection.CLAIM_APHP -> buildMap(List(SolrColumn.Claim.CREATED)),
       SolrCollection.PROCEDURE_APHP -> buildMap(List(SolrColumn.Procedure.DATE)),
       SolrCollection.IMAGINGSTUDY_APHP -> buildMap(List(SolrColumn.PATIENT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)),
+      SolrCollection.QUESTIONNAIRE_RESPONSE_APHP -> (buildMap(List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(EPISODE_OF_CARE_COL -> List(SolrColumn.EPISODE_OF_CARE))),
       "default" -> Map(DATE_COL -> List[String](), ENCOUNTER_COL -> List[String](), ENCOUNTER_DATES_COL -> List[String]())
     )
 
@@ -69,6 +70,7 @@ class QueryBuilderConfigs {
       SolrCollection.MEDICATIONREQUEST_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
       SolrCollection.OBSERVATION_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
       SolrCollection.IMAGINGSTUDY_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      SolrCollection.QUESTIONNAIRE_RESPONSE_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
       IPP_LIST -> List[String](),
       "default" -> List(QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE, EVENT_DATE)
     )
@@ -76,6 +78,8 @@ class QueryBuilderConfigs {
   def getSubjectColumn(id: Short, isPatient: Boolean = true): String = buildColName(id, if (isPatient) QueryColumn.PATIENT else SolrColumn.ID)
 
   def getEncounterColumn(id: Short): String = buildColName(id, QueryColumn.ENCOUNTER)
+
+  def getEpisodeOfCareColumn(id: Short): String = buildColName(id, QueryColumn.EPISODE_OF_CARE)
 
   def getDateColumn(id: Short): String = buildColName(id, LOCAL_DATE)
 

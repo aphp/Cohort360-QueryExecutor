@@ -36,7 +36,6 @@ case class BasicResource(_id: Short,
   extends BaseQuery("basic_resource", _id, isInclusive) {
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
 }
-
 case class TemporalConstraint(
                                idList: Either[String, List[Short]],
                                constraintType: String,
@@ -61,6 +60,13 @@ object GroupResourceType {
     final val AND = "andGroup"
     final val OR = "orGroup"
     final val N_AMONG_M = "nAmongM"
+}
+
+object TemporalConstraintType {
+  final val SAME_ENCOUNTER = "sameEncounter"
+  final val DIFFERENT_ENCOUNTER = "differentEncounter"
+  final val DIRECT_CHRONOLOGICAL_ORDERING = "directChronologicalOrdering"
+  final val SAME_EPISODE_OF_CARE = "sameEpisodeOfCare"
 }
 
 case class TemporalConstraintDuration(

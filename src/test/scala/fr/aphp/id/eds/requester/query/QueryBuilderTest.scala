@@ -126,6 +126,10 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     testCaseEvaluate("temporalConstraintSameEncounterByPairs")
   }
 
+  test("questionnaireResponse") {
+    testCaseEvaluate("temporalConstraintSameEpisodeOfCare")
+  }
+
   test("resourceCohort") {
     testCaseEvaluate("resourceCohort", checkOrder = false)
   }
