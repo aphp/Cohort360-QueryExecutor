@@ -1,6 +1,7 @@
 package fr.aphp.id.eds.requester.jobs
 
 import com.typesafe.config.Config
+import fr.aphp.id.eds.requester.AppConfig
 import org.apache.spark.sql.SparkSession
 
 
@@ -11,7 +12,14 @@ case class JobBaseResult(status: String, data: Map[String, String], extra: Map[S
 trait JobBase {
   def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): JobBaseResult
 
-  def callbackUrl(jobData: SparkJobParameter): Option[String] = jobData.callbackUrl
+  def callbackUrl(jobData: SparkJobParameter): Option[String] = if (jobData.callbackUrl.isDefined) {
+    jobData.callbackUrl
+  } else if(jobData.callbackPath.isDefined) {
+    Some(AppConfig.djangoUrl + jobData.callbackPath.get)
+  } else {
+    Option.empty
+  }
+
 }
 
 object JobExecutionStatus {

@@ -20,7 +20,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
   }
 
   test("testCallbackUrl") {
-    var callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("url")))
+    var callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("path"), Some("url")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "url")
     callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))

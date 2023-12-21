@@ -21,9 +21,9 @@ class CountQueryTest extends AnyFunSuiteLike {
   }
 
   test("testCallbackUrl") {
-    var callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("url")))
+    var callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("/url")))
     assert(callbackUrl.isDefined)
-    assert(callbackUrl.get == "url")
+    assert(callbackUrl.get == "http://django/url")
     callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/cohort/dated-measures/id/")

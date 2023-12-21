@@ -60,7 +60,7 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
       "test",
       "test",
       Some("test"),
-      Some(wireMockServer.baseUrl()))
+      callbackUrl=Some(wireMockServer.baseUrl()))
     )
     assert(jobManager.list().size == 1)
     assert(jobManager.status(job.jobId).status == JobExecutionStatus.RUNNING)

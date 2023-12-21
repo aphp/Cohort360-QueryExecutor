@@ -9,6 +9,7 @@ case class SparkJobParameter(
     commitWithin: String = "10000",
     mode: String = JobType.count,
     cohortUuid: Option[String] = Option.empty,
+    callbackPath: Option[String] = Option.empty,
     callbackUrl: Option[String] = Option.empty
 )
 
