@@ -32,6 +32,7 @@ class JobController(implicit val swagger: Swagger) extends ScalatraServlet with 
       "10000",
       configData.getString("mode"),
       if (configData.hasPath("cohortUuid")) Option(configData.getString("cohortUuid")) else Option.empty,
+      if (configData.hasPath("callbackPath")) Option(configData.getString("callbackPath")) else Option.empty,
       if (configData.hasPath("callbackUrl")) Option(configData.getString("callbackUrl")) else Option.empty
     )
   }
