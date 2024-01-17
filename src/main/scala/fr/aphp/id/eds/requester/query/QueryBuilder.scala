@@ -2,6 +2,7 @@ package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
+import fr.aphp.id.eds.requester.tools.JobUtils.{addEmptyGroup, getRandomIdNotInTabooList}
 import fr.aphp.id.eds.requester.tools.OmopTools
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{functions => F}
@@ -43,10 +44,22 @@ object QueryBuilder extends QueryBuilder {
                      recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup()
                     ): DataFrame = {
 
+    // wrap the first group in a higher group is it is not inclusive
+    val root = if (!request.request.get.IsInclusive) {
+      GroupResource(
+        _type = GroupResourceType.AND,
+        _id = getRandomIdNotInTabooList(List(request.request.get.i)),
+        isInclusive = true,
+        criteria = List(request.request.get)
+      )
+    } else {
+      request.request.get
+    }
+
     val cohortDataFrame = recursiveQueryBuilder.processSubrequest(
       spark,
       solrConf,
-      request.request.get,
+      root,
       request.sourcePopulation,
       criterionTagsMap,
       omopTools = omopTools,
