@@ -1,9 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.tools.JobUtils.{
-  getDefaultSolrFilterQuery,
-  getRandomIdNotInTabooList
-}
+import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, getDefaultSolrFilterQueryPatientAphp, getRandomIdNotInTabooList}
 import fr.aphp.id.eds.requester.tools.{OmopTools, SparkTools}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -96,7 +93,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                                            sourcePopulation: SourcePopulation,
                                            exclusionCriteriaId: List[Short]): List[BaseQuery] = {
     if (isInclusionCriteriaEmpty) {
-      val defaultSolrFilterQuery: String = getDefaultSolrFilterQuery(sourcePopulation)
+      val defaultSolrFilterQuery: String = getDefaultSolrFilterQueryPatientAphp(sourcePopulation)
       val allTabooId: List[Short] = inclusionCriteria.map(x => x.i) ++ exclusionCriteriaId
       val newCriterionIdList: Short = getRandomIdNotInTabooList(allTabooId)
       List(

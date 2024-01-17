@@ -96,6 +96,11 @@ object JobUtils extends JobUtilsService {
   def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
     s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})"
   }
+  def getDefaultSolrFilterQueryPatientAphp(sourcePopulation: SourcePopulation): String = {
+    s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})" +
+      " AND active:true"+
+      " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
+  }
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {
     val rnd = new scala.util.Random
@@ -109,9 +114,9 @@ object JobUtils extends JobUtilsService {
 
   def addEmptyGroup(allTabooId: List[Short]): BaseQuery = {
     GroupResource(_type = GroupResourceType.AND,
-                  _id = getRandomIdNotInTabooList(allTabooId),
-                  isInclusive = true,
-                  criteria = List())
+      _id = getRandomIdNotInTabooList(allTabooId),
+      isInclusive = true,
+      criteria = List())
   }
 
 }
