@@ -83,7 +83,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       cohort,
       completeRequest.sourcePopulation,
       count,
-      cohortSizeBiggerThanLimit
+      cohortSizeBiggerThanLimit,
+      request.resourceType
     )
 
     getCreationResult(cohortDefinitionId, count, status)

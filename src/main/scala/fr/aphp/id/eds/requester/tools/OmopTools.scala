@@ -13,7 +13,8 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
-  private final val fhirResourceVocabulary = "Domain"
+  private final val cohort_item_table_rw = "list__entry_central_cohort360"
+  private final val cohort_table_rw = "list_cohort360"
 
   /**
     * @param cohortDefinitionName        : The name of the cohort
@@ -29,51 +30,24 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       ownerEntityId: String,
       resourceType: String
   ): Long = {
-    val resourceConceptId = getResourceTypeConceptId(resourceType)
-    val cohortHash = "DEPRECATED"
     val stmt =
       s"""
-         |insert into cohort_definition
-         |(hash, cohort_definition_name, cohort_definition_description, cohort_definition_syntax, cohort_hash, owner_entity_id, cohort_initiation_datetime, cohort_active, subject_concept_id, owner_domain_id)
-         |values (-1, ?, ?, ?, ?, ? , now(), false, ?, 'Provider')
-         |returning cohort_definition_id
+         |insert into ${cohort_table_rw}
+         |(hash, title, note__text, _sourcereferenceid, source__reference, source__type, mode, subject__type, date)
+         |values (-1, ?, ?, ?, ?, 'Practitioner', 'snapshot', ?, now())
+         |returning id
          |""".stripMargin
     val result = pg
       .sqlExecWithResult(
         stmt,
         List(
           cohortDefinitionName,
-          cohortDefinitionDescription,
           cohortDefinitionSyntax,
-          cohortHash,
           ownerEntityId,
-          resourceConceptId
+          s"Practitioner/${ownerEntityId}",
+          resourceType
         )
       )
-      .collect()
-      .map(_.getLong(0))
-    result(0)
-  }
-
-  def getResourceTypeConceptId(resourceType: String): Long = {
-    // TODO remove this when the correct vocabulary is used
-    // -> https://gitlab.eds.aphp.fr/bigdata/terminology/-/issues/98
-    val resourceNameMapping = Map(
-      "Patient" -> "Person",
-      "Encounter" -> "Visit",
-      "DocumentReference" -> "Note"
-    )
-    val renamedResourceType = resourceNameMapping.getOrElse(resourceType, resourceType)
-    // --
-    val stmt =
-      s"""
-         |select concept_id
-         |from concept
-         |where concept_name = ?
-         |and vocabulary_id = '${fhirResourceVocabulary}'
-         |""".stripMargin
-    val result = pg
-      .sqlExecWithResult(stmt, List(renamedResourceType))
       .collect()
       .map(_.getLong(0))
     result(0)
@@ -95,17 +69,22 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
                    cohort: DataFrame,
                    sourcePopulation: SourcePopulation,
                    count: Long,
-                   delayCohortCreation: Boolean): Unit = {
+                   delayCohortCreation: Boolean,
+                   resourceType: String,
+                  ): Unit = {
     try {
       uploadCount(cohortDefinitionId, count)
       uploadRelationship(cohortDefinitionId, sourcePopulation)
 
       val dataframe = cohort
-        .withColumn("cohort_definition_id", lit(cohortDefinitionId))
-        .withColumn("cohort_type_source_value", lit("QueryBuilder"))
-        .select(F.col(ResultColumn.SUBJECT),
-          F.col("cohort_type_source_value"),
-          F.col("cohort_definition_id"))
+        .withColumn("_listid", lit(cohortDefinitionId))
+        .withColumn("_provider", lit("Cohort360"))
+        .withColumnRenamed(ResultColumn.SUBJECT, "_itemreferenceid")
+        .withColumn("item__reference", concat(lit(s"${resourceType}/"), col("_itemreferenceid")))
+        .select(F.col("_itemreferenceid"),
+          F.col("item__reference"),
+          F.col("_provider"),
+          F.col("_listid"))
 
       uploadCohortTableToPG(dataframe)
 
@@ -161,9 +140,9 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
   ): Unit = {
     val stmt =
       s"""
-         |update cohort_definition
-         |set cohort_size = $count
-         |where cohort_definition_id = $cohortDefinitionId
+         |update ${cohort_table_rw}
+         |set _size = $count
+         |where id = $cohortDefinitionId
          |""".stripMargin
     pg.sqlExec(stmt)
   }
@@ -174,9 +153,9 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
   ): Unit = {
     val stmt =
       s"""
-         |update cohort_definition
-         |set cohort_status = '$status'
-         |where cohort_definition_id = $cohortDefinitionId
+         |update ${cohort_table_rw}
+         |set status = '$status'
+         |where id = $cohortDefinitionId
          |""".stripMargin
     pg.sqlExec(stmt)
   }
@@ -185,11 +164,12 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       cohortDefinitionId: Long,
       status: Boolean
   ): Unit = {
+    val mode = if (status) "working" else "snapshot"
     val stmt =
       s"""
-         |update cohort_definition
-         |set cohort_active = $status, valid_start_datetime = now()
-         |where cohort_definition_id = $cohortDefinitionId
+         |update ${cohort_table_rw}
+         |set mode = '$mode'
+         |where id = $cohortDefinitionId
          |""".stripMargin
     pg.sqlExec(stmt)
   }
@@ -197,23 +177,24 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
   private def uploadCohortTableToPG(df: DataFrame): Unit = {
     require(
       List(
-        "cohort_definition_id",
-        ResultColumn.SUBJECT,
-        "cohort_type_source_value"
+        "_listid",
+        "item__reference",
+        "_provider",
+        "_itemreferenceid"
       ).toSet == df.columns.toSet,
-      "cohort dataframe shall have cohort_definition_id and subject_id"
+      "cohort dataframe shall have _listid, _provider, _provider and item__reference"
     )
-    pg.outputBulk("cohort_query_builder", SparkTools.dfAddHash(df), Some(4))
+    pg.outputBulk(cohort_item_table_rw, SparkTools.dfAddHash(df), Some(4))
   }
 
   private def uploadCohortTableToSolr(cohortDefinitionId: Long, df: DataFrame, count: Long): Unit = {
     // Change in the dataframe are not saved, its purpose is only to format the dataframe for Solr
     df.withColumn(
       "id",
-      concat(col("cohort_definition_id"), lit("_"), col(ResultColumn.SUBJECT))
+      concat(col("_listid"), lit("_"), col("_itemreferenceid"))
     )
-      .withColumnRenamed("cohort_definition_id", "groupId")
-      .withColumnRenamed(ResultColumn.SUBJECT, "resourceId")
+      .withColumnRenamed("_listid", "groupId")
+      .withColumnRenamed("_itemreferenceid", "resourceId")
       .withColumn("_lastUpdated", current_timestamp())
       .write
       // Give solr connection configuration to the dataframe
@@ -229,7 +210,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
 
 object CohortStatus extends Enumeration {
   type status = Value
-  val ERROR: CohortStatus.Value = Value("error")
-  val RUNNING: CohortStatus.Value = Value("running")
-  val FINISHED: CohortStatus.Value = Value("finished")
+  val ERROR: CohortStatus.Value = Value("entered-in-error")
+  val RUNNING: CohortStatus.Value = Value("retired")
+  val FINISHED: CohortStatus.Value = Value("current")
 }
