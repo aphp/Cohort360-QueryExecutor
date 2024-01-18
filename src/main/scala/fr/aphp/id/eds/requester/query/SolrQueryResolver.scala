@@ -1,6 +1,8 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
+import org.apache.solr.client.solrj.impl.CloudSolrClient
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 abstract class SolrQueryResolver {
@@ -11,6 +13,8 @@ abstract class SolrQueryResolver {
       solrConf: Map[String, String],
       resourceId: Short = -1,
   ): DataFrame
+
+  def getSolrClient(zkHostString: String): CloudSolrClient
 }
 
 /** Class for questioning solr. */
@@ -28,6 +32,10 @@ object SolrQueryResolver extends SolrQueryResolver {
       case util.Failure(e) =>
         throw e
     }
+  }
+
+  def getSolrClient(zkHostString: String): CloudSolrClient = {
+    SolrTools.getSolrClient(zkHostString)
   }
 
   def getSolrResponseDataFrame(resourceType: String,

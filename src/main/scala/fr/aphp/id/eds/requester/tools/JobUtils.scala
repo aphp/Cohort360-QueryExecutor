@@ -36,6 +36,8 @@ trait JobUtilsService {
   def getOmopTools(session: SparkSession, env: JobEnv, stringToString: Map[String, String]): OmopTools
 
   def getSolrConf(env: JobEnv): Map[String, String]
+
+  def getRandomIdNotInTabooList(allTabooId: List[Short]): Short
 }
 
 object JobUtils extends JobUtilsService {

@@ -1,0 +1,45 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": false,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "patientAphp",
+        "filterSolr": "active:true",
+        "filterFhir": "",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 2,
+        "isInclusive": true,
+        "resourceType": "IPPList",
+        "filterSolr": "identifier.value:2,3,6,7",
+        "filterFhir": "identifier.value=2,3,6,7",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 3
+}

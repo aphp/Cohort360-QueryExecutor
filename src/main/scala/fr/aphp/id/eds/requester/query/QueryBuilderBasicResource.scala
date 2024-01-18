@@ -562,7 +562,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                      sourcePopulation: SourcePopulation,
                      res: BasicResource,
                      withOrganizations: Boolean): DataFrame = {
-    val solr = getSolrClient(solrConf("zkhost"))
+    val solr = querySolver.getSolrClient(solrConf("zkhost"))
     val localId = res._id
     val ippList: List[String] = extractIdsIpp(res.filter)
     val ippListFilter: String = ippList.mkString(",")

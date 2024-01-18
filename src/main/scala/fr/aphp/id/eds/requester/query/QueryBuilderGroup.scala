@@ -1,10 +1,9 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.tools.JobUtils.{getDefaultSolrFilterQuery, getDefaultSolrFilterQueryPatientAphp, getRandomIdNotInTabooList}
-import fr.aphp.id.eds.requester.tools.{OmopTools, SparkTools}
+import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQueryPatientAphp
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools, SparkTools}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.{functions => F}
 
 import scala.language.postfixOps
 
@@ -12,7 +11,8 @@ case class QueryExecutionOptions(withOrganizations: Boolean = false)
 
 class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                           new QueryBuilderBasicResource(),
-                        val options: QueryExecutionOptions = QueryExecutionOptions()) {
+                        val options: QueryExecutionOptions = QueryExecutionOptions(),
+                        val jobUtilsService: JobUtilsService = JobUtils) {
   private val logger = Logger.getLogger(this.getClass)
   private val qbUtils = new QueryBuilderConfigs()
   private val qbTc = new QueryBuilderTemporalConstraint(options)
@@ -95,7 +95,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     if (isInclusionCriteriaEmpty) {
       val defaultSolrFilterQuery: String = getDefaultSolrFilterQueryPatientAphp(sourcePopulation)
       val allTabooId: List[Short] = inclusionCriteria.map(x => x.i) ++ exclusionCriteriaId
-      val newCriterionIdList: Short = getRandomIdNotInTabooList(allTabooId)
+      val newCriterionIdList: Short = jobUtilsService.getRandomIdNotInTabooList(allTabooId)
       List(
         BasicResource(newCriterionIdList,
                       isInclusive = true,
@@ -179,13 +179,12 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     val groupIdColumnName = qbUtils.getSubjectColumn(groupId)
     var dfGroup =
       if (temporalConstraints.isEmpty) {
-        qbLc.processGroupWithoutTemporalConstraint(
-          dataFramePerIdMap,
-          completedCriterionTagsMap,
-          groupResource,
-          groupIdColumnName,
-          groupId,
-          inclusionCriteriaIdList)
+        qbLc.processGroupWithoutTemporalConstraint(dataFramePerIdMap,
+                                                   completedCriterionTagsMap,
+                                                   groupResource,
+                                                   groupIdColumnName,
+                                                   groupId,
+                                                   inclusionCriteriaIdList)
       } else if (List(GroupResourceType.OR, GroupResourceType.N_AMONG_M).contains(
                    groupResource._type)) {
         throw new Exception("Cannot use temporal constraints within orGroup and nAmongM groups")
@@ -202,10 +201,10 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
 
     // step 4: exclude patients of each exclusion criteria
     dfGroup = qbLc.joinExclusionCriteria(groupIdColumnName,
-                                                                  dfGroup,
-                                                                  exclusionCriteria,
-                                                                  dataFramePerIdMap,
-                                                                  completedCriterionTagsMap)
+                                         dfGroup,
+                                         exclusionCriteria,
+                                         dataFramePerIdMap,
+                                         completedCriterionTagsMap)
     if (logger.isDebugEnabled)
       logger.debug(
         s"Group : final join : df.columns=${dfGroup.columns.toList}, df.count=${dfGroup.count()}")

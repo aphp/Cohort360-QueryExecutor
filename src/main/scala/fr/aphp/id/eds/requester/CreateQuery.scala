@@ -7,7 +7,7 @@ import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
-case class CreateQuery(queryBuilder: QueryBuilder = QueryBuilder,
+case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                        jobUtilsService: JobUtilsService = JobUtils)
     extends JobBase {
   private val logger: Logger = Logger.getLogger(this.getClass)

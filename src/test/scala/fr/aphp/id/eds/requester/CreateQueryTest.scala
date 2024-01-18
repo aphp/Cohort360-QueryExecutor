@@ -44,6 +44,8 @@ class CreateQueryTest extends AnyFunSuiteLike {
       }
 
       override def getSolrConf(env: JobEnv): Map[String, String] = Map.empty
+
+      override def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = 99
     }
 
     val createJob = CreateQuery(queryBuilderMock, new JobUtilsMock)

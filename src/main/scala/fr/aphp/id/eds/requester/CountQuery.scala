@@ -12,7 +12,9 @@ import org.apache.spark.sql.functions.{col, explode}
 
 import java.security.SecureRandom
 
-case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService: JobUtilsService = JobUtils) extends JobBase {
+case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
+                      jobUtilsService: JobUtilsService = JobUtils)
+    extends JobBase {
 
   private val RANGE_MIN = 25
   private val RANGE_MAX = 50
@@ -29,7 +31,9 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
     }
   }
 
-  override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): JobBaseResult = {
+  override def runJob(spark: SparkSession,
+                      runtime: JobEnv,
+                      data: SparkJobParameter): JobBaseResult = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
     val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
@@ -49,7 +53,8 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
     def processQueryWithSpark(withOrganizationsDetails: Boolean) = {
       val t0 = System.nanoTime()
       val resultDf = queryBuilder
-        .processRequest(spark,
+        .processRequest(
+          spark,
           solrConf,
           request,
           criterionTagsMap,
@@ -57,7 +62,9 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
           data.ownerEntityId,
           cacheEnabled,
           withOrganizationsDetails,
-          new QueryBuilderGroup(options = QueryExecutionOptions(withOrganizations = withOrganizationsDetails))
+          new QueryBuilderGroup(
+            options = QueryExecutionOptions(withOrganizations = withOrganizationsDetails),
+            jobUtilsService = jobUtilsService)
         )
       val t1 = System.nanoTime()
       logger.info("Query Count final dataframe processed in: " + (t1 - t0) / 1000 + "ms")
@@ -93,31 +100,41 @@ case class CountQuery(queryBuilder: QueryBuilder = QueryBuilder, jobUtilsService
     if (data.mode == JobType.countWithDetails) {
       val result = processQueryWithSpark(withOrganizationsDetails = true)
       val counts = result
-          // unless option("flatten_multivalued", "false") is used in solr query
-          //.withColumn(ResultColumn.ORGANIZATIONS, functions.split(col(ResultColumn.ORGANIZATIONS), ","))
-          .withColumn(ResultColumn.ORGANIZATION, explode(col(ResultColumn.ORGANIZATIONS)))
-          .groupBy(ResultColumn.ORGANIZATION)
-          .count()
-          .collect().foldLeft(Map[String, String]()) {
-            case (map, row) => map + (row.getLong(0).toString -> row.getLong(1).toString)
-          }
+      // unless option("flatten_multivalued", "false") is used in solr query
+      //.withColumn(ResultColumn.ORGANIZATIONS, functions.split(col(ResultColumn.ORGANIZATIONS), ","))
+        .withColumn(ResultColumn.ORGANIZATION, explode(col(ResultColumn.ORGANIZATIONS)))
+        .groupBy(ResultColumn.ORGANIZATION)
+        .count()
+        .collect()
+        .foldLeft(Map[String, String]()) {
+          case (map, row) => map + (row.getLong(0).toString -> row.getLong(1).toString)
+        }
       val total = result.count()
-      return JobBaseResult(JobExecutionStatus.FINISHED, Map("count" -> total.toString), extra = counts)
+      return JobBaseResult(JobExecutionStatus.FINISHED,
+                           Map("count" -> total.toString),
+                           extra = counts)
     }
 
     val countResult = countPatientsInQuery()
     if (data.mode == JobType.countAll) {
-      JobBaseResult(JobExecutionStatus.FINISHED, Map("minimum" -> getMinimum(countResult.toInt).toString, "maximum" -> getMaximum(countResult.toInt).toString, "count" -> countResult.toString))
+      JobBaseResult(
+        JobExecutionStatus.FINISHED,
+        Map("minimum" -> getMinimum(countResult.toInt).toString,
+            "maximum" -> getMaximum(countResult.toInt).toString,
+            "count" -> countResult.toString)
+      )
     } else {
       JobBaseResult(JobExecutionStatus.FINISHED, Map("count" -> countResult.toString))
     }
   }
 
-  private def getMaximum(count: Int) = new SecureRandom().nextInt(RANGE_MAX - RANGE_MIN) + count + RANGE_MIN
+  private def getMaximum(count: Int) =
+    new SecureRandom().nextInt(RANGE_MAX - RANGE_MIN) + count + RANGE_MIN
 
   private def getMinimum(count: Int) = {
-    val limMax = if (count - RANGE_MIN <= 1) count
-    else count - RANGE_MIN
+    val limMax =
+      if (count - RANGE_MIN <= 1) count
+      else count - RANGE_MIN
     val lowBound = Math.max(count - RANGE_MAX, 0)
     if (count <= 0) 0
     else new SecureRandom().nextInt(limMax - lowBound) + lowBound
