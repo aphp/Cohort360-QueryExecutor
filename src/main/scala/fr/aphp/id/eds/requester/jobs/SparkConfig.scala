@@ -13,6 +13,7 @@ object SparkConfig {
   sparkConf.set("spark.driver.bindAddress", "0.0.0.0")
   sparkConf.set("spark.driver.port", AppConfig.conf.getString("spark.driver.port"))
   sparkConf.set("spark.driver.host", AppConfig.conf.getString("spark.driver.host"))
+  sparkConf.set("spark.executor.memory", if (AppConfig.conf.hasPath("spark.executor.memory")) AppConfig.conf.getString("spark.executor.memory") else "1G")
   sparkConf.set("spark.executor.extraJavaOptions", "-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=solr_auth.txt")
 
   val sparkSession: SparkSession = SparkSession
