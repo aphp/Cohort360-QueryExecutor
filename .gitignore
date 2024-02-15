@@ -43,6 +43,7 @@ build.log
 #  ^\.pc/
 
 #SHITTY output not in target directory
+*.versionsBackup
 spark-warehouse
 metastore_db
 spark-postgres-tmp
