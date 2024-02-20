@@ -54,15 +54,6 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                                              cacheEnabled,
                                              withOrganizationDetails = false)
 
-    // get a new cohortId
-    cohortDefinitionId = omopTools.getCohortDefinitionId(
-      data.cohortDefinitionName,
-      data.cohortDefinitionDescription,
-      data.cohortDefinitionSyntax,
-      data.ownerEntityId,
-      request.resourceType
-    )
-
     // filter df columns
     cohort = cohort.select(
       List(ResultColumn.SUBJECT, "encounter", "entryEvent", "exitEvent")
@@ -72,6 +63,16 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     cohort.cache()
     count = cohort.dropDuplicates().count()
     val cohortSizeBiggerThanLimit = count > LIMIT
+
+    // get a new cohortId
+    cohortDefinitionId = omopTools.getCohortDefinitionId(
+      data.cohortDefinitionName,
+      data.cohortDefinitionDescription,
+      data.cohortDefinitionSyntax,
+      data.ownerEntityId,
+      request.resourceType,
+      count
+    )
 
     status =
       if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING

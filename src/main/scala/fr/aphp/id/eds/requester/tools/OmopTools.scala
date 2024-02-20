@@ -13,8 +13,9 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
-  private final val cohort_item_table_rw = "list__entry_central_cohort360"
+  private final val cohort_item_table_rw = "list__entry_cohort360"
   private final val cohort_table_rw = "list_cohort360"
+  private final val cohort_provider_name = "Cohort360"
 
   /**
     * @param cohortDefinitionName        : The name of the cohort
@@ -28,13 +29,14 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       cohortDefinitionDescription: Option[String],
       cohortDefinitionSyntax: String,
       ownerEntityId: String,
-      resourceType: String
+      resourceType: String,
+      size: Long
   ): Long = {
     val stmt =
       s"""
          |insert into ${cohort_table_rw}
-         |(hash, title, note__text, _sourcereferenceid, source__reference, source__type, mode, subject__type, date)
-         |values (-1, ?, ?, ?, ?, 'Practitioner', 'snapshot', ?, now())
+         |(hash, title, note__text, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
+         |values (-1, ?, ?, ?, ?, '$cohort_provider_name', 'Practitioner', 'snapshot', '${CohortStatus.RUNNING}', ?, now(), ?)
          |returning id
          |""".stripMargin
     val result = pg
@@ -45,7 +47,8 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
           cohortDefinitionSyntax,
           ownerEntityId,
           s"Practitioner/${ownerEntityId}",
-          resourceType
+          resourceType,
+          size
         )
       )
       .collect()
@@ -78,7 +81,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
 
       val dataframe = cohort
         .withColumn("_listid", lit(cohortDefinitionId))
-        .withColumn("_provider", lit("Cohort360"))
+        .withColumn("_provider", lit(cohort_provider_name))
         .withColumnRenamed(ResultColumn.SUBJECT, "_itemreferenceid")
         .withColumn("item__reference", concat(lit(s"${resourceType}/"), col("_itemreferenceid")))
         .select(F.col("_itemreferenceid"),
@@ -111,7 +114,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
             s"""
                |insert into fact_relationship
                |(hash, insert_datetime, change_datetime, domain_concept_id_1, fact_id_1, domain_concept_id_2, fact_id_2, relationship_concept_id, cdm_source)
-               |values (-1, now(), now(), 1147323, ?, 1147323, ?, $relationship_concept_id, 'Cohort360')
+               |values (-1, now(), now(), 1147323, ?, 1147323, ?, $relationship_concept_id, '$cohort_provider_name')
                |""".stripMargin
           pg.sqlExec(stmt, list_id)
         }
