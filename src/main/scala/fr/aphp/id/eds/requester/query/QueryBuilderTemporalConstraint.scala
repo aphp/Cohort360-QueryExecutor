@@ -38,6 +38,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
     def infoToCheck(idTags: CriterionTags, constraintType: String): Boolean =
       if (List[String](SAME_ENCOUNTER, DIFFERENT_ENCOUNTER).contains(constraintType))
         idTags.isEncounterAvailable
+      else if(SAME_EPISODE_OF_CARE.equals(constraintType))
+        idTags.isEpisodeOfCareAvailable
       else idTags.isDateTimeAvailable
 
     // extract criteria that are related to a date or encounter among all criteria of the group

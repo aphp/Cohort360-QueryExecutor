@@ -118,6 +118,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
         addedCriterion.i -> new CriterionTags(false,
                                               false,
                                               false,
+                                              false,
                                               List[String](),
                                               "patientAphp",
                                               List[String]()))

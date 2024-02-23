@@ -94,10 +94,11 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
   private def getCreationResult(cohortDefinitionId: Long,
                                 count: Long,
                                 status: String): JobBaseResult = {
-    JobBaseResult(status, Map(
-      "group.id" -> cohortDefinitionId.toString,
-      "group.count" -> count.toString,
-    ))
+    JobBaseResult(status,
+                  Map(
+                    "group.id" -> cohortDefinitionId.toString,
+                    "group.count" -> count.toString,
+                  ))
   }
 
   private def addOneEmptyGroupToRequest(request: Request): (Request, Map[Short, CriterionTags]) = {
@@ -107,6 +108,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
               resourceType = request.resourceType)
     val completeTagsPerIdMap: Map[Short, CriterionTags] = Map(
       completeRequest.request.get.i -> new CriterionTags(false,
+                                                         false,
                                                          false,
                                                          false,
                                                          List[String](),

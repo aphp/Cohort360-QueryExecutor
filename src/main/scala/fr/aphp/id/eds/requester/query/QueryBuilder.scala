@@ -55,6 +55,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
         criteriaId -> new CriterionTags(false,
           false,
           false,
+          false,
           List[String](),
           "patientAphp",
           List[String]())))

@@ -30,6 +30,7 @@ import org.apache.log4j.Logger
   */
 class CriterionTags(val isDateTimeAvailable: Boolean,
                     val isEncounterAvailable: Boolean,
+                    val isEpisodeOfCareAvailable: Boolean,
                     val isInTemporalConstraint: Boolean,
                     val temporalConstraintTypeList: List[String] = List[String](),
                     val resourceType: String = "default",
@@ -213,6 +214,7 @@ object CriterionTagsParser {
             val criterionTags = new CriterionTags(
               isDateTimeAvailable,
               isEncounterAvailable,
+              criterionTagsMapTmp(criterionId).isEpisodeOfCareAvailable,
               isInTemporalConstraint,
               constraintTypeList,
               collection,
@@ -236,6 +238,7 @@ object CriterionTagsParser {
           mergedMap + (i._1 -> new CriterionTags(
             mergedMap(i._1).isDateTimeAvailable || i._2.isDateTimeAvailable,
             mergedMap(i._1).isEncounterAvailable || i._2.isEncounterAvailable,
+            mergedMap(i._1).isEpisodeOfCareAvailable || i._2.isEpisodeOfCareAvailable,
             mergedMap(i._1).isInTemporalConstraint || i._2.isInTemporalConstraint,
             (mergedMap(i._1).temporalConstraintTypeList ++ i._2.temporalConstraintTypeList).distinct,
             mergedMap(i._1).resourceType,
@@ -320,6 +323,12 @@ object CriterionTagsParser {
         .contains(ENCOUNTER_COL)
     }
 
+    def getIsEpisodeOfCareAvailable: Boolean = {
+      queryBuilderConfigs
+        .requestKeyPerCollectionMap(collection)
+        .contains(EPISODE_OF_CARE_COL)
+    }
+
     requiredSolrFieldList = getEncounterDateRangeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getDateRangeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getPatientAgeDatetimePreferenceList(requiredSolrFieldList)
@@ -329,8 +338,10 @@ object CriterionTagsParser {
       convertDatePreferenceToDateTimeSolrField(requiredSolrFieldList, collection)
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
+    val isEpisodeOfCareAvailable: Boolean = getIsEpisodeOfCareAvailable
     new CriterionTags(isDateTimeAvailable,
                       isEncounterAvailable,
+                      isEpisodeOfCareAvailable,
                       false,
                       List[String](),
                       collection,
@@ -360,10 +371,18 @@ object CriterionTagsParser {
         .getOrElse(false)
     }
 
+    def getIsEpisodeOfCareAvailable: Boolean = {
+      inclusionCriteriaIdList
+        .map(x => criterionTagsMap(x).isEpisodeOfCareAvailable)
+        .reduceOption(_ || _)
+        .getOrElse(false)
+    }
+
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
     new CriterionTags(isDateTimeAvailable,
                       isEncounterAvailable,
+                      getIsEpisodeOfCareAvailable,
                       false,
                       withOrganizations = requestOrganization)
   }
