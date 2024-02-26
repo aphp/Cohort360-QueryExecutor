@@ -89,7 +89,7 @@ class JobManager() {
       logger.info(s"Calling callback at ${callback} for job ${jobId}")
       val callbackResult = result match {
         case Left(wrapped) =>
-          Map("request_job_status" -> JobExecutionStatus.ERROR, "message" -> wrapped.getMessage)
+          Map("request_job_status" -> JobExecutionStatus.ERROR, "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
         case Right(value) => {
           Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
         }
