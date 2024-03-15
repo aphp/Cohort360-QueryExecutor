@@ -97,6 +97,7 @@ package object requester {
     object ImagingStudy {
       final val STARTED = "started"
       final val SERIES_STARTED = "series.started"
+      final val STUDY_ID = "studyId"
     }
 
     object QuestionnaireResponse {
@@ -111,5 +112,6 @@ package object requester {
   final val EPISODE_OF_CARE_COL = "episode_of_care_col"
   final val ENCOUNTER_COL = "encounter_col"
   final val ENCOUNTER_DATES_COL = "encounter_dates_col"
+  final val GROUP_BY_COLUMN = "group_by_column"
 
 }

@@ -4,6 +4,7 @@ import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import fr.aphp.id.eds.requester._
+import fr.aphp.id.eds.requester.query.CriterionTagsParser.queryBuilderConfigs
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
@@ -306,6 +307,14 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       else groupByColumns
     }
 
+    def addResourceGroupByColumns(groupByColumns: ListBuffer[String]): ListBuffer[String] = {
+      if (qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType).contains(GROUP_BY_COLUMN)) {
+        groupByColumns ++= qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)(GROUP_BY_COLUMN).map(qbConfigs.buildColName(criterionId, _))
+      } else {
+        groupByColumns
+      }
+    }
+
     def addSameEncounterGroupByColumns(sameEncounter: Boolean,
                                        groupByColumns: ListBuffer[String]): ListBuffer[String] = {
       if (sameEncounter) {
@@ -368,6 +377,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
         val criterionDataFrameWithSameDayColumn: DataFrame =
           addSameDayConstraintColumns(criterionDataFrame, sameDay)
 
+        groupByColumns = addResourceGroupByColumns(groupByColumns)
         groupByColumns = addSameDayGroupByColumns(sameDay, groupByColumns)
         groupByColumns = addSameEncounterGroupByColumns(sameEncounter, groupByColumns)
         if (logger.isInfoEnabled)

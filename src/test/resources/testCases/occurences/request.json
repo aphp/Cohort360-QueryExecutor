@@ -42,7 +42,7 @@
         "_type": "basicResource",
         "_id": 3,
         "isInclusive": true,
-        "resourceType": "observationAphp",
+        "resourceType": "imagingStudyAphp",
         "filterSolr": "((part-of:A0283* OR part-of:E6954* OR part-of:F9934* OR part-of:G7716* OR part-of:J5184*))",
         "filterFhir": "part-of=A0283,E6954,F9934,G7716,J5184",
         "occurrence": {

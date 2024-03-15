@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
-import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, EPISODE_OF_CARE_COL, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
+import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, EPISODE_OF_CARE_COL, GROUP_BY_COLUMN, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
 
 class QueryBuilderConfigs {
 
@@ -38,7 +38,7 @@ class QueryBuilderConfigs {
       SolrCollection.GROUP_APHP -> Map(PATIENT_COL -> List(SolrColumn.Group.RESOURCE_ID)),
       SolrCollection.CLAIM_APHP -> buildMap(List(SolrColumn.Claim.CREATED)),
       SolrCollection.PROCEDURE_APHP -> buildMap(List(SolrColumn.Procedure.DATE)),
-      SolrCollection.IMAGINGSTUDY_APHP -> buildMap(List(SolrColumn.PATIENT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)),
+      SolrCollection.IMAGINGSTUDY_APHP -> (buildMap(List(SolrColumn.PATIENT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(GROUP_BY_COLUMN -> List(SolrColumn.ImagingStudy.STUDY_ID))),
       SolrCollection.QUESTIONNAIRE_RESPONSE_APHP -> (buildMap(List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(EPISODE_OF_CARE_COL -> List(SolrColumn.EPISODE_OF_CARE))),
       "default" -> Map(DATE_COL -> List[String](), ENCOUNTER_COL -> List[String](), ENCOUNTER_DATES_COL -> List[String]())
     )
