@@ -14,4 +14,14 @@ object AppConfig {
   } else {
     throw new RuntimeException("No token provided")
   }
+  val cohortTableName: String = if (conf.hasPath("app.cohortTableName")) {
+    conf.getString("app.cohortTableName")
+  } else {
+    "list_cohort360"
+  }
+  val cohortItemsTableName: String = if (conf.hasPath("app.cohortTableItemsName")) {
+    conf.getString("app.cohortTableItemsName")
+  } else {
+    "list__entry_cohort360"
+  }
 }

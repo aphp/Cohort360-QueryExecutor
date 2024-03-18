@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.tools
 
 import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
-import fr.aphp.id.eds.requester.ResultColumn
+import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import fr.aphp.id.eds.requester.query.SourcePopulation
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, functions => F}
@@ -13,8 +13,8 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
-  private final val cohort_item_table_rw = "list__entry_cohort360"
-  private final val cohort_table_rw = "list_cohort360"
+  private final val cohort_item_table_rw = AppConfig.cohortItemsTableName
+  private final val cohort_table_rw = AppConfig.cohortTableName
   private final val cohort_provider_name = "Cohort360"
 
   /**
