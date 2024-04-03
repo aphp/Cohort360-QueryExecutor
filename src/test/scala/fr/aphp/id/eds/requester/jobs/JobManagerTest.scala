@@ -7,6 +7,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.{Parameters, ServeEventListener}
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
 import com.typesafe.config.ConfigFactory
+import fr.aphp.id.eds.requester.CountQuery
 import org.apache.spark.sql.SparkSession
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -50,18 +51,8 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
     }
   }
 
-  def testJob(jobObject: JobBase, result: JobResult, callbackResult: String): Unit = {
-    val job = jobManager.execJob(jobObject, SparkJobParameter(
-      "test",
-      Some("test"),
-      "test",
-      "test",
-      "test",
-      "test",
-      "test",
-      Some("test"),
-      callbackUrl=Some(wireMockServer.baseUrl()))
-    )
+  def testJob(jobObject: JobBase, jobParam: SparkJobParameter, result: JobResult, callbackResult: String): Unit = {
+    val job = jobManager.execJob(jobObject, jobParam)
     assert(jobManager.list().size == 1)
     assert(jobManager.status(job.jobId).status == JobExecutionStatus.RUNNING)
 
@@ -79,9 +70,19 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
   }
 
   // TODO test the message sent to wiremock and also test with real job types to see if the results are properly built
-  test("testJobs") {
+  test("testJobsTypes") {
     testJob(
       new JobTest(),
+      SparkJobParameter(
+        "test",
+        Some("test"),
+        "test",
+        "test",
+        "test",
+        "test",
+        "test",
+        Some("test"),
+        callbackUrl=Some(wireMockServer.baseUrl())),
       JobResult("test", JobBaseResult(JobExecutionStatus.FINISHED, Map("ok"-> "ok")).toString),
       "{\"request_job_status\":\"FINISHED\",\"ok\":\"ok\",\"extra\":{}}")
   }

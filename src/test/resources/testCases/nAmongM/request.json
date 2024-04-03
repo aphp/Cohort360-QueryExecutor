@@ -1,0 +1,179 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request":
+  {
+    "_type": "orGroup",
+    "_id": -1,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "nAmongM",
+        "_id": 0,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 1,
+            "isInclusive": true,
+            "resourceType": "patientAphp",
+            "filterSolr": "active:true",
+            "filterFhir": "",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 2,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 3,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "nAmongMOptions": {
+          "n": 2,
+          "operator": ">="
+        },
+        "temporalConstraints": []
+      },
+      {
+        "_type": "nAmongM",
+        "_id": -2,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 4,
+            "isInclusive": true,
+            "resourceType": "patientAphp",
+            "filterSolr": "active:true",
+            "filterFhir": "",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 5,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 6,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "nAmongMOptions": {
+          "n": 2,
+          "operator": "="
+        },
+        "temporalConstraints": []
+      },
+      {
+        "_type": "nAmongM",
+        "_id": -3,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 7,
+            "isInclusive": true,
+            "resourceType": "patientAphp",
+            "filterSolr": "active:true",
+            "filterFhir": "",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 8,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 9,
+            "isInclusive": true,
+            "resourceType": "conditionAphp",
+            "filterSolr": "(codeList:R26) AND active:true",
+            "filterFhir": "codeList=R26",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "nAmongMOptions": {
+          "n": 2,
+          "operator": "<="
+        },
+        "temporalConstraints": []
+      }
+    ]
+  },
+  "id": 1000
+}

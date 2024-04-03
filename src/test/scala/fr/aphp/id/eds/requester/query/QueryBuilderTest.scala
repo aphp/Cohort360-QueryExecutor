@@ -2,13 +2,14 @@ package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions}
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.MockitoSugar.{mock, when}
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
+import org.mockito.MockitoSugar.{mock, verify, when}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
 import fr.aphp.id.eds.requester.{ResultColumn, SolrCollection, SolrColumn}
-import org.apache.solr.client.solrj.SolrRequest
+import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
 import org.apache.solr.client.solrj.response.QueryResponse
+import org.apache.solr.common.params.SolrParams
 import org.apache.solr.common.{SolrDocument, SolrDocumentList}
 import org.apache.spark.sql.functions.{col, explode}
 
@@ -25,7 +26,8 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
       folderCase: String,
       withOrganizationsDetail: Boolean = false,
       checkOrder: Boolean = true,
-      setUpSolrClientMock: (org.apache.solr.client.solrj.impl.CloudSolrClient) => Unit = (_) => {})
+      setUpSolrClientMock: (org.apache.solr.client.solrj.impl.CloudSolrClient) => Unit = (_) => {},
+      verifySolrClientMock: (org.apache.solr.client.solrj.impl.CloudSolrClient) => Unit = (_) => {})
     : DataFrame = {
     val solrQueryResolver: SolrQueryResolver = mock[SolrQueryResolver]
     val expected = getClass.getResource(s"/testCases/$folderCase/expected.csv")
@@ -84,6 +86,7 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
                             jobUtilsService = jobUtilsService)
     )
     assertSmallDatasetEquality(result, expectedResult, orderedComparison = checkOrder)
+    verifySolrClientMock(solrClient)
     result
   }
 
@@ -122,8 +125,43 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     )
   }
 
+  test("ipp") {
+    testCaseEvaluate(
+      "ipp",
+      setUpSolrClientMock = (solrClient) => {
+        val queryResponse = mock[QueryResponse]
+        val docList = new SolrDocumentList()
+        List(1, 2)
+          .map(
+            (x) => {
+              val doc = new SolrDocument()
+              doc.setField(SolrColumn.PATIENT, x)
+              doc
+            }
+          )
+          .foreach(x => docList.add(x))
+        when(queryResponse.getResults).thenReturn(docList)
+        when(
+          solrClient.query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP),
+            ArgumentMatchersSugar.*,
+            ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST)))
+          .thenReturn(queryResponse)
+      },
+      verifySolrClientMock = (solrClient) => {
+        val argument: ArgumentCaptor[SolrQuery] = ArgumentCaptor.forClass(classOf[SolrQuery])
+        verify(solrClient).query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP), argument.capture(), ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST))
+        assert(argument.getValue.get("q") == "*:*")
+        assert(argument.getValue.get("fq") == "(({!terms f=identifier.value}123456789,841381256,153213516) AND -(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")) AND (_list:(57664))")
+      }
+    )
+  }
+
   test("temporalConstraints") {
     testCaseEvaluate("temporalConstraintSameEncounterByPairs")
+  }
+
+  test("nAmongM") {
+    testCaseEvaluate("nAmongM")
   }
 
   test("questionnaireResponse") {

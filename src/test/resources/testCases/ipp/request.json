@@ -1,0 +1,31 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "IPPList",
+        "filterSolr": "identifier.value:(123456789 841381256 153213516)",
+        "filterFhir": "",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 3
+}
