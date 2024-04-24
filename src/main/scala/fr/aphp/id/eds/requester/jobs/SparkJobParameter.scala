@@ -29,26 +29,24 @@ object ResourceType extends Enumeration {
   val documentReference = "DocumentReference"
   val encounter = "Encounter"
   val imagingStudy = "ImagingStudy"
-  val imagingSeries = "ImagingSeries"
   val medicationAdministration = "MedicationAdministration"
   val medicationRequest = "MedicationRequest"
   val observation = "Observation"
   val patient = "Patient"
   val procedure = "Procedure"
+  val questionnaireResponse = "QuestionnaireResponse"
 
-  // TODO enable all when the proper concept terminologies are up
-  // -> https://gitlab.eds.aphp.fr/bigdata/terminology/-/issues/98
   val all: Seq[ResourceType] = Seq(
-//    claim,
-//    condition,
+    claim,
+    condition,
     documentReference,
     encounter,
-//    imagingStudy,
-//    imagingSeries,
-//    medicationAdministration,
-//    medicationRequest,
-//    observation,
+    imagingStudy,
+    medicationAdministration,
+    medicationRequest,
+    observation,
     patient,
-//    procedure
+    procedure,
+    questionnaireResponse
   )
 }
