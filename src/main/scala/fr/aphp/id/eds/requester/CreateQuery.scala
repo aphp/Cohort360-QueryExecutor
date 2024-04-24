@@ -58,10 +58,10 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     cohort = cohort.select(
       List(ResultColumn.SUBJECT, "encounter", "entryEvent", "exitEvent")
         .filter(c => cohort.columns.contains(c))
-        .map(c => F.col(c)): _*)
+        .map(c => F.col(c)): _*).dropDuplicates()
 
     cohort.cache()
-    count = cohort.dropDuplicates().count()
+    count = cohort.count()
     val cohortSizeBiggerThanLimit = count > LIMIT
 
     // get a new cohortId
