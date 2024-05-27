@@ -96,10 +96,11 @@ object JobUtils extends JobUtilsService {
   }
 
   def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
-    s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})"
+    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
+    s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
   }
   def getDefaultSolrFilterQueryPatientAphp(sourcePopulation: SourcePopulation): String = {
-    s"_list:(${sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")})" +
+    getDefaultSolrFilterQuery(sourcePopulation) +
       " AND active:true"+
       " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
   }

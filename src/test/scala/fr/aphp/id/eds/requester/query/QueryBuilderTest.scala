@@ -151,7 +151,7 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
         val argument: ArgumentCaptor[SolrQuery] = ArgumentCaptor.forClass(classOf[SolrQuery])
         verify(solrClient).query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP), argument.capture(), ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST))
         assert(argument.getValue.get("q") == "*:*")
-        assert(argument.getValue.get("fq") == "(({!terms f=identifier.value}123456789,841381256,153213516) AND -(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")) AND (_list:(57664))")
+        assert(argument.getValue.get("fq") == "(({!terms f=identifier.value}123456789,841381256,153213516) AND -(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")) AND (_list:(57664) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(57664)' score=none method=crossCollection}))")
       }
     )
   }
