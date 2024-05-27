@@ -75,7 +75,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     )
 
     status =
-      if (cohortSizeBiggerThanLimit) JobExecutionStatus.LONG_PENDING
+      if (cohortSizeBiggerThanLimit && request.resourceType == ResourceType.patient) JobExecutionStatus.LONG_PENDING
       else JobExecutionStatus.FINISHED
 
     //  upload into pg and solr
