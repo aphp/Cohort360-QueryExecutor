@@ -2,6 +2,7 @@ package fr.aphp.id.eds.requester.tools
 
 import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
+import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import fr.aphp.id.eds.requester.query.SourcePopulation
 import org.apache.spark.sql.functions._
@@ -91,7 +92,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
 
       uploadCohortTableToPG(dataframe)
 
-      if (!delayCohortCreation) uploadCohortTableToSolr(cohortDefinitionId, dataframe, count)
+      if (!delayCohortCreation && resourceType == ResourceType.patient) uploadCohortTableToSolr(cohortDefinitionId, dataframe, count)
     } catch {
       case e: Exception =>
         setOmopCohortStatus(cohortDefinitionId, CohortStatus.ERROR)
