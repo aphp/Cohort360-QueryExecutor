@@ -5,7 +5,7 @@ abstract class BaseQuery(_type: String, _id: Short, isInclusive: Boolean) {
   val IsInclusive: Boolean = isInclusive
 }
 
-case class Occurrence(n: Short,
+case class Occurrence(n: Int,
                       operator: String,
                       sameEncounter: Option[Boolean],
                       sameDay: Option[Boolean],

@@ -325,7 +325,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     def getPatientListFilteredByOccurrenceNumber(dataframe: DataFrame,
                                                  groupByColumns: ListBuffer[String],
                                                  operator: String,
-                                                 n: Short) = {
+                                                 n: Int) = {
 
       if (logger.isInfoEnabled)
         logger.info(s"*** GroupByColumns: $groupByColumns  FILTER: 'count $operator $n'")
