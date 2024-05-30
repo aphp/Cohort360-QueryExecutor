@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cohort-requester</artifactId>
   <groupId>fr.aphp.id.eds</groupId>
-  <version>2.5.1</version>
+  <version>2.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Cohort Requester</name>
   <description/>
