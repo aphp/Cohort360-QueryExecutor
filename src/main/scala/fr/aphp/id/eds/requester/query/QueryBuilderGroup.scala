@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.SolrColumn
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQueryPatientAphp
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools, SparkTools}
 import org.apache.log4j.Logger
@@ -115,13 +116,16 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
       criterionTagsMap: Map[Short, CriterionTags]): Map[Short, CriterionTags] = {
     if (isInclusionCriteriaEmpty)
       criterionTagsMap ++ Map(
-        addedCriterion.i -> new CriterionTags(false,
-                                              false,
-                                              false,
-                                              false,
-                                              List[String](),
-                                              "patientAphp",
-                                              List[String]()))
+        addedCriterion.i -> new CriterionTags(
+          false,
+          false,
+          false,
+          false,
+          List[String](),
+          "patientAphp",
+          if (options.withOrganizations) { List(SolrColumn.ORGANIZATIONS) } else List[String](),
+          withOrganizations = options.withOrganizations,
+        ))
     else criterionTagsMap
   }
 

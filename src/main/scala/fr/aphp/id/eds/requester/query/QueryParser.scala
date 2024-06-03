@@ -300,8 +300,7 @@ object QueryParser {
             case "basicResource" =>
               Some(loadBasicResource(requestOption.get))
             case _ =>
-              val group = loadGroupResource(requestOption.get)
-              if (group.criteria.isEmpty) None else Some(group)
+              Some(loadGroupResource(requestOption.get))
           }
           Right(
             Request(sourcePopulation = genericQuery.sourcePopulation.get,
