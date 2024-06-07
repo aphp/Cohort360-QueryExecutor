@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.{IPP_LIST, SolrCollection}
 import org.apache.log4j.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsResult, JsString, JsSuccess, JsValue, Json, Reads}
 import org.json4s.jackson.Serialization
@@ -233,7 +234,7 @@ object QueryParser {
       BasicResource(
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,
-        resourceType = genericQuery.resourceType.get,
+        resourceType = if (genericQuery.resourceType.get == IPP_LIST) SolrCollection.PATIENT_APHP else genericQuery.resourceType.get,
         filter = genericQuery.filterSolr.get,
         occurrence = genericQuery.occurrence,
         patientAge = genericQuery.patientAge,

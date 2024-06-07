@@ -45,11 +45,11 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                         cacheNestedGroup: Boolean): DataFrame = {
     criterion match {
       case res: BasicResource =>
-        qbBasicResource.processRequestBasicResource(spark,
-                                                    solrConf,
-                                                    criterionTagsMap(res._id),
-                                                    sourcePopulation,
-                                                    res)
+        qbBasicResource.processFhirRessource(spark,
+                                             solrConf,
+                                             sourcePopulation,
+                                             criterionTagsMap(res._id),
+                                             res)
 
       case group: GroupResource =>
         if (enableCurrentGroupCache) { // @todo: this is unused code for now

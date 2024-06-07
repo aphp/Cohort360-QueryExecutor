@@ -5,7 +5,6 @@ import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, SolrQueryResolver}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import org.apache.log4j.Logger
-import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
@@ -401,33 +400,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     } else criterionDataFrame
   }
 
-  /** Get fq and fl parameters for solr based on the basic resource
-    *
-    * @param sourcePopulation caresite and provider source population
-    * @param basicResource    the basicResource object
-    */
-  private def getSolrFilterQueryLegacy(sourcePopulation: SourcePopulation,
-                                       basicResource: BasicResource): String = {
-    def addAvailableFieldListFilterQuery(solrFilterQuery: String) = {
-      val availableFieldList =
-        basicResource.nullAvailableFieldList.getOrElse(List[String]())
-      // TODO: Not sure of syntax and maybe to remove... always false for ipp list process
-      if (availableFieldList.nonEmpty) {
-        s"(($solrFilterQuery) OR (" + availableFieldList
-          .map(r => s"$r:-[* TO *]")
-          .mkString(",") + ")"
-      } else solrFilterQuery
-    }
-
-    def addDefaultSolrFilterQuery(solrFilterQuery: String) = {
-      s"($solrFilterQuery) AND (${getDefaultSolrFilterQuery(sourcePopulation)})"
-    }
-
-    var solrFilterQuery = basicResource.filter
-    solrFilterQuery = addAvailableFieldListFilterQuery(solrFilterQuery)
-    addDefaultSolrFilterQuery(solrFilterQuery)
-  }
-
   private def getSolrFilterQuery(sourcePopulation: SourcePopulation,
                                  basicResource: BasicResource): String = {
     def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
@@ -496,7 +468,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       querySolver.getSolrResponseDataFrame(basicResource.resourceType,
                                            solrFilterList,
                                            solrFilterQuery)(spark, solrConf, criterionId)
-    //criterionDataFrame.write.option("header", "true").csv(s"/tmp/criterionDataFrame-${basicResource._id}")
     criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
     if (logger.isDebugEnabled) {
       logger.debug(
@@ -525,68 +496,4 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     criterionDataFrame
   }
 
-  /**
-    * input is like "filterSolr":"(active:true) AND (identifier.value:(8006781418 8008199625 8001006675))"
-    */
-  def extractIdsIpp(input: String): List[String] = {
-    import scala.util.matching.Regex
-    val pattern: Regex = """identifier\.value:\((.*?)\)""".r
-    val matches = pattern.findAllIn(input).matchData.toList
-    matches.flatMap { matchData =>
-      matchData.group(1).split(" ").toList
-    }
-  }
-
-  def processIppList(implicit spark: SparkSession,
-                     solrConf: Map[String, String],
-                     sourcePopulation: SourcePopulation,
-                     res: BasicResource,
-                     withOrganizations: Boolean): DataFrame = {
-    val localId = res._id
-    val ippList: List[String] = extractIdsIpp(res.filter)
-    val ippListFilter: String = ippList.mkString(",")
-    // because we do not retrieve the full query translated by the CRB process
-    // we need to add back this filter to the query
-    val opposedSubject =
-      "-(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
-    val ippFilter =
-      s"({!terms f=${SolrColumn.Patient.IDENTIFIER_VALUE}}$ippListFilter) AND ${opposedSubject}"
-    val ippRessource: BasicResource = BasicResource(
-      localId,
-      isInclusive = res.isInclusive,
-      resourceType = res.resourceType,
-      filter = ippFilter
-    )
-    val filterQuery: String = getSolrFilterQueryLegacy(sourcePopulation, ippRessource)
-    val fl = SolrColumn.PATIENT + (if (withOrganizations) s",${SolrColumn.ORGANIZATIONS}" else "")
-    val df = querySolver.getSolrResponseDataFrame(SolrCollection.PATIENT_APHP, fl, filterQuery)(spark,
-                                                                                         solrConf,
-                                                                                         localId)
-    val selectedCols = List(qbConfigs.buildColName(localId, QueryColumn.PATIENT)) ++ (if (withOrganizations) {
-                                                                                        List(
-                                                                                          qbConfigs.buildColName(
-                                                                                            localId,
-                                                                                            QueryColumn.ORGANIZATIONS))
-                                                                                      } else {
-                                                                                        List()
-                                                                                      })
-    df.toDF(selectedCols: _*)
-  }
-
-  /** Compute the resulting df of a criteria which is a group of criteria.
-    *
-    * @param solrConf         solr configs extracted from SJS config
-    * @param sourcePopulation caresite and provider source population
-    * @param res              the basicResource object
-    */
-  def processRequestBasicResource(spark: SparkSession,
-                                  solrConf: Map[String, String],
-                                  criterionTags: CriterionTags,
-                                  sourcePopulation: SourcePopulation,
-                                  res: BasicResource): DataFrame = {
-
-    if (res.resourceType.equals(IPP_LIST))
-      processIppList(spark, solrConf, sourcePopulation, res, criterionTags.withOrganizations)
-    else processFhirRessource(spark, solrConf, sourcePopulation, criterionTags, res)
-  }
 }
