@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.tools
 
+import fr.aphp.id.eds.requester.AppConfig
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
 import org.apache.log4j.Logger
@@ -30,7 +31,7 @@ trait JobUtilsService {
       criterionTagsMap,
       solrConf,
       omopTools,
-      runtime.contextConfig.getBoolean("app.enableCache"))
+      runtime.contextConfig.business.enableCache)
   }
 
   def getOmopTools(session: SparkSession, env: JobEnv, stringToString: Map[String, String]): OmopTools
@@ -44,26 +45,11 @@ object JobUtils extends JobUtilsService {
 
   /** Read Postgresql passthrough parameters in SJS conf file */
   override def getOmopTools(spark: SparkSession, runtime: JobEnv, solrConf: Map[String, String]): OmopTools = {
-    val pgHost =
-      runtime.contextConfig.getString(
-        "postgres.host"
-      )
-    val pgPort =
-      runtime.contextConfig.getString(
-        "postgres.port"
-      )
-    val pgDb =
-      runtime.contextConfig.getString(
-        "postgres.database"
-      )
-    val pgSchema =
-      runtime.contextConfig.getString(
-        "postgres.schema"
-      )
-    val pgUser =
-      runtime.contextConfig.getString(
-        "postgres.user"
-      )
+    val pgHost = runtime.contextConfig.pg.host
+    val pgPort = runtime.contextConfig.pg.port
+    val pgDb = runtime.contextConfig.pg.database
+    val pgSchema = runtime.contextConfig.pg.schema
+    val pgUser = runtime.contextConfig.pg.user
     new OmopTools(
       PGTool(
         spark,
@@ -77,10 +63,10 @@ object JobUtils extends JobUtilsService {
 
   /** Read SolR passthrough parameters in SJS conf file */
   override def getSolrConf(runtime: JobEnv): Map[String, String] = {
-    val zkHost = runtime.contextConfig.getString("solr.zk")
-    val maxSolrTry = runtime.contextConfig.getString("solr.max_try")
-    val rows = runtime.contextConfig.getString("solr.rows")
-    val commitWithin = runtime.contextConfig.getString("solr.commit_within")
+    val zkHost = runtime.contextConfig.solr.zk
+    val maxSolrTry = runtime.contextConfig.solr.max_try
+    val rows = runtime.contextConfig.solr.rows
+    val commitWithin = runtime.contextConfig.solr.commit_within
 
     val options = Map(
       "zkhost" -> zkHost,
@@ -88,9 +74,9 @@ object JobUtils extends JobUtilsService {
       "timezone_id" -> "Europe/Paris",
       "request_handler" -> "/export",
       "flatten_multivalued" -> "false",
-      "rows" -> rows,
-      "commit_within" -> commitWithin,
-      "max_solr_try" -> maxSolrTry
+      "rows" -> rows.toString,
+      "commit_within" -> commitWithin.toString,
+      "max_solr_try" -> maxSolrTry.toString
     )
     options
   }

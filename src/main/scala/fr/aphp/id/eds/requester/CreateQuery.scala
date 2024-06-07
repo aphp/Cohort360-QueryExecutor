@@ -11,14 +11,14 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                        jobUtilsService: JobUtilsService = JobUtils)
     extends JobBase {
   private val logger: Logger = Logger.getLogger(this.getClass)
-  private val LIMIT = AppConfig.conf.getInt("app.cohortCreationLimit")
+  private val LIMIT = AppConfig.get.business.cohorts.cohortCreationLimit
 
   override def callbackUrl(jobData: SparkJobParameter): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
     } else if (jobData.cohortUuid.isDefined) {
-      Some(AppConfig.djangoUrl + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
+      Some(AppConfig.get.back.url + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }

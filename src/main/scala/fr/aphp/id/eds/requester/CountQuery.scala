@@ -25,7 +25,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     if (overrideCallback.isDefined) {
       overrideCallback
     } else if (jobData.cohortUuid.isDefined) {
-      Some(AppConfig.djangoUrl + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
+      Some(AppConfig.get.back.url + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }

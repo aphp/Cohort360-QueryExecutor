@@ -57,7 +57,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
     var error = intercept[RuntimeException] {
       createJob.runJob(
         sparkSession,
-        JobEnv("someid", AppConfig.conf),
+        JobEnv("someid", AppConfig.get),
         SparkJobParameter(
           "testCohort",
           None,
@@ -75,7 +75,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
     error = intercept[RuntimeException] {
       createJob.runJob(
         sparkSession,
-        JobEnv("someid", AppConfig.conf),
+        JobEnv("someid", AppConfig.get),
         SparkJobParameter(
           "testCohort",
           None,
@@ -93,7 +93,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
     error = intercept[RuntimeException] {
       createJob.runJob(
         sparkSession,
-        JobEnv("someid", AppConfig.conf),
+        JobEnv("someid", AppConfig.get),
         SparkJobParameter(
           "testCohort",
           None,
@@ -129,7 +129,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
     """.stripMargin
     val res = createJob.runJob(
       sparkSession,
-      JobEnv("someid", AppConfig.conf),
+      JobEnv("someid", AppConfig.get),
       SparkJobParameter(
         "testCohort",
         None,

@@ -11,15 +11,18 @@ object SparkConfig {
   sparkConf.setJars(Seq("postgresql.jar", "cohort-requester-libs.jar"))
   sparkConf.set("spark.scheduler.mode", "FAIR")
   sparkConf.set("spark.driver.bindAddress", "0.0.0.0")
-  sparkConf.set("spark.driver.port", AppConfig.conf.getString("spark.driver.port"))
-  sparkConf.set("spark.driver.host", AppConfig.conf.getString("spark.driver.host"))
-  sparkConf.set("spark.executor.memory", if (AppConfig.conf.hasPath("spark.executor.memory")) AppConfig.conf.getString("spark.executor.memory") else "1G")
-  sparkConf.set("spark.executor.extraJavaOptions", "-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=solr_auth.txt")
+  sparkConf.set("spark.driver.port", AppConfig.get.spark.driverPort.toString)
+  sparkConf.set("spark.driver.host", AppConfig.get.spark.driverHost)
+  sparkConf.set("spark.executor.memory", AppConfig.get.spark.executorMemory)
+  sparkConf.set(
+    "spark.executor.extraJavaOptions",
+    f"-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=${AppConfig.get.solr.auth_file}"
+  )
 
   val sparkSession: SparkSession = SparkSession
     .builder()
     .config(sparkConf)
-    .master(AppConfig.conf.getString("spark.master"))
+    .master(AppConfig.get.spark.master)
     .getOrCreate()
 
 }

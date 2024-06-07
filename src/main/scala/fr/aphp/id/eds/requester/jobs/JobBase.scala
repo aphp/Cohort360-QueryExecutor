@@ -5,7 +5,7 @@ import fr.aphp.id.eds.requester.AppConfig
 import org.apache.spark.sql.SparkSession
 
 
-case class JobEnv(jobId: String, contextConfig: Config) {
+case class JobEnv(jobId: String, contextConfig: AppConfig) {
 }
 case class JobBaseResult(status: String, data: Map[String, String], extra: Map[String, String] = Map.empty)
 
@@ -15,7 +15,7 @@ trait JobBase {
   def callbackUrl(jobData: SparkJobParameter): Option[String] = if (jobData.callbackUrl.isDefined) {
     jobData.callbackUrl
   } else if(jobData.callbackPath.isDefined) {
-    Some(AppConfig.djangoUrl + jobData.callbackPath.get)
+    Some(AppConfig.get.back.url + jobData.callbackPath.get)
   } else {
     Option.empty
   }

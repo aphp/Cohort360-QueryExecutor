@@ -16,7 +16,7 @@ object HttpTools extends LazyLogging {
   private val httpClient = HttpClientBuilder.create().build()
 
   def httpPatchRequest(url: String, data: AnyRef): String = {
-    httpPatchRequest(url, getBasicBearerTokenHeader(AppConfig.backAuthToken), data)
+    httpPatchRequest(url, getBasicBearerTokenHeader(AppConfig.get.back.authToken), data)
   }
 
   def httpPatchRequest(url: String, headerConfig: Map[String, String], data: AnyRef): String = {

@@ -14,9 +14,9 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
-  private final val cohort_item_table_rw = AppConfig.cohortItemsTableName
-  private final val cohort_table_rw = AppConfig.cohortTableName
-  private final val cohort_provider_name = "Cohort360"
+  private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName
+  private final val cohort_table_rw = AppConfig.get.business.cohorts.cohortTableName
+  private final val cohort_provider_name = AppConfig.get.business.cohorts.cohortProviderName
 
   /**
     * @param cohortDefinitionName        : The name of the cohort

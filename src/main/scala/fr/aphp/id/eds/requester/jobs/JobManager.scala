@@ -27,11 +27,11 @@ class JobManager() {
   val sparkSession: SparkSession = SparkConfig.sparkSession
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(
-      Executors.newFixedThreadPool(AppConfig.conf.getInt("app.jobs.threads")))
+      Executors.newFixedThreadPool(AppConfig.get.business.jobs.threads))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
-  sparkSession.sparkContext.addFile("solr_auth.txt")
+  sparkSession.sparkContext.addFile(AppConfig.get.solr.auth_file)
 
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {
     val jobId = UUID.randomUUID().toString
@@ -40,7 +40,7 @@ class JobManager() {
       logger.info(s"Job ${jobId} started")
       sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
       sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
-      jobExecutor.runJob(sparkSession, JobEnv(jobId, AppConfig.conf), jobData)
+      jobExecutor.runJob(sparkSession, JobEnv(jobId, AppConfig.get), jobData)
     }
     jobs(jobId) = JobInfo(
       JobExecutionStatus.RUNNING,

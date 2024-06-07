@@ -66,7 +66,7 @@ class CountQueryTest extends AnyFunSuiteLike {
     val countJob = CountQuery(queryBuilderMock)
     val res = countJob.runJob(
       sparkSession,
-      JobEnv("someid", AppConfig.conf),
+      JobEnv("someid", AppConfig.get),
       SparkJobParameter(
         "testCohort",
         None,
@@ -116,7 +116,7 @@ class CountQueryTest extends AnyFunSuiteLike {
     val countJob = CountQuery(queryBuilderMock)
     val res = countJob.runJob(
       sparkSession,
-      JobEnv("someid", AppConfig.conf),
+      JobEnv("someid", AppConfig.get),
       SparkJobParameter(
         "testCohort",
         None,
