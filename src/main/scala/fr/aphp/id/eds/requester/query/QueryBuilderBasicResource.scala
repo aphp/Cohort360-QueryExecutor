@@ -1,10 +1,9 @@
 package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
-import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
-import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import fr.aphp.id.eds.requester._
-import fr.aphp.id.eds.requester.query.CriterionTagsParser.queryBuilderConfigs
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, SolrQueryResolver}
+import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
@@ -13,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 
 class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBuilderConfigs(),
                                 val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-                                val querySolver: SolrQueryResolver = SolrQueryResolver) {
+                                val querySolver: FhirResourceResolver = SolrQueryResolver) {
   val requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] =
     qbConfigs.requestKeyPerCollectionMap
 
@@ -420,42 +419,12 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       } else solrFilterQuery
     }
 
-    // @todo : unused for now
-    def addEncounterDateRangeFilterQuery(solrFilterQuery: String) = {
-      if (basicResource.encounterDateRange.isDefined) {
-        val encounterDateRange = basicResource.encounterDateRange.get
-        val encounterDateMinRequiredColumn = qbConfigs
-          .requestKeyPerCollectionMap(basicResource.resourceType)(ENCOUNTER_DATES_COL)
-          .head
-        val encounterDateMaxRequiredColumn =
-          qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)(ENCOUNTER_DATES_COL)(1)
-        val listConstraint = new ListBuffer[String]()
-        if (encounterDateRange.minDate.isDefined) {
-          listConstraint += s"$encounterDateMinRequiredColumn:[${encounterDateRange.minDate.get} TO *]"
-        }
-        if (encounterDateRange.maxDate.isDefined) {
-          listConstraint += s"$encounterDateMaxRequiredColumn:[* TO ${encounterDateRange.maxDate.get}]"
-        }
-        var encounterDateRangeFilterQuery =
-          listConstraint.toList.mkString(" AND ")
-        encounterDateRangeFilterQuery =
-          if (encounterDateRange.dateIsNotNull.getOrElse(true))
-            encounterDateRangeFilterQuery
-          else
-            s"($encounterDateRangeFilterQuery) OR (-$encounterDateMinRequiredColumn:[* TO *] AND -$encounterDateMaxRequiredColumn:[* TO *])"
-        s"($solrFilterQuery) AND ($encounterDateRangeFilterQuery)"
-      } else solrFilterQuery
-    }
-
     def addDefaultSolrFilterQuery(solrFilterQuery: String) = {
       s"($solrFilterQuery) AND (${getDefaultSolrFilterQuery(sourcePopulation)})"
     }
 
     var solrFilterQuery = basicResource.filter
     solrFilterQuery = addAvailableFieldListFilterQuery(solrFilterQuery)
-    // @todo : the following code is dead since encounterDateRange is treated in filterByDateRangeList to benefit from spark.coalesce
-    // if not necessary (ask POs), uncomment the following because it is more efficient
-    //    solrFilterQuery = addEncounterDateRangeFilterQuery(solrFilterQuery)
     addDefaultSolrFilterQuery(solrFilterQuery)
   }
 
@@ -573,7 +542,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                      sourcePopulation: SourcePopulation,
                      res: BasicResource,
                      withOrganizations: Boolean): DataFrame = {
-    val solr = querySolver.getSolrClient(solrConf("zkhost"))
     val localId = res._id
     val ippList: List[String] = extractIdsIpp(res.filter)
     val ippListFilter: String = ippList.mkString(",")
@@ -589,20 +557,11 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
       resourceType = res.resourceType,
       filter = ippFilter
     )
-
     val filterQuery: String = getSolrFilterQueryLegacy(sourcePopulation, ippRessource)
-    val query = new SolrQuery("*:*")
-      .addFilterQuery(filterQuery)
-      .setStart(0)
-      .setRows(100000000)
-    val solrResult =
-      solr.query(SolrCollection.PATIENT_APHP, query, SolrRequest.METHOD.POST).getResults
-    var rdd: Seq[String] = Seq[String]()
-    solrResult.forEach(doc => rdd = rdd :+ doc.get(SolrColumn.PATIENT).toString)
-
-    solr.close()
-    import spark.implicits._
-
+    val fl = SolrColumn.PATIENT + (if (withOrganizations) s",${SolrColumn.ORGANIZATIONS}" else "")
+    val df = querySolver.getSolrResponseDataFrame(SolrCollection.PATIENT_APHP, fl, filterQuery)(spark,
+                                                                                         solrConf,
+                                                                                         localId)
     val selectedCols = List(qbConfigs.buildColName(localId, QueryColumn.PATIENT)) ++ (if (withOrganizations) {
                                                                                         List(
                                                                                           qbConfigs.buildColName(
@@ -611,7 +570,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                                                                                       } else {
                                                                                         List()
                                                                                       })
-    rdd.toDF(selectedCols: _*)
+    df.toDF(selectedCols: _*)
   }
 
   /** Compute the resulting df of a criteria which is a group of criteria.

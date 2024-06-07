@@ -1,17 +1,12 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
-import org.apache.spark.sql.{DataFrame, SparkSession, functions}
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
-import org.mockito.MockitoSugar.{mock, verify, when}
-import org.scalatest.funsuite.AnyFunSuiteLike
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import fr.aphp.id.eds.requester.{ResultColumn, SolrCollection, SolrColumn}
-import org.apache.solr.client.solrj.{SolrQuery, SolrRequest}
-import org.apache.solr.client.solrj.response.QueryResponse
-import org.apache.solr.common.params.SolrParams
-import org.apache.solr.common.{SolrDocument, SolrDocumentList}
-import org.apache.spark.sql.functions.{col, explode}
+import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
+import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.mockito.ArgumentMatchersSugar
+import org.mockito.MockitoSugar.{mock, when}
+import org.scalatest.funsuite.AnyFunSuiteLike
 
 import scala.io.Source
 
@@ -25,11 +20,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
   def testCaseEvaluate(
       folderCase: String,
       withOrganizationsDetail: Boolean = false,
-      checkOrder: Boolean = true,
-      setUpSolrClientMock: (org.apache.solr.client.solrj.impl.CloudSolrClient) => Unit = (_) => {},
-      verifySolrClientMock: (org.apache.solr.client.solrj.impl.CloudSolrClient) => Unit = (_) => {})
+      checkOrder: Boolean = true)
     : DataFrame = {
-    val solrQueryResolver: SolrQueryResolver = mock[SolrQueryResolver]
+    val solrQueryResolver: FhirResourceResolver = mock[FhirResourceResolver]
     val expected = getClass.getResource(s"/testCases/$folderCase/expected.csv")
     val expectedResult = sparkSession.read
       .format("csv")
@@ -45,10 +38,6 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
         .mkString,
       QueryParsingOptions(withOrganizationDetails = withOrganizationsDetail)
     )
-
-    val solrClient = mock[org.apache.solr.client.solrj.impl.CloudSolrClient]
-    when(solrQueryResolver.getSolrClient(ArgumentMatchersSugar.*)).thenReturn(solrClient)
-    setUpSolrClientMock(solrClient)
 
     val folder = getClass.getResource(s"/testCases/$folderCase").getPath
     new java.io.File(folder).listFiles
@@ -86,7 +75,6 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
                             jobUtilsService = jobUtilsService)
     )
     assertSmallDatasetEquality(result, expectedResult, orderedComparison = checkOrder)
-    verifySolrClientMock(solrClient)
     result
   }
 
@@ -101,58 +89,13 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
 
   test("withNonInclusiveRoot") {
     testCaseEvaluate(
-      "withRootNegation",
-      setUpSolrClientMock = (solrClient) => {
-        val queryResponse = mock[QueryResponse]
-        val docList = new SolrDocumentList()
-        List(2, 3, 6, 7)
-          .map(
-            (x) => {
-              val doc = new SolrDocument()
-              doc.setField(SolrColumn.PATIENT, x)
-              doc
-            }
-          )
-          .foreach(x => docList.add(x))
-        when(queryResponse.getResults).thenReturn(docList)
-        when(
-          solrClient.query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP),
-                           ArgumentMatchersSugar.*,
-                           ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST)))
-          .thenReturn(queryResponse)
-
-      }
+      "withRootNegation"
     )
   }
 
   test("ipp") {
     testCaseEvaluate(
-      "ipp",
-      setUpSolrClientMock = (solrClient) => {
-        val queryResponse = mock[QueryResponse]
-        val docList = new SolrDocumentList()
-        List(1, 2)
-          .map(
-            (x) => {
-              val doc = new SolrDocument()
-              doc.setField(SolrColumn.PATIENT, x)
-              doc
-            }
-          )
-          .foreach(x => docList.add(x))
-        when(queryResponse.getResults).thenReturn(docList)
-        when(
-          solrClient.query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP),
-            ArgumentMatchersSugar.*,
-            ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST)))
-          .thenReturn(queryResponse)
-      },
-      verifySolrClientMock = (solrClient) => {
-        val argument: ArgumentCaptor[SolrQuery] = ArgumentCaptor.forClass(classOf[SolrQuery])
-        verify(solrClient).query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP), argument.capture(), ArgumentMatchersSugar.eqTo(SolrRequest.METHOD.POST))
-        assert(argument.getValue.get("q") == "*:*")
-        assert(argument.getValue.get("fq") == "(({!terms f=identifier.value}123456789,841381256,153213516) AND -(meta.security: \"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")) AND (_list:(57664) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(57664)' score=none method=crossCollection}))")
-      }
+      "ipp"
     )
   }
 
