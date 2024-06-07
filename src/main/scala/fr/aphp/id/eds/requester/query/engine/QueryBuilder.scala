@@ -2,6 +2,7 @@ package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
+import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{functions => F}

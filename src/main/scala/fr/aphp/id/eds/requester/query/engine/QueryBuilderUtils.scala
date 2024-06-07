@@ -1,13 +1,9 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
+import fr.aphp.id.eds.requester.QueryColumn
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
-import fr.aphp.id.eds.requester.{QueryColumn, SolrColumn}
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.types.{MapType, ShortType, StringType, StructType}
-import org.apache.spark.sql.{functions => F}
-
-import scala.collection.mutable.ListBuffer
+import org.apache.spark.sql.{DataFrame, functions => F}
 
 class QueryBuilderUtils {
   private val logger = Logger.getLogger(this.getClass)

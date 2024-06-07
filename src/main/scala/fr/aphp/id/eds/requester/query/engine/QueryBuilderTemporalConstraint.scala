@@ -1,6 +1,7 @@
 package fr.aphp.id.eds.requester.query
 
 import fr.aphp.id.eds.requester.query.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
+import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
 import fr.aphp.id.eds.requester.{QueryColumn, SolrColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.catalyst.util.IntervalUtils.makeInterval

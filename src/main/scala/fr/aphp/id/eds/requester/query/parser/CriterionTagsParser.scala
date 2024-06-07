@@ -1,25 +1,11 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.QueryColumn.{
-  ENCOUNTER_END_DATE,
-  ENCOUNTER_START_DATE,
-  EPISODE_OF_CARE,
-  EVENT_DATE
-}
+import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EPISODE_OF_CARE, EVENT_DATE}
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.QueryParser.{
-  DataValueShortList,
-  DataValueString,
-  GenericQuery,
-  GenericTemporalConstraint
-}
-import fr.aphp.id.eds.requester.query.TemporalConstraintType.{
-  DIFFERENT_ENCOUNTER,
-  DIRECT_CHRONOLOGICAL_ORDERING,
-  SAME_ENCOUNTER,
-  SAME_EPISODE_OF_CARE
-}
+import fr.aphp.id.eds.requester.query.QueryParser.{DataValueShortList, DataValueString, GenericQuery, GenericTemporalConstraint}
+import fr.aphp.id.eds.requester.query.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
 import fr.aphp.id.eds.requester._
+import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.

@@ -1,7 +1,6 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.config.JobsConfig
-import fr.aphp.id.eds.requester.jobs.{JobEnv, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobEnv, JobsConfig, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.QueryBuilder
 import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools}
 import org.apache.spark.sql.SparkSession

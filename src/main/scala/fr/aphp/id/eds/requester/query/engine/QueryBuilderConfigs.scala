@@ -1,7 +1,7 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
-import fr.aphp.id.eds.requester.{DATE_COL, ENCOUNTER_COL, ENCOUNTER_DATES_COL, EPISODE_OF_CARE_COL, GROUP_BY_COLUMN, IPP_LIST, PATIENT_COL, QueryColumn, SolrCollection, SolrColumn}
+import fr.aphp.id.eds.requester._
 
 class QueryBuilderConfigs {
 

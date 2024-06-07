@@ -1,4 +1,4 @@
-package fr.aphp.id.eds.requester.config
+package fr.aphp.id.eds.requester.jobs
 
 import fr.aphp.id.eds.requester.{CountQuery, CreateQuery}
 

@@ -169,11 +169,9 @@ object QueryParser {
                          parentTemporalConstraint: Option[List[TemporalConstraint]] = Option.empty)
     : Either[BaseQuery, Request] = {
 
-    def removeEmptyGroup(x: GenericQuery): Boolean = {
-      !(!List("request", "basicResource").contains(x._type) &&
-        !x.criteria
-          .getOrElse(List[GenericQuery]())
-          .exists(x => removeEmptyGroup(x)))
+    def isNotEmptyGroup(x: GenericQuery): Boolean = {
+      List("request", "basicResource").contains(x._type) || (List("andGroup", "orGroup", "nAmongM").contains(x._type) &&
+        x.criteria.getOrElse(List[GenericQuery]()).exists(isNotEmptyGroup))
     }
 
     /** Convert a GenericTemporalConstraint object to a TemporalConstraint */
@@ -258,7 +256,7 @@ object QueryParser {
       // feed the construction of sub criteria with tc with ids (in case they are related to them)
       val criterion = genericQuery.criteria
         .getOrElse(List[GenericQuery]())
-        .filter(x => removeEmptyGroup(x))
+        .filter(isNotEmptyGroup)
         .map(x => specJson(x, tcWithIds).left.get)
       val criterionIds = criterion.map((c) => c.i)
 

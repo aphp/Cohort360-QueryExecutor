@@ -1,8 +1,7 @@
 package fr.aphp.id.eds.requester.server
 
 import com.typesafe.config.ConfigFactory
-import fr.aphp.id.eds.requester.config.JobsConfig
-import fr.aphp.id.eds.requester.jobs.{JobManager, JobResultSerializer, JobType, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobManager, JobResultSerializer, JobType, JobsConfig, SparkJobParameter}
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport

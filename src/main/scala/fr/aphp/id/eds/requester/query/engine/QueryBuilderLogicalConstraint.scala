@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query
 
+import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.{functions => F}

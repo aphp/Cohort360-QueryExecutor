@@ -1,7 +1,6 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.config.JobsConfig
-import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
+import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, JobsConfig, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.QueryBuilder
 import org.apache.spark.sql.{SparkSession, functions}
 import org.apache.spark.sql.functions.col
