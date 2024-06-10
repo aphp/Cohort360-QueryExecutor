@@ -4,8 +4,7 @@ import fr.aphp.id.eds.requester.jobs._
 import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
-import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
-import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SolrTools}
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
@@ -81,7 +80,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     }
 
     def countPatientsInSolr() = {
-      val solr = getSolrClient
+      val solr = new SolrTools(AppConfig.get.solr.get).getSolrClient
       val query =
         new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(request.sourcePopulation))
       val res = solr.query(SolrCollection.PATIENT_APHP, query)

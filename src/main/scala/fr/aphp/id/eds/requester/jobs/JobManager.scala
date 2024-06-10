@@ -31,7 +31,9 @@ class JobManager() {
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
-  sparkSession.sparkContext.addFile(AppConfig.get.solr.auth_file)
+  if (AppConfig.get.solr.isDefined) {
+    sparkSession.sparkContext.addFile(AppConfig.get.solr.get.auth_file)
+  }
 
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {
     val jobId = UUID.randomUUID().toString

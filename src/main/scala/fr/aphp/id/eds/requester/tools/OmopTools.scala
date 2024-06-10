@@ -191,7 +191,12 @@ class OmopTools(pg: PGTool) extends LazyLogging {
   }
 
   private def uploadCohortTableToSolr(cohortDefinitionId: Long, df: DataFrame, count: Long): Unit = {
-    val solrOptions = SolrTools.getSolrConf
+    val solrConf = AppConfig.get.solr
+    if (solrConf.isEmpty) {
+      return
+    }
+    val solrTools = new SolrTools(solrConf.get)
+    val solrOptions = solrTools.getSolrConf
     // Change in the dataframe are not saved, its purpose is only to format the dataframe for Solr
     df.withColumn(
       "id",
@@ -207,7 +212,7 @@ class OmopTools(pg: PGTool) extends LazyLogging {
       .solr("groupAphp")
 
     // check that all replicates of "groupAphp" are update
-    SolrTools.checkReplications(cohortDefinitionId, count)
+    solrTools.checkReplications(cohortDefinitionId, count)
   }
 
 }

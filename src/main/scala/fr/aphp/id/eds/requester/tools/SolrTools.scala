@@ -10,8 +10,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import scala.compat.java8.OptionConverters.RichOptionForJava8
 
 
-object SolrTools extends LazyLogging {
-  private val solrConfig = AppConfig.get.solr
+class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
 
   /** Read SolR passthrough parameters in SJS conf file */
   def getSolrConf: Map[String, String] = {

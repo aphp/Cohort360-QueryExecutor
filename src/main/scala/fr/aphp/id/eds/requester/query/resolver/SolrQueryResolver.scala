@@ -1,18 +1,19 @@
 package fr.aphp.id.eds.requester.query.resolver
 
 import fr.aphp.id.eds.requester.SolrCollection._
-import fr.aphp.id.eds.requester.tools.{JobUtils, SolrTools}
+import fr.aphp.id.eds.requester.tools.SolrTools
+import fr.aphp.id.eds.requester.{FhirResource, SolrConfig}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /** Class for questioning solr. */
-object SolrQueryResolver extends FhirResourceResolver {
+class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
   private val logger = Logger.getLogger(this.getClass)
-  private val solrConf = SolrTools.getSolrConf
+  private val solrConf = new SolrTools(solrConfig).getSolrConf
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
-  def retry[T](n: Int)(fn: => T): T = {
+  private def retry[T](n: Int)(fn: => T): T = {
     util.Try {
       fn
     } match {
@@ -44,4 +45,22 @@ object SolrQueryResolver extends FhirResourceResolver {
     }
     df
   }
+}
+
+object SolrCollections {
+  val mapping: Map[String, String] = Map(
+    FhirResource.PATIENT -> PATIENT_APHP,
+    FhirResource.ENCOUNTER -> ENCOUNTER_APHP,
+    FhirResource.OBSERVATION -> OBSERVATION_APHP,
+    FhirResource.CONDITION -> CONDITION_APHP,
+    FhirResource.PROCEDURE -> PROCEDURE_APHP,
+    FhirResource.DOCUMENT_REFERENCE -> DOCUMENTREFERENCE_APHP,
+    FhirResource.CLAIM -> CLAIM_APHP,
+    FhirResource.COMPOSITION -> COMPOSITION_APHP,
+    FhirResource.GROUP -> GROUP_APHP,
+    FhirResource.MEDICATION_REQUEST -> MEDICATIONREQUEST_APHP,
+    FhirResource.MEDICATION_ADMINISTRATION -> MEDICATIONADMINISTRATION_APHP,
+    FhirResource.IMAGING_STUDY -> IMAGINGSTUDY_APHP,
+    FhirResource.QUESTIONNAIRE_RESPONSE -> QUESTIONNAIRE_RESPONSE_APHP,
+  )
 }

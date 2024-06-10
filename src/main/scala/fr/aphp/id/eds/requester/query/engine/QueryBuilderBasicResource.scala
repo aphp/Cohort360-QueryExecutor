@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 
 class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBuilderConfigs(),
                                 val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-                                val querySolver: FhirResourceResolver = SolrQueryResolver) {
+                                val querySolver: FhirResourceResolver = new SolrQueryResolver(AppConfig.get.solr.get)) {
   val requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] =
     qbConfigs.requestKeyPerCollectionMap
 

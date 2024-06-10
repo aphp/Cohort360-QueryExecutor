@@ -18,6 +18,10 @@ case class SolrConfig(
     auth_file: String
 )
 
+case class FhirServerConfig(
+    url: String
+)
+
 case class PGConfig(
     host: String,
     port: String,
@@ -55,13 +59,24 @@ class AppConfig(conf: Config) {
     conf.getString("spark.driver.host"),
     if (conf.hasPath("spark.executor.memory")) conf.getString("spark.executor.memory") else "1G"
   )
-  val solr: SolrConfig = SolrConfig(
-    conf.getString("solr.zk"),
-    conf.getInt("solr.max_try"),
-    conf.getInt("solr.rows"),
-    conf.getInt("solr.commit_within"),
-    conf.getString("solr.auth_file")
-  )
+  val solr: Option[SolrConfig] = if (conf.hasPath("solr")) {
+    Some(
+      SolrConfig(
+        conf.getString("solr.zk"),
+        conf.getInt("solr.max_try"),
+        conf.getInt("solr.rows"),
+        conf.getInt("solr.commit_within"),
+        conf.getString("solr.auth_file")
+      ))
+  } else {
+    None
+  }
+  val fhir: Option[FhirServerConfig] = if (conf.hasPath("fhir.url")) {
+    Some(
+      FhirServerConfig(
+        conf.getString("fhir.url")
+      ))
+  } else { None }
   val pg: PGConfig = PGConfig(
     conf.getString("postgres.host"),
     conf.getString("postgres.port"),

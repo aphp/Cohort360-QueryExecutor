@@ -1,6 +1,22 @@
 package fr.aphp.id.eds
 
 package object requester {
+  object FhirResource {
+    final val PATIENT = "Patient"
+    final val ENCOUNTER = "Encounter"
+    final val OBSERVATION = "Observation"
+    final val CONDITION = "Condition"
+    final val PROCEDURE = "Procedure"
+    final val DOCUMENT_REFERENCE = "DocumentReference"
+    final val CLAIM = "Claim"
+    final val COMPOSITION = "Composition"
+    final val GROUP = "Group"
+    final val MEDICATION_REQUEST = "MedicationRequest"
+    final val MEDICATION_ADMINISTRATION = "MedicationAdministration"
+    final val IMAGING_STUDY = "ImagingStudy"
+    final val QUESTIONNAIRE_RESPONSE = "QuestionnaireResponse"
+  }
+
   object SolrCollection {
     final val PATIENT_APHP = "patientAphp"
     final val ENCOUNTER_APHP = "encounterAphp"
@@ -52,8 +68,6 @@ package object requester {
 
     object Patient {
       final val BIRTHDATE = "birthdate"
-      final val IDENTIFIER_VALUE = "identifier.value"
-
     }
 
     object Encounter {
