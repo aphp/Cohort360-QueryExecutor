@@ -70,7 +70,7 @@ object QueryParser {
 
   /** The GenericTemporalConstraint class is different from the TemporalConstraint class because Map(_id -> value) makes
     * more sense than a List[Map(_id: ..., value: ...)].
-    * Parameters correspond to the spec that can be found here : https://gitlab.eds.aphp.fr/dev/query-server/suivi-projet/-/wikis/technical_spec_V1.2.1
+    * Parameters correspond to the spec that can be found here : https://gitlab.data.aphp.fr/dev/query-server/suivi-projet/-/wikis/technical_spec_V1.2.1
     *
     * @param idList can be "all" or a list of short. It is the list of criteria id concerned by the constraint.
     * @param constraintType the type of temporal constraint.
