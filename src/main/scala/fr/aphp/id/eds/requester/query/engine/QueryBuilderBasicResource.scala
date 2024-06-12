@@ -1,8 +1,10 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
+import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, SolrQueryResolver}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import org.apache.log4j.Logger

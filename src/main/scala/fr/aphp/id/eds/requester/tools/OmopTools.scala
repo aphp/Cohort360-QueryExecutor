@@ -4,7 +4,7 @@ import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
-import fr.aphp.id.eds.requester.query.SourcePopulation
+import fr.aphp.id.eds.requester.query.model.SourcePopulation
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, functions => F}
 

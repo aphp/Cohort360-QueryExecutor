@@ -1,7 +1,8 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query._
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderGroup, QueryExecutionOptions}
+import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools.getSolrClient
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}

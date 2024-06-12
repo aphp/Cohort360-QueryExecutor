@@ -1,7 +1,9 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query._
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder}
+import fr.aphp.id.eds.requester.query.model.{BasicResource, Request}
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger

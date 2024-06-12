@@ -1,10 +1,10 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.query.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
-import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
-import fr.aphp.id.eds.requester.{QueryColumn, SolrColumn}
+import fr.aphp.id.eds.requester.QueryColumn
+import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
+import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, TemporalConstraint, TemporalConstraintDuration}
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import org.apache.log4j.Logger
-import org.apache.spark.sql.catalyst.util.IntervalUtils.makeInterval
 import org.apache.spark.sql.functions.expr
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}

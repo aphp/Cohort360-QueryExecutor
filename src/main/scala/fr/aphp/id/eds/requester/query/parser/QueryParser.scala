@@ -1,5 +1,6 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.parser
 
+import fr.aphp.id.eds.requester.query.model.{BaseQuery, BasicResource, DateRange, GroupResource, IdWithDateBoolean, IdWithIdBoolean, IdWithString, IdWithStringList, Occurrence, PatientAge, QueryParsingOptions, Request, SourcePopulation, TemporalConstraint, TemporalConstraintDuration}
 import fr.aphp.id.eds.requester.{IPP_LIST, SolrCollection}
 import org.apache.log4j.Logger
 import play.api.libs.json.{JsArray, JsBoolean, JsResult, JsString, JsSuccess, JsValue, Json, Reads}
@@ -19,7 +20,7 @@ object QueryParser {
   implicit lazy val idWithDateBooleanReads: Reads[IdWithDateBoolean] =
     Json.reads[IdWithDateBoolean]
 
-  /** Required to map a json to a "Either[String, List[Short]]" object */
+  /** Required to map a json to a `Either[String, List[Short]]` object */
   sealed trait DataValue
   case class DataValueString(s: String) extends DataValue
   case class DataValueShortList(iList: List[Short]) extends DataValue
@@ -34,7 +35,7 @@ object QueryParser {
     }
   }
 
-  /** Required to map a json to a "Either[Boolean, List[Obj[Short, Boolean]]" object */
+  /** Required to map a json to a `Either[Boolean, List[Obj[Short, Boolean]]` object */
   sealed trait BoolValueId
   case class BoolValueIdOnly(s: Boolean) extends BoolValueId
   case class BoolValueIdList(iList: List[IdWithIdBoolean]) extends BoolValueId
@@ -112,7 +113,7 @@ object QueryParser {
     * @param nAmongMOptions specific options for nAmongM groups
     * @param sourcePopulation specific object with origin caresite and provider cohorts on which the cohort is built
     * @param nullAvailableFieldList list of string that can be null in the request.
-    * @param dateRange required date min and/or max of occurrences for a basic ressource
+    * @param dateRangeList required date min and/or max of occurrences for a basic ressource
     * */
   case class GenericQuery(_type: String,
                           _id: Option[Short],
@@ -153,13 +154,12 @@ object QueryParser {
     val cohortRequestOption =
       Json.parse(cohortDefinitionSyntaxJsonString).validate[GenericQuery]
     val cohortRequest = cohortRequestOption.get
+    val request = specJson(cohortRequest).right.get
     val criterionTagsMap =
       CriterionTagsParser.getCriterionTagsMap(
-        cohortRequest,
-        Map[Short, CriterionTags](),
-        requestOrganizations = options.withOrganizationDetails
+        request,
+        options.withOrganizationDetails
       )
-    val request = specJson(cohortRequest).right.get
     if (logger.isDebugEnabled)
       logger.debug(s"Json parsed : request=${request}, criterionIdWithTcMap=${criterionTagsMap}")
     (request, criterionTagsMap)
@@ -276,7 +276,7 @@ object QueryParser {
       val temporalConstraints = tcForAll.getOrElse(List()) ++ groupTcWithIds
 
       GroupResource(
-        _type = genericQuery._type,
+        groupType = genericQuery._type,
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,
         criteria = criterion,

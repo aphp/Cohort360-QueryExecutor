@@ -3,6 +3,8 @@ package fr.aphp.id.eds.requester.tools
 import fr.aphp.id.eds.requester.AppConfig
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
+import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType, QueryParsingOptions, Request, SourcePopulation}
+import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
@@ -102,7 +104,7 @@ object JobUtils extends JobUtilsService {
   }
 
   def addEmptyGroup(allTabooId: List[Short]): BaseQuery = {
-    GroupResource(_type = GroupResourceType.AND,
+    GroupResource(groupType = GroupResourceType.AND,
       _id = getRandomIdNotInTabooList(allTabooId),
       isInclusive = true,
       criteria = List())

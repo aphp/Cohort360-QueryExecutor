@@ -1,11 +1,11 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
+import fr.aphp.id.eds.requester.query.model.{GroupResource, GroupResourceType, Request}
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools}
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.{functions => F}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 trait QueryBuilder {
 
@@ -48,7 +48,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
     val (root, updatedCriteriontagsMap) = if (!request.request.get.IsInclusive) {
       val criteriaId = jobUtilsService.getRandomIdNotInTabooList(List(request.request.get.i))
       (GroupResource(
-        _type = GroupResourceType.AND,
+        groupType = GroupResourceType.AND,
         _id = criteriaId,
         isInclusive = true,
         criteria = List(request.request.get)

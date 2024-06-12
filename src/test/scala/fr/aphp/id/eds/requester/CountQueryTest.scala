@@ -1,9 +1,9 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, JobsConfig, SparkJobParameter}
-import fr.aphp.id.eds.requester.query.QueryBuilder
-import org.apache.spark.sql.{SparkSession, functions}
+import fr.aphp.id.eds.requester.query.engine.QueryBuilder
 import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.{SparkSession, functions}
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.Mockito.when
 import org.mockito.MockitoSugar.mock

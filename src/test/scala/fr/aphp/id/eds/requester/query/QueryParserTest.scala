@@ -1,11 +1,12 @@
 package fr.aphp.id.eds.requester.query
 
-import fr.aphp.id.eds.requester.query.TemporalConstraintType.SAME_ENCOUNTER
+import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.SAME_ENCOUNTER
+import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource, QueryParsingOptions}
+import fr.aphp.id.eds.requester.query.parser.QueryParser
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-import scala.List
 import scala.io.Source
 
 class QueryParserTest extends AnyFunSuiteLike {

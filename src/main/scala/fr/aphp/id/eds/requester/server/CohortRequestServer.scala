@@ -6,9 +6,9 @@ import javax.servlet.ServletContext
 
 
 class CohortRequestServer extends LifeCycle {
-  implicit val swagger = new CohortRequesterSwagger
+  implicit val swagger: CohortRequesterSwagger = new CohortRequesterSwagger
 
-  override def init(context: ServletContext) = {
+  override def init(context: ServletContext): Unit = {
     context mount (new HealthController, "/")
     context mount (new JobController, "/jobs")
     context.mount (new SwaggerController, "/api-docs")

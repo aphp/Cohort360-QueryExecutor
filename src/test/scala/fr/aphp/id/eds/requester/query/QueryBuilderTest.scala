@@ -1,6 +1,9 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup}
+import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
+import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
 import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
 import org.apache.spark.sql.{DataFrame, SparkSession}

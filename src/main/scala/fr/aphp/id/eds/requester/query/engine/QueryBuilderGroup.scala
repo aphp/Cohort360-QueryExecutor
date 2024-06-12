@@ -1,7 +1,8 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.SolrColumn
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
+import fr.aphp.id.eds.requester.query.model._
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQueryPatientAphp
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools, SparkTools}
 import org.apache.log4j.Logger

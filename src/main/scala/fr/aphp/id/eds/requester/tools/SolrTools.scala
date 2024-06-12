@@ -89,8 +89,7 @@ object SolrTools extends LazyLogging {
     }
   }
 
-
-  def warnDownNodes(shards: scala.collection.Map[String, JsValue]): Unit = {
+  private def warnDownNodes(shards: scala.collection.Map[String, JsValue]): Unit = {
     val urlsNodeDown: List[String] = shards
       .flatMap(shard =>
         shard._2

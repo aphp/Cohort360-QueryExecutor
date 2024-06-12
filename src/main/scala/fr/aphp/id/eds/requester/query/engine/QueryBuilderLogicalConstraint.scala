@@ -1,6 +1,8 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
+import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType}
+import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import org.apache.log4j.Logger
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.{functions => F}

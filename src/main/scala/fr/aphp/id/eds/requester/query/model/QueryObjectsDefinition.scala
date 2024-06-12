@@ -1,6 +1,8 @@
-package fr.aphp.id.eds.requester.query
+package fr.aphp.id.eds.requester.query.model
 
-abstract class BaseQuery(_type: String, _id: Short, isInclusive: Boolean) {
+import fr.aphp.id.eds.requester.jobs.ResourceType
+
+abstract class BaseQuery(val _type: String, _id: Short, isInclusive: Boolean) {
   val i: Short = _id
   val IsInclusive: Boolean = isInclusive
 }
@@ -46,13 +48,13 @@ case class TemporalConstraint(
                                dateIsNotNull: Option[Either[Boolean, Map[Short, Boolean]]], // true
                                filteredCriteriaId: Option[Either[String, List[Short]]]) // "all"
 
-case class GroupResource(_type: String,
+case class GroupResource(groupType: String,
                          _id: Short,
                          isInclusive: Boolean,
                          criteria: List[BaseQuery],
                          temporalConstraints: Option[List[TemporalConstraint]] = None,
                          nAmongMOptions: Option[Occurrence] = None)
-  extends BaseQuery(_type, _id, isInclusive) {
+  extends BaseQuery(groupType, _id, isInclusive) {
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
 }
 
@@ -81,7 +83,7 @@ case class TemporalConstraintDuration(
 case class SourcePopulation(caresiteCohortList: Option[List[Int]],
                             providerCohortList: Option[List[Int]])
 
-case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery], resourceType: String = "Patient")
+case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery], resourceType: String = ResourceType.patient)
 
 case class QueryParsingOptions(withOrganizationDetails: Boolean = false)
 
