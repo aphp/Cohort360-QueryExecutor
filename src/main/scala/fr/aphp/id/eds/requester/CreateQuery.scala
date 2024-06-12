@@ -31,7 +31,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       runtime: JobEnv,
       data: SparkJobParameter
   ): JobBaseResult = {
-    implicit val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
+    implicit val (request, criterionTagsMap, omopTools, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     validateRequestOrThrow(request)
@@ -48,7 +48,6 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       else (request, criterionTagsMap)
 
     var cohort = queryBuilder.processRequest(spark,
-                                             solrConf,
                                              completeRequest,
                                              completedCriterionTagsMap,
                                              omopTools,

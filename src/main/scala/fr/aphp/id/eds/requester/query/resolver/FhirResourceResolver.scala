@@ -7,7 +7,6 @@ abstract class FhirResourceResolver {
                                requestedFields: String,
                                requestFilter: String)(
       implicit spark: SparkSession,
-      solrConf: Map[String, String],
       resourceId: Short = -1,
   ): DataFrame
 

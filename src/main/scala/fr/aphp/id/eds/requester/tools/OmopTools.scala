@@ -10,10 +10,9 @@ import org.apache.spark.sql.{DataFrame, functions => F}
 
 /**
   * @param pg           pgTool obj
-  * @param solrOptions  Solr configs dictionary
   * @todo use of parametrized queries instead of scala string which is not securized
   */
-class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLogging {
+class OmopTools(pg: PGTool) extends LazyLogging {
   private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName
   private final val cohort_table_rw = AppConfig.get.business.cohorts.cohortTableName
   private final val cohort_provider_name = AppConfig.get.business.cohorts.cohortProviderName
@@ -192,6 +191,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
   }
 
   private def uploadCohortTableToSolr(cohortDefinitionId: Long, df: DataFrame, count: Long): Unit = {
+    val solrOptions = SolrTools.getSolrConf
     // Change in the dataframe are not saved, its purpose is only to format the dataframe for Solr
     df.withColumn(
       "id",
@@ -207,7 +207,7 @@ class OmopTools(pg: PGTool, solrOptions: Map[String, String]) extends LazyLoggin
       .solr("groupAphp")
 
     // check that all replicates of "groupAphp" are update
-    SolrTools.checkReplications(cohortDefinitionId, solrOptions, count)
+    SolrTools.checkReplications(cohortDefinitionId, count)
   }
 
 }

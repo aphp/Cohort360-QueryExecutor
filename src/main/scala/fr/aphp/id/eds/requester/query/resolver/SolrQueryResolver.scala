@@ -1,11 +1,14 @@
 package fr.aphp.id.eds.requester.query.resolver
 
+import fr.aphp.id.eds.requester.SolrCollection._
+import fr.aphp.id.eds.requester.tools.{JobUtils, SolrTools}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /** Class for questioning solr. */
 object SolrQueryResolver extends FhirResourceResolver {
   private val logger = Logger.getLogger(this.getClass)
+  private val solrConf = SolrTools.getSolrConf
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -20,11 +23,10 @@ object SolrQueryResolver extends FhirResourceResolver {
     }
   }
 
-  def getSolrResponseDataFrame(resourceType: String,
-                               requestedFields: String,
-                               requestFilter: String)(implicit spark: SparkSession,
-                                                      solrConf: Map[String, String],
-                                                      resourceId: Short): DataFrame = {
+  def getSolrResponseDataFrame(
+      resourceType: String,
+      requestedFields: String,
+      requestFilter: String)(implicit spark: SparkSession, resourceId: Short): DataFrame = {
     import com.lucidworks.spark.util.SolrDataFrameImplicits._
     logger.info(
       s"SolR REQUEST: ${Map("collection" -> resourceType, "fields" -> requestedFields, "solr.params" -> requestFilter)}")

@@ -23,7 +23,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
 
   /** The recursive function that can process nested basicResource or group criteria.
     *
-    * @param solrConf                          solr configs extracted from SJS config
     * @param criterion                         the criterion
     * @param criterionWithTcList               list of criterion id concerned by a tc
     * @param sourcePopulation                  caresite and provider source population
@@ -37,7 +36,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     * @param cacheNestedGroup                  whether to cache nested groups or not
     * */
   def processSubrequest(spark: SparkSession,
-                        solrConf: Map[String, String],
                         criterion: BaseQuery,
                         sourcePopulation: SourcePopulation,
                         criterionTagsMap: Map[Short, CriterionTags],
@@ -48,7 +46,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     criterion match {
       case res: BasicResource =>
         qbBasicResource.processFhirRessource(spark,
-                                             solrConf,
                                              sourcePopulation,
                                              criterionTagsMap(res._id),
                                              res)
@@ -68,7 +65,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
             case _ =>
               logger.debug("DF not found in cache")
               val groupDataFrame = processRequestGroup(spark,
-                                                       solrConf,
                                                        criterionTagsMap,
                                                        sourcePopulation,
                                                        omopTools,
@@ -80,7 +76,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
           }
         } else {
           processRequestGroup(spark,
-                              solrConf,
                               criterionTagsMap,
                               sourcePopulation,
                               omopTools,
@@ -134,7 +129,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
   /** Compute the resulting df of a criteria which is a group of criteria
     *
     * @param groupResource                             the group object
-    * @param solrConf                          solr configs extracted from SJS config
     * @param criterionWithTcList     list of criterion id concerned by a tc
     * @param sourcePopulation                 caresite and provider source population
     * @param tagsPerId                  map linking id to their tags info.
@@ -143,7 +137,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     * @param cacheNestedGroup                  whether it is the top level request or not.
     * */
   def processRequestGroup(spark: SparkSession,
-                          solrConf: Map[String, String],
                           criterionTagsMap: Map[Short, CriterionTags],
                           sourcePopulation: SourcePopulation,
                           omopTools: OmopTools,
@@ -175,7 +168,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     val dataFramePerIdMap = computeCriteria(
       spark,
       criteria,
-      solrConf,
       completedCriterionTagsMap,
       sourcePopulation,
       omopTools,
@@ -222,7 +214,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
   /** Recover df of each criteria in the group.
     *
     * @param criteria                          list of criteria of the group
-    * @param solrConf                          solr configs extracted from SJS config
     * @param criterionTagsMap               map linking id to their tags info.
     * @param dataFramePerIdMap                        map linking id to their corresponding df
     * @param datePreferencePerIdList list of criterion id concerned by a tc
@@ -231,7 +222,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     * */
   private def computeCriteria(implicit spark: SparkSession,
                               criteria: List[BaseQuery],
-                              solrConf: Map[String, String],
                               criterionTagsMap: Map[Short, CriterionTags],
                               sourcePopulation: SourcePopulation,
                               omopTools: OmopTools,
@@ -240,7 +230,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     var dataFramePerIdMapTmp = Map[Short, DataFrame]()
     for (criterion <- criteria) {
       val criterionDataframe = processSubrequest(spark,
-                                                 solrConf,
                                                  criterion,
                                                  sourcePopulation,
                                                  criterionTagsMap,

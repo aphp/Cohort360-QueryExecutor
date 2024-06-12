@@ -448,7 +448,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
   }
 
   def processFhirRessource(implicit spark: SparkSession,
-                           solrConf: Map[String, String],
                            sourcePopulation: SourcePopulation,
                            criterionTags: CriterionTags,
                            basicResource: BasicResource): DataFrame = {
@@ -470,7 +469,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     var criterionDataFrame: DataFrame =
       querySolver.getSolrResponseDataFrame(basicResource.resourceType,
                                            solrFilterList,
-                                           solrFilterQuery)(spark, solrConf, criterionId)
+                                           solrFilterQuery)(spark, criterionId)
     criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
     if (logger.isDebugEnabled) {
       logger.debug(

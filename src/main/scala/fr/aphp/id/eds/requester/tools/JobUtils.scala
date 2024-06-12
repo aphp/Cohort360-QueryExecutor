@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.AppConfig
+import fr.aphp.id.eds.requester.{AppConfig, SolrConfig}
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query._
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType, QueryParsingOptions, Request, SourcePopulation}
@@ -14,12 +14,11 @@ trait JobUtilsService {
                           spark: SparkSession,
                           runtime: JobEnv,
                           data: SparkJobParameter)
-  : (Request, Map[Short, CriterionTags], Map[String, String], OmopTools, Boolean) = {
+  : (Request, Map[Short, CriterionTags], OmopTools, Boolean) = {
     logger.debug(s"Received data: ${data.toString}")
 
     // init db connectors
-    val solrConf: Map[String, String] = getSolrConf(runtime)
-    val omopTools = getOmopTools(spark, runtime, solrConf)
+    val omopTools = getOmopTools(spark, runtime)
 
     // load input json into object
     val (request, criterionTagsMap) = QueryParser.parse(
@@ -31,14 +30,11 @@ trait JobUtilsService {
 
     (request,
       criterionTagsMap,
-      solrConf,
       omopTools,
       runtime.contextConfig.business.enableCache)
   }
 
-  def getOmopTools(session: SparkSession, env: JobEnv, stringToString: Map[String, String]): OmopTools
-
-  def getSolrConf(env: JobEnv): Map[String, String]
+  def getOmopTools(session: SparkSession, env: JobEnv): OmopTools
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short
 }
@@ -46,7 +42,7 @@ trait JobUtilsService {
 object JobUtils extends JobUtilsService {
 
   /** Read Postgresql passthrough parameters in SJS conf file */
-  override def getOmopTools(spark: SparkSession, runtime: JobEnv, solrConf: Map[String, String]): OmopTools = {
+  override def getOmopTools(spark: SparkSession, runtime: JobEnv): OmopTools = {
     val pgHost = runtime.contextConfig.pg.host
     val pgPort = runtime.contextConfig.pg.port
     val pgDb = runtime.contextConfig.pg.database
@@ -57,30 +53,8 @@ object JobUtils extends JobUtilsService {
         spark,
         s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=$pgSchema,public",
         "/tmp/postgres-spark-job"
-      ),
-      solrConf
+      )
     )
-
-  }
-
-  /** Read SolR passthrough parameters in SJS conf file */
-  override def getSolrConf(runtime: JobEnv): Map[String, String] = {
-    val zkHost = runtime.contextConfig.solr.zk
-    val maxSolrTry = runtime.contextConfig.solr.max_try
-    val rows = runtime.contextConfig.solr.rows
-    val commitWithin = runtime.contextConfig.solr.commit_within
-
-    val options = Map(
-      "zkhost" -> zkHost,
-      "batch_size" -> "10000",
-      "timezone_id" -> "Europe/Paris",
-      "request_handler" -> "/export",
-      "flatten_multivalued" -> "false",
-      "rows" -> rows.toString,
-      "commit_within" -> commitWithin.toString,
-      "max_solr_try" -> maxSolrTry.toString
-    )
-    options
   }
 
   def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {

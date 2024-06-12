@@ -1,7 +1,11 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup}
+import fr.aphp.id.eds.requester.query.engine.{
+  DefaultQueryBuilder,
+  QueryBuilderBasicResource,
+  QueryBuilderGroup
+}
 import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
@@ -20,11 +24,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     .master("local[*]")
     .getOrCreate()
 
-  def testCaseEvaluate(
-      folderCase: String,
-      withOrganizationsDetail: Boolean = false,
-      checkOrder: Boolean = true)
-    : DataFrame = {
+  def testCaseEvaluate(folderCase: String,
+                       withOrganizationsDetail: Boolean = false,
+                       checkOrder: Boolean = true): DataFrame = {
     val solrQueryResolver: FhirResourceResolver = mock[FhirResourceResolver]
     val expected = getClass.getResource(s"/testCases/$folderCase/expected.csv")
     val expectedResult = sparkSession.read
@@ -56,7 +58,6 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
                                                      ArgumentMatchersSugar.*,
                                                      ArgumentMatchersSugar.*)(
             ArgumentMatchersSugar.*,
-            ArgumentMatchersSugar.*,
             ArgumentMatchersSugar.eqTo(
               f.getName.replace("resource_", "").replace(".csv", "").toInt.toShort))).thenReturn(
           resourceContent
@@ -67,10 +68,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
 
     val result = new DefaultQueryBuilder(jobUtilsService).processRequest(
       sparkSession,
-      Map("zkhost" -> "dummy"),
       request._1,
       request._2,
-      new OmopTools(mock[PGTool], Map()),
+      new OmopTools(mock[PGTool]),
       "",
       false,
       withOrganizationsDetail,

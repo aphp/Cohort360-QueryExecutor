@@ -1,6 +1,7 @@
 package fr.aphp.id.eds.requester.tools
 
 import com.typesafe.scalalogging.LazyLogging
+import fr.aphp.id.eds.requester.{AppConfig, SolrConfig}
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.impl.{CloudSolrClient, HttpSolrClient}
 import org.apache.solr.client.solrj.request.CollectionAdminRequest
@@ -10,18 +11,41 @@ import scala.compat.java8.OptionConverters.RichOptionForJava8
 
 
 object SolrTools extends LazyLogging {
+  private val solrConfig = AppConfig.get.solr
 
-  def getSolrClient(zkHostString: String): CloudSolrClient = {
+  /** Read SolR passthrough parameters in SJS conf file */
+  def getSolrConf: Map[String, String] = {
+    val zkHost = solrConfig.zk
+    val maxSolrTry = solrConfig.max_try
+    val rows = solrConfig.rows
+    val commitWithin = solrConfig.commit_within
+
+    val options = Map(
+      "zkhost" -> zkHost,
+      "batch_size" -> "10000",
+      "timezone_id" -> "Europe/Paris",
+      "request_handler" -> "/export",
+      "flatten_multivalued" -> "false",
+      "rows" -> rows.toString,
+      "commit_within" -> commitWithin.toString,
+      "max_solr_try" -> maxSolrTry.toString
+    )
+    options
+  }
+
+  def getSolrClient: CloudSolrClient = {
     import scala.collection.JavaConverters._
-    val zkHostList = zkHostString.split(",").toList.asJava
+    val zkHostList = solrConfig.zk.split(",").toList.asJava
     new CloudSolrClient.Builder(zkHostList, (None: Option[String]).asJava)
       .build()
   }
 
+
+
   /**
     * Check cohort creation
     */
-  def checkReplications(cohortDefinitionId: Long, solrConf: Map[String, String], cohortCount: Long): Unit = {
+  def checkReplications(cohortDefinitionId: Long, cohortCount: Long): Unit = {
     def validateReplications(groupId: Long, urls: List[String]): Boolean = {
       val counts: List[Long] = urls.map(url => {
         val solrServer = new HttpSolrClient.Builder(url).build
@@ -41,7 +65,7 @@ object SolrTools extends LazyLogging {
 
     logger.debug("[checking cohort creation] originalCounter = %s".format(cohortCount))
     if (cohortCount != 0) {
-      val client = getSolrClient(solrConf("zkhost"))
+      val client = getSolrClient
       val request = new CollectionAdminRequest.ClusterStatus()
       val response = client.request(request)
 

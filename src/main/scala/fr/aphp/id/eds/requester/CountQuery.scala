@@ -36,7 +36,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                       runtime: JobEnv,
                       data: SparkJobParameter): JobBaseResult = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
-    val (request, criterionTagsMap, solrConf, omopTools, cacheEnabled) =
+    val (request, criterionTagsMap, omopTools, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     def isGroupResourceAndHasCriteria =
@@ -56,7 +56,6 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       val resultDf = queryBuilder
         .processRequest(
           spark,
-          solrConf,
           request,
           criterionTagsMap,
           omopTools,
@@ -82,7 +81,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     }
 
     def countPatientsInSolr() = {
-      val solr = getSolrClient(solrConf("zkhost"))
+      val solr = getSolrClient
       val query =
         new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(request.sourcePopulation))
       val res = solr.query(SolrCollection.PATIENT_APHP, query)
