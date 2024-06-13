@@ -3,10 +3,9 @@ package fr.aphp.id.eds.requester
 import fr.aphp.id.eds.requester.jobs._
 import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
-import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
-import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SolrTools}
+import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolverFactory
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
-import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, explode}
 
@@ -79,17 +78,13 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       count
     }
 
-    def countPatientsInSolr() = {
-      val solr = new SolrTools(AppConfig.get.solr.get).getSolrClient
-      val query =
-        new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(request.sourcePopulation))
-      val res = solr.query(SolrCollection.PATIENT_APHP, query)
-      solr.close()
-      res.getResults.getNumFound
+    def countPatientsWithResolver() = {
+      FhirResourceResolverFactory.getDefault
+        .countPatients(request.sourcePopulation)
     }
 
     def countPatientsInQuery() = {
-      if (theRequestHasAtLeastOneCriteria()) countPatientsWithSpark() else countPatientsInSolr()
+      if (theRequestHasAtLeastOneCriteria()) countPatientsWithSpark() else countPatientsWithResolver()
     }
 
     if (request.sourcePopulation.caresiteCohortList.isEmpty)

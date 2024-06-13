@@ -6,7 +6,7 @@ import fr.aphp.id.eds.requester.query.engine.{
   QueryBuilderBasicResource,
   QueryBuilderGroup
 }
-import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
+import fr.aphp.id.eds.requester.query.model.{BasicResource, QueryParsingOptions}
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
 import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
@@ -48,18 +48,19 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     new java.io.File(folder).listFiles
       .filter(_.getName.startsWith("resource_"))
       .foreach((f) => {
+        val criterionId = f.getName.replace("resource_", "").replace(".csv", "").toInt.toShort
         val resourceContent = sparkSession.read
           .format("csv")
           .option("delimiter", ";")
           .option("header", "true")
           .load(f.getPath)
         when(
-          solrQueryResolver.getSolrResponseDataFrame(ArgumentMatchersSugar.*,
-                                                     ArgumentMatchersSugar.*,
-                                                     ArgumentMatchersSugar.*)(
+          solrQueryResolver.getSolrResponseDataFrame(
+            ArgumentMatchersSugar.argThat((res: BasicResource) => res._id == criterionId),
             ArgumentMatchersSugar.*,
-            ArgumentMatchersSugar.eqTo(
-              f.getName.replace("resource_", "").replace(".csv", "").toInt.toShort))).thenReturn(
+            ArgumentMatchersSugar.*)(
+            ArgumentMatchersSugar.*
+          )).thenReturn(
           resourceContent
         )
       })

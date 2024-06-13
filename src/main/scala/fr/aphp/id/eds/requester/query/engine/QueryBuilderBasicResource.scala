@@ -2,11 +2,9 @@ package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester._
-import fr.aphp.id.eds.requester.query.engine.{QueryBuilderConfigs, QueryBuilderUtils}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, SolrQueryResolver}
-import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
@@ -14,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 
 class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBuilderConfigs(),
                                 val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-                                val querySolver: FhirResourceResolver = new SolrQueryResolver(AppConfig.get.solr.get)) {
+                                val querySolver: FhirResourceResolver = FhirResourceResolverFactory.getDefault) {
   val requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] =
     qbConfigs.requestKeyPerCollectionMap
 
@@ -403,50 +401,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     } else criterionDataFrame
   }
 
-  private def getSolrFilterQuery(sourcePopulation: SourcePopulation,
-                                 basicResource: BasicResource): String = {
-    def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
-      if (solrFilterQuery == null || solrFilterQuery.isEmpty) {
-        return s"fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
-      }
-      s"$solrFilterQuery&fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
-    }
-
-    addDefaultCohortFqParameter(basicResource.filter)
-  }
-
-  /**
-    * Determines the field names to ask for solr.
-    * */
-  def getSolrFilterList(criterionTags: CriterionTags, isPatientAgeConstraint: Boolean): String = {
-    val collectionName: String = criterionTags.resourceType
-    val fieldsPerCollectionMap = qbConfigs.requestKeyPerCollectionMap(collectionName)
-
-    def addRequiredFields(requestedAttributes: List[String]): List[String] = {
-      requestedAttributes ++ criterionTags.requiredSolrFieldList
-    }
-
-    def addPatientAgeRequiredAttributes(requestedAttributes: List[String]): List[String] = {
-      if (isPatientAgeConstraint) {
-        collectionName match {
-          case SolrCollection.PATIENT_APHP => SolrColumn.Patient.BIRTHDATE :: requestedAttributes
-          case _                           => SolrColumn.PATIENT_BIRTHDATE :: requestedAttributes
-        }
-      } else requestedAttributes
-    }
-
-    val requestedSolrFields = addPatientAgeRequiredAttributes(
-      addRequiredFields(
-        fieldsPerCollectionMap.getOrElse(PATIENT_COL, List[String]())
-      )
-    )
-    if (logger.isDebugEnabled) {
-      logger.debug(s"requested fields for $collectionName: $requestedSolrFields")
-    }
-
-    requestedSolrFields.mkString(",")
-  }
-
   def processFhirRessource(implicit spark: SparkSession,
                            sourcePopulation: SourcePopulation,
                            criterionTags: CriterionTags,
@@ -462,14 +416,8 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
                                                         .getOrganizationsColumn(criterionId))
                                                   else List())
 
-    val solrFilterList = getSolrFilterList(criterionTags, basicResource.patientAge.isDefined)
-    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, basicResource)
-
     // Solr request
-    var criterionDataFrame: DataFrame =
-      querySolver.getSolrResponseDataFrame(basicResource.resourceType,
-                                           solrFilterList,
-                                           solrFilterQuery)(spark, criterionId)
+    var criterionDataFrame: DataFrame = querySolver.getSolrResponseDataFrame(basicResource, criterionTags, sourcePopulation)
     criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
     if (logger.isDebugEnabled) {
       logger.debug(

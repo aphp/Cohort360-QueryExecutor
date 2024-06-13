@@ -59,6 +59,7 @@ class AppConfig(conf: Config) {
     conf.getString("spark.driver.host"),
     if (conf.hasPath("spark.executor.memory")) conf.getString("spark.executor.memory") else "1G"
   )
+  val defaultResolver: String = conf.getString("app.defaultResolver")
   val solr: Option[SolrConfig] = if (conf.hasPath("solr")) {
     Some(
       SolrConfig(
