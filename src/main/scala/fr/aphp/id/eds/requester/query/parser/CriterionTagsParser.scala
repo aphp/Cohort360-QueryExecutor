@@ -19,7 +19,7 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
                     val isEpisodeOfCareAvailable: Boolean,
                     val isInTemporalConstraint: Boolean,
                     val temporalConstraintTypeList: List[String] = List[String](),
-                    val resourceType: String = "default",
+                    val resourceType: String = FhirResource.UNKNOWN,
                     val requiredSolrFieldList: List[String] = List[String](),
                     val isResourceFilter: Boolean = false,
                     val withOrganizations: Boolean = false,
@@ -130,7 +130,7 @@ object CriterionTagsParser {
                                                      collection: String,
                                                      criterion: BaseQuery): List[String] = {
       var normalizedDatePreferenceList: List[String] =
-        if (collection == SolrCollection.DEFAULT) List[String]()
+        if (collection == FhirResource.UNKNOWN) List[String]()
         else if (!isTemporalConstraintAboutDateTime) List(ENCOUNTER_ID)
         else {
           if (temporalConstraint.datePreference.isDefined) {

@@ -2,6 +2,7 @@ package fr.aphp.id.eds
 
 package object requester {
   object FhirResource {
+    final val UNKNOWN = "unknown"
     final val PATIENT = "Patient"
     final val ENCOUNTER = "Encounter"
     final val OBSERVATION = "Observation"
@@ -31,7 +32,6 @@ package object requester {
     final val MEDICATIONADMINISTRATION_APHP = "medicationAdministrationAphp"
     final val IMAGINGSTUDY_APHP = "imagingStudyAphp"
     final val QUESTIONNAIRE_RESPONSE_APHP = "questionnaireResponseAphp"
-    final val DEFAULT = "default"
 
   }
 

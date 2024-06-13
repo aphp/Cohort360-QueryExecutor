@@ -1,10 +1,11 @@
 package fr.aphp.id.eds.requester.query.parser
 
-import fr.aphp.id.eds.requester.query.model.{BaseQuery, BasicResource, DateRange, GroupResource, IdWithDateBoolean, IdWithIdBoolean, IdWithString, IdWithStringList, Occurrence, PatientAge, QueryParsingOptions, Request, SourcePopulation, TemporalConstraint, TemporalConstraintDuration}
-import fr.aphp.id.eds.requester.{IPP_LIST, SolrCollection}
+import fr.aphp.id.eds.requester.query.model._
+import fr.aphp.id.eds.requester.query.resolver.SolrCollections
+import fr.aphp.id.eds.requester.{FhirResource, IPP_LIST}
 import org.apache.log4j.Logger
-import play.api.libs.json.{JsArray, JsBoolean, JsResult, JsString, JsSuccess, JsValue, Json, Reads}
 import org.json4s.jackson.Serialization
+import play.api.libs.json._
 
 /** The QueryParser aimed at parsing the json query in string format to extract some info and map the json to an object structure */
 object QueryParser {
@@ -138,8 +139,8 @@ object QueryParser {
     * Extracts also the "request" object.
     * */
   def parse(cohortDefinitionSyntaxJsonString: String, options: QueryParsingOptions = QueryParsingOptions()): (Request, Map[Short, CriterionTags]) = {
-    import play.api.libs.json._
     import org.json4s._
+    import play.api.libs.json._
     implicit val formats = Serialization.formats(NoTypeHints)
 
     implicit lazy val occurrenceReads = Json.reads[Occurrence]
@@ -229,11 +230,21 @@ object QueryParser {
       )
     }
 
+    // Compatibility with old resourceType
+    // TODO remove this when django doesn't replace the resourceType anymore
+    def tmpCompatOldResourceType(resourceType: String): String = {
+      if (SolrCollections.reverseMapping.contains(resourceType)) {
+        SolrCollections.reverseMapping(resourceType)
+      } else {
+        resourceType
+      }
+    }
+
     def loadBasicResource(genericQuery: GenericQuery): BasicResource = {
       BasicResource(
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,
-        resourceType = if (genericQuery.resourceType.get == IPP_LIST) SolrCollection.PATIENT_APHP else genericQuery.resourceType.get,
+        resourceType = tmpCompatOldResourceType(if (genericQuery.resourceType.get == IPP_LIST) FhirResource.PATIENT else genericQuery.resourceType.get),
         filter = genericQuery.filterSolr.getOrElse(genericQuery.filterFhir.get),
         occurrence = genericQuery.occurrence,
         patientAge = genericQuery.patientAge,

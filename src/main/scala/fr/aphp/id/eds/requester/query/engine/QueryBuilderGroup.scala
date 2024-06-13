@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.SolrColumn
+import fr.aphp.id.eds.requester.{FhirResource, SolrColumn}
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQueryPatientAphp
@@ -97,7 +97,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
       List(
         BasicResource(newCriterionIdList,
                       isInclusive = true,
-                      "patientAphp",
+                      FhirResource.PATIENT,
                       defaultSolrFilterQuery,
                       None,
                       None,
@@ -119,7 +119,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
           false,
           false,
           List[String](),
-          "patientAphp",
+          FhirResource.PATIENT,
           if (options.withOrganizations) { List(SolrColumn.ORGANIZATIONS) } else List[String](),
           withOrganizations = options.withOrganizations,
         ))

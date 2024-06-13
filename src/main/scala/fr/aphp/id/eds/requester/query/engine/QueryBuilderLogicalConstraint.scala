@@ -20,7 +20,7 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
                                             groupId: Short,
                                             inclusionCriteriaIdList: List[Short]): DataFrame = {
     groupResource._type match {
-      case "andGroup" =>
+      case GroupResourceType.AND =>
         joinInclusionCriteriaForAndGroup(groupIdColumnName,
                                          groupId,
                                          groupResource,

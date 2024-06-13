@@ -1,6 +1,6 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.ResultColumn
+import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model.{GroupResource, GroupResourceType, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
@@ -55,7 +55,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
           false,
           false,
           List[String](),
-          "patientAphp",
+          FhirResource.PATIENT,
           List[String]())))
     } else {
       (request.request.get, criterionTagsMap)

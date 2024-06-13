@@ -36,15 +36,16 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
                                 sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
     val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
+    val solrCollection = SolrCollections.mapping.getOrElse(resource.resourceType, throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
     logger.info(
-      s"SolR REQUEST: ${Map("collection" -> resource.resourceType, "fields" -> solrFilterList, "solr.params" -> solrFilterQuery)}")
+      s"SolR REQUEST: ${Map("collection" -> solrCollection, "fields" -> solrFilterList, "solr.params" -> solrFilterQuery)}")
 
-    val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map("collection" -> resource.resourceType,
+    val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map("collection" -> solrCollection,
                                                                     "fields" -> solrFilterList,
                                                                     "solr.params" -> solrFilterQuery)
     import com.lucidworks.spark.util.SolrDataFrameImplicits._
     val df: DataFrame = retry(solrConf.getOrElse("max_try", "1").toInt) {
-      spark.read.solr(resource.resourceType, mapRequest)
+      spark.read.solr(solrCollection, mapRequest)
     }
     if (logger.isDebugEnabled) {
       logger.debug(
@@ -77,7 +78,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
     def addPatientAgeRequiredAttributes(requestedAttributes: List[String]): List[String] = {
       if (isPatientAgeConstraint) {
         collectionName match {
-          case SolrCollection.PATIENT_APHP => SolrColumn.Patient.BIRTHDATE :: requestedAttributes
+          case FhirResource.PATIENT => SolrColumn.Patient.BIRTHDATE :: requestedAttributes
           case _                           => SolrColumn.PATIENT_BIRTHDATE :: requestedAttributes
         }
       } else requestedAttributes
@@ -124,4 +125,5 @@ object SolrCollections {
     FhirResource.IMAGING_STUDY -> IMAGINGSTUDY_APHP,
     FhirResource.QUESTIONNAIRE_RESPONSE -> QUESTIONNAIRE_RESPONSE_APHP,
   )
+  val reverseMapping: Map[String, String] = mapping.map(_.swap)
 }

@@ -39,7 +39,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
         val encounterField =
           requestKeyPerCollection(collection).getOrElse(ENCOUNTER_COL, List("")).head
         collection match {
-          case SolrCollection.ENCOUNTER_APHP =>
+          case FhirResource.ENCOUNTER =>
             column_name match {
               case SolrColumn.Encounter.PERIOD_START => QueryColumn.ENCOUNTER_START_DATE
               case SolrColumn.Encounter.PERIOD_END   => QueryColumn.ENCOUNTER_END_DATE
@@ -50,7 +50,7 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
               case `encounterField`                  => QueryColumn.ENCOUNTER
               case _                                 => column_name.replace(".", "_")
             }
-          case SolrCollection.PATIENT_APHP =>
+          case FhirResource.PATIENT =>
             column_name match {
               case SolrColumn.Patient.BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
               case SolrColumn.ORGANIZATIONS     => QueryColumn.ORGANIZATIONS

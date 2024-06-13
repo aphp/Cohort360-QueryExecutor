@@ -56,10 +56,12 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                                              withOrganizationDetails = false)
 
     // filter df columns
-    cohort = cohort.select(
-      List(ResultColumn.SUBJECT, "encounter", "entryEvent", "exitEvent")
-        .filter(c => cohort.columns.contains(c))
-        .map(c => F.col(c)): _*).dropDuplicates()
+    cohort = cohort
+      .select(
+        List(ResultColumn.SUBJECT, "encounter", "entryEvent", "exitEvent")
+          .filter(c => cohort.columns.contains(c))
+          .map(c => F.col(c)): _*)
+      .dropDuplicates()
 
     cohort.cache()
     count = cohort.count()
@@ -76,7 +78,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     )
 
     status =
-      if (cohortSizeBiggerThanLimit && request.resourceType == ResourceType.patient) JobExecutionStatus.LONG_PENDING
+      if (cohortSizeBiggerThanLimit && request.resourceType == ResourceType.patient)
+        JobExecutionStatus.LONG_PENDING
       else JobExecutionStatus.FINISHED
 
     //  upload into pg and solr
@@ -113,7 +116,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                                                          false,
                                                          false,
                                                          List[String](),
-                                                         SolrCollection.PATIENT_APHP,
+                                                         FhirResource.PATIENT,
                                                          List[String]()))
     (completeRequest, completeTagsPerIdMap)
   }

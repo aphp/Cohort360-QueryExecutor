@@ -24,23 +24,23 @@ class QueryBuilderConfigs {
 
   val requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] =
     Map(
-      SolrCollection.ENCOUNTER_APHP -> Map(PATIENT_COL -> List(SolrColumn.PATIENT),
+      FhirResource.ENCOUNTER -> Map(PATIENT_COL -> List(SolrColumn.PATIENT),
         ENCOUNTER_COL -> List(SolrColumn.ENCOUNTER),
         ENCOUNTER_DATES_COL -> List(SolrColumn.Encounter.PERIOD_START, SolrColumn.Encounter.PERIOD_END)),
-      SolrCollection.MEDICATIONREQUEST_APHP -> buildMap(List(SolrColumn.MedicationRequest.PERIOD_START, SolrColumn.MedicationRequest.PERIOD_END)),
-      SolrCollection.MEDICATIONADMINISTRATION_APHP -> buildMap(List(SolrColumn.MedicationAdministration.PERIOD_START)),
-      SolrCollection.OBSERVATION_APHP -> buildMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME)),
-      SolrCollection.CONDITION_APHP -> buildMap(List(SolrColumn.Condition.RECORDED_DATE)),
-      SolrCollection.PATIENT_APHP -> Map(PATIENT_COL -> List(SolrColumn.PATIENT)),
+      FhirResource.MEDICATION_REQUEST -> buildMap(List(SolrColumn.MedicationRequest.PERIOD_START, SolrColumn.MedicationRequest.PERIOD_END)),
+      FhirResource.MEDICATION_ADMINISTRATION -> buildMap(List(SolrColumn.MedicationAdministration.PERIOD_START)),
+      FhirResource.OBSERVATION -> buildMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME)),
+      FhirResource.CONDITION -> buildMap(List(SolrColumn.Condition.RECORDED_DATE)),
+      FhirResource.PATIENT -> Map(PATIENT_COL -> List(SolrColumn.PATIENT)),
       IPP_LIST -> Map(PATIENT_COL -> List(SolrColumn.PATIENT)),
-      SolrCollection.DOCUMENTREFERENCE_APHP -> buildMap(List(SolrColumn.Document.DATE)),
-      SolrCollection.COMPOSITION_APHP -> buildMap(List(SolrColumn.Document.DATE)),
-      SolrCollection.GROUP_APHP -> Map(PATIENT_COL -> List(SolrColumn.Group.RESOURCE_ID)),
-      SolrCollection.CLAIM_APHP -> buildMap(List(SolrColumn.Claim.CREATED)),
-      SolrCollection.PROCEDURE_APHP -> buildMap(List(SolrColumn.Procedure.DATE)),
-      SolrCollection.IMAGINGSTUDY_APHP -> (buildMap(List(SolrColumn.PATIENT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(GROUP_BY_COLUMN -> List(SolrColumn.ImagingStudy.STUDY_ID))),
-      SolrCollection.QUESTIONNAIRE_RESPONSE_APHP -> (buildMap(List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(EPISODE_OF_CARE_COL -> List(SolrColumn.EPISODE_OF_CARE))),
-      "default" -> Map(DATE_COL -> List[String](), ENCOUNTER_COL -> List[String](), ENCOUNTER_DATES_COL -> List[String]())
+      FhirResource.DOCUMENT_REFERENCE -> buildMap(List(SolrColumn.Document.DATE)),
+      FhirResource.COMPOSITION -> buildMap(List(SolrColumn.Document.DATE)),
+      FhirResource.GROUP -> Map(PATIENT_COL -> List(SolrColumn.Group.RESOURCE_ID)),
+      FhirResource.CLAIM -> buildMap(List(SolrColumn.Claim.CREATED)),
+      FhirResource.PROCEDURE -> buildMap(List(SolrColumn.Procedure.DATE)),
+      FhirResource.IMAGING_STUDY -> (buildMap(List(SolrColumn.PATIENT), List(SolrColumn.ImagingStudy.STARTED,SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(GROUP_BY_COLUMN -> List(SolrColumn.ImagingStudy.STUDY_ID))),
+      FhirResource.QUESTIONNAIRE_RESPONSE -> (buildMap(List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(EPISODE_OF_CARE_COL -> List(SolrColumn.EPISODE_OF_CARE))),
+      FhirResource.UNKNOWN -> Map(DATE_COL -> List[String](), ENCOUNTER_COL -> List[String](), ENCOUNTER_DATES_COL -> List[String]())
     )
 
   val listCollectionWithEventDatetimeFields: List[String] =
@@ -58,21 +58,21 @@ class QueryBuilderConfigs {
   // @todo : read default.yml instead
   val defaultDatePreferencePerCollection: Map[String, List[String]] =
     Map[String, List[String]](
-      SolrCollection.ENCOUNTER_APHP -> List(QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.CONDITION_APHP -> List(QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE, EVENT_DATE),
-      SolrCollection.PATIENT_APHP -> List(QueryColumn.PATIENT_BIRTHDATE),
-      SolrCollection.DOCUMENTREFERENCE_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.COMPOSITION_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.GROUP_APHP -> List(),
-      SolrCollection.CLAIM_APHP -> List(QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE, EVENT_DATE),
-      SolrCollection.PROCEDURE_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE),
-      SolrCollection.MEDICATIONADMINISTRATION_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.MEDICATIONREQUEST_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.OBSERVATION_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.IMAGINGSTUDY_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
-      SolrCollection.QUESTIONNAIRE_RESPONSE_APHP -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.ENCOUNTER -> List(QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.CONDITION -> List(QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE, EVENT_DATE),
+      FhirResource.PATIENT -> List(QueryColumn.PATIENT_BIRTHDATE),
+      FhirResource.DOCUMENT_REFERENCE -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.COMPOSITION -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.GROUP -> List(),
+      FhirResource.CLAIM -> List(QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE, EVENT_DATE),
+      FhirResource.PROCEDURE -> List(EVENT_DATE, QueryColumn.ENCOUNTER_END_DATE, QueryColumn.ENCOUNTER_START_DATE),
+      FhirResource.MEDICATION_ADMINISTRATION -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.MEDICATION_REQUEST -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.OBSERVATION -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.IMAGING_STUDY -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.QUESTIONNAIRE_RESPONSE -> List(EVENT_DATE, QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE),
       IPP_LIST -> List[String](),
-      "default" -> List(QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE, EVENT_DATE)
+      FhirResource.UNKNOWN -> List(QueryColumn.ENCOUNTER_START_DATE, QueryColumn.ENCOUNTER_END_DATE, EVENT_DATE)
     )
 
   def getSubjectColumn(id: Short, isPatient: Boolean = true): String = buildColName(id, if (isPatient) QueryColumn.PATIENT else SolrColumn.ID)
