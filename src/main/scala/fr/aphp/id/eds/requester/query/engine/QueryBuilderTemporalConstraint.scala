@@ -4,6 +4,7 @@ import fr.aphp.id.eds.requester.QueryColumn
 import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, TemporalConstraint, TemporalConstraintDuration}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.functions.expr
 import org.apache.spark.sql.types.TimestampType
@@ -14,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 
 class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbConfigs = new QueryBuilderConfigs()
+  private val qbConfigs = FhirResourceResolverFactory.getDefaultConfig
   private val qbUtils = new QueryBuilderUtils()
 
   def getOccurrenceChoice(temporalConstraint: TemporalConstraint,

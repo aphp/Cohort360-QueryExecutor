@@ -10,7 +10,6 @@ import org.apache.spark.sql.{DataFrame, functions => F}
 
 /**
   * @param pg           pgTool obj
-  * @todo use of parametrized queries instead of scala string which is not securized
   */
 class OmopTools(pg: PGTool) extends LazyLogging {
   private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName

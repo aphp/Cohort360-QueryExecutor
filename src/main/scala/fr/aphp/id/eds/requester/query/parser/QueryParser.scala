@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester.query.parser
 
+import fr.aphp.id.eds.requester.FhirResource
 import fr.aphp.id.eds.requester.query.model._
-import fr.aphp.id.eds.requester.query.resolver.SolrCollections
-import fr.aphp.id.eds.requester.{FhirResource, IPP_LIST}
+import fr.aphp.id.eds.requester.query.resolver.solr.SolrCollections
 import org.apache.log4j.Logger
 import org.json4s.jackson.Serialization
 import play.api.libs.json._
@@ -241,6 +241,7 @@ object QueryParser {
     }
 
     def loadBasicResource(genericQuery: GenericQuery): BasicResource = {
+      val IPP_LIST = "IPPList"
       BasicResource(
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,

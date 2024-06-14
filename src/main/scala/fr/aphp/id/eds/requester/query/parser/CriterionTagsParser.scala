@@ -3,9 +3,10 @@ package fr.aphp.id.eds.requester.query.parser
 import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EVENT_DATE}
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
 import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, BasicResource, GroupResource, Request, TemporalConstraint}
+import fr.aphp.id.eds.requester.query.parser.CriterionTagsParser.queryBuilderConfigs
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
@@ -27,7 +28,7 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
 
 object CriterionTagsParser {
   private val logger = Logger.getLogger(this.getClass)
-  private val queryBuilderConfigs = new QueryBuilderConfigs()
+  private val queryBuilderConfigs = FhirResourceResolverFactory.getDefaultConfig
 
   def getCriterionTagsMap(request: Request,
                           requestOrganizations: Boolean): Map[Short, CriterionTags] = {
@@ -131,7 +132,7 @@ object CriterionTagsParser {
                                                      criterion: BaseQuery): List[String] = {
       var normalizedDatePreferenceList: List[String] =
         if (collection == FhirResource.UNKNOWN) List[String]()
-        else if (!isTemporalConstraintAboutDateTime) List(ENCOUNTER_ID)
+        else if (!isTemporalConstraintAboutDateTime) List(QueryColumn.ENCOUNTER)
         else {
           if (temporalConstraint.datePreference.isDefined) {
             val localDatePreference =
@@ -142,7 +143,8 @@ object CriterionTagsParser {
           } else queryBuilderConfigs.defaultDatePreferencePerCollection(collection)
         }
       normalizedDatePreferenceList = normalizedDatePreferenceList ++ (if (temporalConstraint.constraintType == SAME_EPISODE_OF_CARE) {
-                                                                        List(EPISODE_OF_CARE_COL)
+                                                                        List(
+                                                                          QueryColumn.EPISODE_OF_CARE)
                                                                       } else {
                                                                         List()
                                                                       })
@@ -236,8 +238,8 @@ object CriterionTagsParser {
                                     requestOrganization: Boolean): CriterionTags = {
     var requiredSolrFieldList =
       Map(
-        isResourceFilter -> SolrColumn.ID,
-        requestOrganization -> SolrColumn.ORGANIZATIONS
+        isResourceFilter -> QueryColumn.ID,
+        requestOrganization -> QueryColumn.ORGANIZATIONS
       ).foldLeft(List[String]()) {
         case (acc, (key, value)) =>
           if (key) value :: acc else acc
@@ -245,11 +247,13 @@ object CriterionTagsParser {
     val collection = genericQuery.resourceType
 
     def getEncounterDateRangeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
-      if (genericQuery.encounterDateRange.isDefined)
-        (dateTimeList ++ queryBuilderConfigs
+      if (genericQuery.encounterDateRange.isDefined) {
+        val colsMapping = queryBuilderConfigs
           .requestKeyPerCollectionMap(collection)
-          .getOrElse(ENCOUNTER_DATES_COL, List[String]())).distinct
-      else dateTimeList
+        (dateTimeList ++ colsMapping
+          .getOrElse(QueryColumn.ENCOUNTER_START_DATE, List[String]()) ++ colsMapping
+          .getOrElse(QueryColumn.ENCOUNTER_END_DATE, List[String]())).distinct
+      } else dateTimeList
     }
 
     def getDateRangeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
@@ -285,37 +289,39 @@ object CriterionTagsParser {
 
     def getSameEncounterOccurrenceFieldList(solrFieldList: List[String]): List[String] = {
       if (genericQuery.occurrence.isDefined && genericQuery.occurrence.get.sameEncounter.isDefined && genericQuery.occurrence.get.sameEncounter.get) {
-        (solrFieldList ++ List(ENCOUNTER_ID)).distinct
+        (solrFieldList ++ List(QueryColumn.ENCOUNTER)).distinct
       } else solrFieldList
     }
 
     def getResourceGroupByFieldOccurrenceFieldList(solrFieldList: List[String]): List[String] = {
       if (genericQuery.occurrence.isDefined
           && (genericQuery.occurrence.get.n != 1 || genericQuery.occurrence.get.operator != ">=")
-          && queryBuilderConfigs.requestKeyPerCollectionMap(collection).contains(GROUP_BY_COLUMN)) {
+          && queryBuilderConfigs
+            .requestKeyPerCollectionMap(collection)
+            .contains(QueryColumn.GROUP_BY)) {
         (solrFieldList ++ queryBuilderConfigs.requestKeyPerCollectionMap(collection)(
-          GROUP_BY_COLUMN)).distinct
+          QueryColumn.GROUP_BY)).distinct
       } else solrFieldList
     }
 
     def getIsDateTimeAvailable: Boolean = {
-      queryBuilderConfigs
+      val colsMapping = queryBuilderConfigs
         .requestKeyPerCollectionMap(collection)
-        .contains(DATE_COL) || queryBuilderConfigs
-        .requestKeyPerCollectionMap(collection)
-        .contains(ENCOUNTER_DATES_COL)
+      colsMapping.contains(QueryColumn.EVENT_DATE) ||
+      colsMapping.contains(QueryColumn.ENCOUNTER_START_DATE) ||
+      colsMapping.contains(QueryColumn.ENCOUNTER_END_DATE)
     }
 
     def getIsEncounterAvailable: Boolean = {
       queryBuilderConfigs
         .requestKeyPerCollectionMap(collection)
-        .contains(ENCOUNTER_COL)
+        .contains(QueryColumn.ENCOUNTER)
     }
 
     def getIsEpisodeOfCareAvailable: Boolean = {
       queryBuilderConfigs
         .requestKeyPerCollectionMap(collection)
-        .contains(EPISODE_OF_CARE_COL)
+        .contains(QueryColumn.EPISODE_OF_CARE)
     }
 
     requiredSolrFieldList = getEncounterDateRangeDatetimePreferenceList(requiredSolrFieldList)
@@ -385,14 +391,23 @@ object CriterionTagsParser {
     val translationMap = queryBuilderConfigs.requestKeyPerCollectionMap
       .getOrElse(collection, Map[String, List[String]]())
     datePreferenceList.foreach {
+      case QueryColumn.ID =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ID, List[String]())
+      case QueryColumn.ORGANIZATIONS =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ORGANIZATIONS, List[String]())
       case EVENT_DATE =>
-        dateTimeSolrFieldList ++= translationMap.getOrElse(DATE_COL, List[String]())
-      case ENCOUNTER_ID =>
-        dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_COL, List[String]())
-      case ENCOUNTER_START_DATE | ENCOUNTER_END_DATE =>
-        dateTimeSolrFieldList ++= translationMap.getOrElse(ENCOUNTER_DATES_COL, List[String]())
-      case EPISODE_OF_CARE_COL =>
-        dateTimeSolrFieldList ++= translationMap.getOrElse(EPISODE_OF_CARE_COL, List[String]())
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.EVENT_DATE, List[String]())
+      case QueryColumn.ENCOUNTER =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ENCOUNTER, List[String]())
+      case ENCOUNTER_START_DATE =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ENCOUNTER_START_DATE,
+                                                           List[String]())
+      case ENCOUNTER_END_DATE =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ENCOUNTER_END_DATE,
+                                                           List[String]())
+      case QueryColumn.EPISODE_OF_CARE =>
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.EPISODE_OF_CARE,
+                                                           List[String]())
       case alreadyGoodString: String => dateTimeSolrFieldList ::= alreadyGoodString
     }
     dateTimeSolrFieldList.distinct

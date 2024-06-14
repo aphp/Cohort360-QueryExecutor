@@ -1,12 +1,12 @@
-package fr.aphp.id.eds.requester.query.resolver
+package fr.aphp.id.eds.requester.query.resolver.solr
 
 import fr.aphp.id.eds.requester.SolrCollection._
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderConfigs
-import fr.aphp.id.eds.requester.query.model.{BasicResource, Request, SourcePopulation}
+import fr.aphp.id.eds.requester._
+import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools
-import fr.aphp.id.eds.requester.{AppConfig, FhirResource, PATIENT_COL, SolrCollection, SolrColumn, SolrConfig}
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -15,7 +15,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
   private val logger = Logger.getLogger(this.getClass)
   private val solrConf = new SolrTools(solrConfig).getSolrConf
-  private val qbConfigs = new QueryBuilderConfigs()
+  private val qbConfigs = FhirResourceResolverFactory.getDefaultConfig
 
   // Returning T, throwing the exception on failure
   @annotation.tailrec
@@ -34,7 +34,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
                                 resource: BasicResource,
                                 criterionTags: CriterionTags,
                                 sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
-    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource)
+    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.filter)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
     val solrCollection = SolrCollections.mapping.getOrElse(resource.resourceType, throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
     logger.info(
@@ -71,24 +71,16 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
     val collectionName: String = criterionTags.resourceType
     val fieldsPerCollectionMap = qbConfigs.requestKeyPerCollectionMap(collectionName)
 
-    def addRequiredFields(requestedAttributes: List[String]): List[String] = {
-      requestedAttributes ++ criterionTags.requiredSolrFieldList
-    }
-
-    def addPatientAgeRequiredAttributes(requestedAttributes: List[String]): List[String] = {
+    val patientAgeColumns =
       if (isPatientAgeConstraint) {
         collectionName match {
-          case FhirResource.PATIENT => SolrColumn.Patient.BIRTHDATE :: requestedAttributes
-          case _                           => SolrColumn.PATIENT_BIRTHDATE :: requestedAttributes
+          case FhirResource.PATIENT => List(SolrColumn.Patient.BIRTHDATE)
+          case _                           => List(SolrColumn.PATIENT_BIRTHDATE)
         }
-      } else requestedAttributes
-    }
+      } else List()
 
-    val requestedSolrFields = addPatientAgeRequiredAttributes(
-      addRequiredFields(
-        fieldsPerCollectionMap.getOrElse(PATIENT_COL, List[String]())
-      )
-    )
+    val requestedSolrFields = fieldsPerCollectionMap.getOrElse(QueryColumn.PATIENT, List[String]()) ++ criterionTags.requiredSolrFieldList ++ patientAgeColumns
+
     if (logger.isDebugEnabled) {
       logger.debug(s"requested fields for $collectionName: $requestedSolrFields")
     }
@@ -97,7 +89,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
   }
 
   private def getSolrFilterQuery(sourcePopulation: SourcePopulation,
-                                           basicResource: BasicResource): String = {
+                                 filterSolr: String): String = {
     def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
       if (solrFilterQuery == null || solrFilterQuery.isEmpty) {
         return s"fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
@@ -105,7 +97,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
       s"$solrFilterQuery&fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
     }
 
-    addDefaultCohortFqParameter(basicResource.filter)
+    addDefaultCohortFqParameter(filterSolr)
   }
 }
 

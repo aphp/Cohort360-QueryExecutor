@@ -12,10 +12,10 @@ case class SparkConfig(
 
 case class SolrConfig(
     zk: String,
-    max_try: Int,
+    maxTry: Int,
     rows: Int,
-    commit_within: Int,
-    auth_file: String
+    commitWithin: Int,
+    authFile: String
 )
 
 case class FhirServerConfig(
@@ -64,10 +64,10 @@ class AppConfig(conf: Config) {
     Some(
       SolrConfig(
         conf.getString("solr.zk"),
-        conf.getInt("solr.max_try"),
+        conf.getInt("solr.maxTry"),
         conf.getInt("solr.rows"),
-        conf.getInt("solr.commit_within"),
-        conf.getString("solr.auth_file")
+        conf.getInt("solr.commitWithin"),
+        conf.getString("solr.authFile")
       ))
   } else {
     None

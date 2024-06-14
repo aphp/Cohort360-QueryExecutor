@@ -15,9 +15,9 @@ class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
   /** Read SolR passthrough parameters in SJS conf file */
   def getSolrConf: Map[String, String] = {
     val zkHost = solrConfig.zk
-    val maxSolrTry = solrConfig.max_try
+    val maxSolrTry = solrConfig.maxTry
     val rows = solrConfig.rows
-    val commitWithin = solrConfig.commit_within
+    val commitWithin = solrConfig.commitWithin
 
     val options = Map(
       "zkhost" -> zkHost,

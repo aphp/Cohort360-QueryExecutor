@@ -17,7 +17,7 @@ object SparkConfig {
   if (AppConfig.get.solr.isDefined) {
     sparkConf.set(
       "spark.executor.extraJavaOptions",
-      f"-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=${AppConfig.get.solr.get.auth_file}"
+      f"-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=${AppConfig.get.solr.get.authFile}"
     )
   }
 

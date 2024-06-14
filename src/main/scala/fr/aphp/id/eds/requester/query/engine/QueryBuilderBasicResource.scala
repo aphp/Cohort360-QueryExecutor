@@ -4,76 +4,22 @@ import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory, QueryElementsConfig}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
 
-class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBuilderConfigs(),
+class QueryBuilderBasicResource(val qbConfigs: QueryElementsConfig = FhirResourceResolverFactory.getDefaultConfig,
                                 val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
                                 val querySolver: FhirResourceResolver = FhirResourceResolverFactory.getDefault) {
-  val requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] =
-    qbConfigs.requestKeyPerCollectionMap
-
   private val logger = Logger.getLogger(this.getClass)
 
   /** Changing names of columns so that there is no difference between resources in the name of columns. */
   private def homogenizeColumns(collectionName: String,
                                 df: DataFrame,
                                 localId: Short): DataFrame = {
-
-    /** Homogenizes the column names across collections.
-      *
-      * @param collection              the collection name of the ressource
-      * @param requestKeyPerCollection the map storing the name of columns per category */
-    def homogenizeDatetimeColumnNames(
-        collection: String,
-        requestKeyPerCollection: Map[String, Map[String, List[String]]] = requestKeyPerCollectionMap)
-      : String => String =
-      (column_name: String) => {
-        val dateField =
-          requestKeyPerCollection(collection).getOrElse(DATE_COL, List[String]("")).head
-        val patientField =
-          requestKeyPerCollection(collection).getOrElse(PATIENT_COL, List[String]("")).head
-        val encounterField =
-          requestKeyPerCollection(collection).getOrElse(ENCOUNTER_COL, List("")).head
-        collection match {
-          case FhirResource.ENCOUNTER =>
-            column_name match {
-              case SolrColumn.Encounter.PERIOD_START => QueryColumn.ENCOUNTER_START_DATE
-              case SolrColumn.Encounter.PERIOD_END   => QueryColumn.ENCOUNTER_END_DATE
-              case SolrColumn.PATIENT_BIRTHDATE      => QueryColumn.PATIENT_BIRTHDATE
-              case SolrColumn.ORGANIZATIONS          => QueryColumn.ORGANIZATIONS
-              case `dateField`                       => EVENT_DATE
-              case `patientField`                    => QueryColumn.PATIENT
-              case `encounterField`                  => QueryColumn.ENCOUNTER
-              case _                                 => column_name.replace(".", "_")
-            }
-          case FhirResource.PATIENT =>
-            column_name match {
-              case SolrColumn.Patient.BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
-              case SolrColumn.ORGANIZATIONS     => QueryColumn.ORGANIZATIONS
-              case `dateField`                  => QueryColumn.EVENT_DATE
-              case `patientField`               => QueryColumn.PATIENT
-              case _                            => column_name.replace(".", "_")
-            }
-          case _ =>
-            column_name match {
-              case `dateField`                     => QueryColumn.EVENT_DATE
-              case `patientField`                  => QueryColumn.PATIENT
-              case SolrColumn.PATIENT_BIRTHDATE    => QueryColumn.PATIENT_BIRTHDATE
-              case SolrColumn.ENCOUNTER_START_DATE => QueryColumn.ENCOUNTER_START_DATE
-              case SolrColumn.ENCOUNTER_END_DATE   => QueryColumn.ENCOUNTER_END_DATE
-              case SolrColumn.ORGANIZATIONS        => QueryColumn.ORGANIZATIONS
-              case SolrColumn.EPISODE_OF_CARE      => QueryColumn.EPISODE_OF_CARE
-              case `encounterField`                => QueryColumn.ENCOUNTER
-              case _                               => column_name.replace(".", "_")
-            }
-        }
-      }
-
-    val convFunc = homogenizeDatetimeColumnNames(collectionName)
+    val convFunc = (column_name: String) => qbConfigs.reverseColumnMapping(collectionName, column_name)
     df.toDF(df.columns.map(c => qbConfigs.buildColName(localId, convFunc(c))).toSeq: _*)
 
   }
@@ -307,8 +253,8 @@ class QueryBuilderBasicResource(val qbConfigs: QueryBuilderConfigs = new QueryBu
     }
 
     def addResourceGroupByColumns(groupByColumns: ListBuffer[String]): ListBuffer[String] = {
-      if (qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType).contains(GROUP_BY_COLUMN)) {
-        groupByColumns ++= qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)(GROUP_BY_COLUMN).map(qbConfigs.buildColName(criterionId, _))
+      if (qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType).contains(QueryColumn.GROUP_BY)) {
+        groupByColumns ++= qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)(QueryColumn.GROUP_BY).map(qbConfigs.buildColName(criterionId, _))
       } else {
         groupByColumns
       }

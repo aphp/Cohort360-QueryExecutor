@@ -1,9 +1,11 @@
-package fr.aphp.id.eds.requester.query.resolver
+package fr.aphp.id.eds.requester.query.resolver.rest
+
 import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.util.BundleUtil
 import fr.aphp.id.eds.requester.FhirServerConfig
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
+import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.hl7.fhir.r4.model.{Bundle, Patient}

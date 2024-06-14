@@ -2,13 +2,14 @@ package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.QueryColumn
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, functions => F}
 
 class QueryBuilderUtils {
   private val logger = Logger.getLogger(this.getClass)
 
-  val qbConfigs = new QueryBuilderConfigs
+  val qbConfigs = FhirResourceResolverFactory.getDefaultConfig
 
   /** Build a date column for a ressource based on date_preference.
     *

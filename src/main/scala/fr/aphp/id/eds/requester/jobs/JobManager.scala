@@ -32,7 +32,7 @@ class JobManager() {
   private val logger = Logger.getLogger(this.getClass)
 
   if (AppConfig.get.solr.isDefined) {
-    sparkSession.sparkContext.addFile(AppConfig.get.solr.get.auth_file)
+    sparkSession.sparkContext.addFile(AppConfig.get.solr.get.authFile)
   }
 
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {

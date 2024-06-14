@@ -1,8 +1,9 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.{FhirResource, SolrColumn}
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
+import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQueryPatientAphp
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools, SparkTools}
 import org.apache.log4j.Logger
@@ -17,7 +18,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                         val options: QueryExecutionOptions = QueryExecutionOptions(),
                         val jobUtilsService: JobUtilsService = JobUtils) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbUtils = new QueryBuilderConfigs()
+  private val qbUtils = FhirResourceResolverFactory.getDefaultConfig
   private val qbTc = new QueryBuilderTemporalConstraint(options)
   private val qbLc = new QueryBuilderLogicalConstraint(options)
 
@@ -120,7 +121,11 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
           false,
           List[String](),
           FhirResource.PATIENT,
-          if (options.withOrganizations) { List(SolrColumn.ORGANIZATIONS) } else List[String](),
+          if (options.withOrganizations) {
+            qbBasicResource.qbConfigs
+              .requestKeyPerCollectionMap(FhirResource.PATIENT)
+              .getOrElse(QueryColumn.ORGANIZATIONS, List())
+          } else List[String](),
           withOrganizations = options.withOrganizations,
         ))
     else criterionTagsMap
