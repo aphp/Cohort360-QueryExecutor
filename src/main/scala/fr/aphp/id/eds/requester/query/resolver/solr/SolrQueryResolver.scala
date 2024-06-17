@@ -31,18 +31,21 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
   }
 
   def getSolrResponseDataFrame(
-                                resource: BasicResource,
-                                criterionTags: CriterionTags,
-                                sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
+      resource: BasicResource,
+      criterionTags: CriterionTags,
+      sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
     val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.filter)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
-    val solrCollection = SolrCollections.mapping.getOrElse(resource.resourceType, throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
+    val solrCollection = SolrCollections.mapping.getOrElse(
+      resource.resourceType,
+      throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
     logger.info(
       s"SolR REQUEST: ${Map("collection" -> solrCollection, "fields" -> solrFilterList, "solr.params" -> solrFilterQuery)}")
 
-    val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map("collection" -> solrCollection,
-                                                                    "fields" -> solrFilterList,
-                                                                    "solr.params" -> solrFilterQuery)
+    val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map(
+      "collection" -> solrCollection,
+      "fields" -> solrFilterList,
+      "solr.params" -> solrFilterQuery)
     import com.lucidworks.spark.util.SolrDataFrameImplicits._
     val df: DataFrame = retry(solrConf.getOrElse("max_try", "1").toInt) {
       spark.read.solr(solrCollection, mapRequest)
@@ -65,9 +68,10 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
   }
 
   /**
-   * Determines the field names to ask for solr.
-   * */
-  private def getSolrFilterList(criterionTags: CriterionTags, isPatientAgeConstraint: Boolean): String = {
+    * Determines the field names to ask for solr.
+    * */
+  private def getSolrFilterList(criterionTags: CriterionTags,
+                                isPatientAgeConstraint: Boolean): String = {
     val collectionName: String = criterionTags.resourceType
     val fieldsPerCollectionMap = qbConfigs.requestKeyPerCollectionMap(collectionName)
 
@@ -75,7 +79,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
       if (isPatientAgeConstraint) {
         collectionName match {
           case FhirResource.PATIENT => List(SolrColumn.Patient.BIRTHDATE)
-          case _                           => List(SolrColumn.PATIENT_BIRTHDATE)
+          case _                    => List(SolrColumn.PATIENT_BIRTHDATE)
         }
       } else List()
 
@@ -88,8 +92,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
     requestedSolrFields.mkString(",")
   }
 
-  private def getSolrFilterQuery(sourcePopulation: SourcePopulation,
-                                 filterSolr: String): String = {
+  private def getSolrFilterQuery(sourcePopulation: SourcePopulation, filterSolr: String): String = {
     def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
       if (solrFilterQuery == null || solrFilterQuery.isEmpty) {
         return s"fq=${getDefaultSolrFilterQuery(sourcePopulation)}"

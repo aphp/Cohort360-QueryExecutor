@@ -18,7 +18,7 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 import scala.io.Source
 
 class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
-
+  System.setProperty("config.resource", "application.test.conf")
   val sparkSession: SparkSession = SparkSession
     .builder()
     .master("local[*]")
@@ -82,12 +82,15 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     result
   }
 
-  test("testProcessRequestSimple") {
+  test("simple") {
     testCaseEvaluate("simple")
-    testCaseEvaluate("exclusion")
-    testCaseEvaluate("occurences")
-    testCaseEvaluate("dateRanges")
-    testCaseEvaluate("temporalConstraintSameEncounter")
+  }
+
+  test("exclusion") { testCaseEvaluate("exclusion") }
+  test("occurences") { testCaseEvaluate("occurences") }
+  test("dateRanges") { testCaseEvaluate("dateRanges") }
+  test("temporalConstraintSameEncounter") { testCaseEvaluate("temporalConstraintSameEncounter") }
+  test("temporalConstraintDirectChronologicalOrder") {
     testCaseEvaluate("temporalConstraintDirectChronologicalOrder")
   }
 

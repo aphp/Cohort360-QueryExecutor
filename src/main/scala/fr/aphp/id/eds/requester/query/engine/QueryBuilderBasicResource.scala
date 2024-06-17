@@ -4,22 +4,28 @@ import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory, QueryElementsConfig}
+import fr.aphp.id.eds.requester.query.resolver.{
+  FhirResourceResolver,
+  FhirResourceResolverFactory,
+  QueryElementsConfig
+}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
 
-class QueryBuilderBasicResource(val qbConfigs: QueryElementsConfig = FhirResourceResolverFactory.getDefaultConfig,
-                                val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-                                val querySolver: FhirResourceResolver = FhirResourceResolverFactory.getDefault) {
+class QueryBuilderBasicResource(
+    val qbConfigs: QueryElementsConfig = FhirResourceResolverFactory.getDefaultConfig,
+    val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
+    val querySolver: FhirResourceResolver = FhirResourceResolverFactory.getDefault) {
   private val logger = Logger.getLogger(this.getClass)
 
   /** Changing names of columns so that there is no difference between resources in the name of columns. */
   private def homogenizeColumns(collectionName: String,
                                 df: DataFrame,
                                 localId: Short): DataFrame = {
-    val convFunc = (column_name: String) => qbConfigs.reverseColumnMapping(collectionName, column_name)
+    val convFunc = (column_name: String) =>
+      qbConfigs.reverseColumnMapping(collectionName, column_name)
     df.toDF(df.columns.map(c => qbConfigs.buildColName(localId, convFunc(c))).toSeq: _*)
 
   }
@@ -252,14 +258,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryElementsConfig = FhirResourc
       else groupByColumns
     }
 
-    def addResourceGroupByColumns(groupByColumns: ListBuffer[String]): ListBuffer[String] = {
-      if (qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType).contains(QueryColumn.GROUP_BY)) {
-        groupByColumns ++= qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)(QueryColumn.GROUP_BY).map(qbConfigs.buildColName(criterionId, _))
-      } else {
-        groupByColumns
-      }
-    }
-
     def addSameEncounterGroupByColumns(sameEncounter: Boolean,
                                        groupByColumns: ListBuffer[String]): ListBuffer[String] = {
       if (sameEncounter) {
@@ -322,7 +320,6 @@ class QueryBuilderBasicResource(val qbConfigs: QueryElementsConfig = FhirResourc
         val criterionDataFrameWithSameDayColumn: DataFrame =
           addSameDayConstraintColumns(criterionDataFrame, sameDay)
 
-        groupByColumns = addResourceGroupByColumns(groupByColumns)
         groupByColumns = addSameDayGroupByColumns(sameDay, groupByColumns)
         groupByColumns = addSameEncounterGroupByColumns(sameEncounter, groupByColumns)
         if (logger.isInfoEnabled)
@@ -360,10 +357,23 @@ class QueryBuilderBasicResource(val qbConfigs: QueryElementsConfig = FhirResourc
                                                     List(
                                                       qbConfigs
                                                         .getOrganizationsColumn(criterionId))
-                                                  else List())
+                                                  else
+                                                    List())
+    // Resolver request
+    var criterionDataFrame: DataFrame =
+      querySolver.getSolrResponseDataFrame(basicResource, criterionTags, sourcePopulation)
+    // Group by exploded resources
+    val resourceConfig = qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)
+    criterionDataFrame = if (resourceConfig.contains(QueryColumn.GROUP_BY)) {
+      criterionDataFrame
+        .drop(resourceConfig(QueryColumn.ID).head)
+        .withColumnRenamed(resourceConfig(QueryColumn.GROUP_BY).head,
+                           resourceConfig(QueryColumn.ID).head)
+        .dropDuplicates(resourceConfig(QueryColumn.ID).head)
+    } else {
+      criterionDataFrame
+    }
 
-    // Solr request
-    var criterionDataFrame: DataFrame = querySolver.getSolrResponseDataFrame(basicResource, criterionTags, sourcePopulation)
     criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
     if (logger.isDebugEnabled) {
       logger.debug(

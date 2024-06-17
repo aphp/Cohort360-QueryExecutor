@@ -293,10 +293,8 @@ object CriterionTagsParser {
       } else solrFieldList
     }
 
-    def getResourceGroupByFieldOccurrenceFieldList(solrFieldList: List[String]): List[String] = {
-      if (genericQuery.occurrence.isDefined
-          && (genericQuery.occurrence.get.n != 1 || genericQuery.occurrence.get.operator != ">=")
-          && queryBuilderConfigs
+    def getResourceGroupByFieldList(solrFieldList: List[String]): List[String] = {
+      if (queryBuilderConfigs
             .requestKeyPerCollectionMap(collection)
             .contains(QueryColumn.GROUP_BY)) {
         (solrFieldList ++ queryBuilderConfigs.requestKeyPerCollectionMap(collection)(
@@ -329,7 +327,7 @@ object CriterionTagsParser {
     requiredSolrFieldList = getPatientAgeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameDayOccurrenceDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameEncounterOccurrenceFieldList(requiredSolrFieldList)
-    requiredSolrFieldList = getResourceGroupByFieldOccurrenceFieldList(requiredSolrFieldList)
+    requiredSolrFieldList = getResourceGroupByFieldList(requiredSolrFieldList)
     requiredSolrFieldList =
       convertDatePreferenceToDateTimeSolrField(requiredSolrFieldList, collection)
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable

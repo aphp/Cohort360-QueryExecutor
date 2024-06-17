@@ -61,6 +61,8 @@ class SolrQueryElementsConfig extends QueryElementsConfig {
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.PATIENT, List[String]("")).head
     val encounterField =
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.ENCOUNTER, List("")).head
+    val groupByField =
+      requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.GROUP_BY, List("")).head
     collection match {
       case FhirResource.ENCOUNTER =>
         column_name match {
@@ -91,6 +93,7 @@ class SolrQueryElementsConfig extends QueryElementsConfig {
           case SolrColumn.ORGANIZATIONS        => QueryColumn.ORGANIZATIONS
           case SolrColumn.EPISODE_OF_CARE      => QueryColumn.EPISODE_OF_CARE
           case `encounterField`                => QueryColumn.ENCOUNTER
+          case `groupByField`                  => QueryColumn.GROUP_BY
           case _                               => column_name.replace(".", "_")
         }
     }
