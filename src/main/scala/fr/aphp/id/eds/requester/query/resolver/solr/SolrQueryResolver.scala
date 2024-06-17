@@ -4,7 +4,7 @@ import fr.aphp.id.eds.requester.SolrCollection._
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolver, FhirResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceResolver, ResourceResolverFactory}
 import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
 import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
@@ -12,25 +12,11 @@ import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /** Class for questioning solr. */
-class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
+class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolver {
   private val logger = Logger.getLogger(this.getClass)
-  private val solrConf = new SolrTools(solrConfig).getSolrConf
-  private val qbConfigs = FhirResourceResolverFactory.getDefaultConfig
+  private val qbConfigs = new SolrQueryElementsConfig
 
-  // Returning T, throwing the exception on failure
-  @annotation.tailrec
-  private def retry[T](n: Int)(fn: => T): T = {
-    util.Try {
-      fn
-    } match {
-      case util.Success(x) => x
-      case _ if n > 1      => retry(n - 1)(fn)
-      case util.Failure(e) =>
-        throw e
-    }
-  }
-
-  def getSolrResponseDataFrame(
+  def getResourceDataFrame(
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
@@ -39,23 +25,19 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
     val solrCollection = SolrCollections.mapping.getOrElse(
       resource.resourceType,
       throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
-    logger.info(
-      s"SolR REQUEST: ${Map("collection" -> solrCollection, "fields" -> solrFilterList, "solr.params" -> solrFilterQuery)}")
-
-    val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map(
-      "collection" -> solrCollection,
-      "fields" -> solrFilterList,
-      "solr.params" -> solrFilterQuery)
-    import com.lucidworks.spark.util.SolrDataFrameImplicits._
-    val df: DataFrame = retry(solrConf.getOrElse("max_try", "1").toInt) {
-      spark.read.solr(solrCollection, mapRequest)
+    var criterionDataFrame = solrSparkReader.readDf(solrCollection, solrFilterQuery, solrFilterList, resource._id)
+    // Group by exploded resources
+    val resourceConfig = qbConfigs.requestKeyPerCollectionMap(resource.resourceType)
+    criterionDataFrame = if (resourceConfig.contains(QueryColumn.GROUP_BY)) {
+      criterionDataFrame
+        .drop(resourceConfig(QueryColumn.ID).head)
+        .withColumnRenamed(resourceConfig(QueryColumn.GROUP_BY).head,
+          resourceConfig(QueryColumn.ID).head)
+        .dropDuplicates(resourceConfig(QueryColumn.ID).head)
+    } else {
+      criterionDataFrame
     }
-    if (logger.isDebugEnabled) {
-      logger.debug(
-        s"SolR REQUEST : $mapRequest => df.count=${df.count}," +
-          s" df.columns=${df.columns.mkString("Array(", ", ", ")")}")
-    }
-    df
+    criterionDataFrame
   }
 
   def countPatients(sourcePopulation: SourcePopulation): Long = {
@@ -83,7 +65,7 @@ class SolrQueryResolver(solrConfig: SolrConfig) extends FhirResourceResolver {
         }
       } else List()
 
-    val requestedSolrFields = fieldsPerCollectionMap.getOrElse(QueryColumn.PATIENT, List[String]()) ++ criterionTags.requiredSolrFieldList ++ patientAgeColumns
+    val requestedSolrFields = fieldsPerCollectionMap.getOrElse(QueryColumn.PATIENT, List[String]()) ++ criterionTags.requiredFieldList ++ patientAgeColumns
 
     if (logger.isDebugEnabled) {
       logger.debug(s"requested fields for $collectionName: $requestedSolrFields")

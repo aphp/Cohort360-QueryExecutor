@@ -24,7 +24,7 @@ class QueryParserTest extends AnyFunSuiteLike {
     assert(resource._2(1).isDateTimeAvailable)
     assert(resource._2(1).isEncounterAvailable)
     assert(resource._2(1).isInTemporalConstraint)
-    resource._2(1).requiredSolrFieldList should Matchers.equal(List("_visit"))
+    resource._2(1).requiredFieldList should Matchers.equal(List("_visit"))
     assert(resource._2(1).temporalConstraintTypeList == List(SAME_ENCOUNTER))
   }
 
@@ -40,7 +40,7 @@ class QueryParserTest extends AnyFunSuiteLike {
     )
     assert(resource._1.request.get.isInstanceOf[GroupResource])
     assert(resource._2.map((x) => x._2.withOrganizations).seq.forall((x) => x))
-    assert(resource._2.filter((x) => List(1,3).contains(x._1)).head._2.requiredSolrFieldList == List("_list.organization", "_visit"))
+    assert(resource._2.filter((x) => List(1,3).contains(x._1)).head._2.requiredFieldList == List("_list.organization", "_visit"))
   }
 
   test("testParseWithResourceFilter") {
@@ -53,7 +53,7 @@ class QueryParserTest extends AnyFunSuiteLike {
     )
     assert(resource._1.request.get.isInstanceOf[BasicResource])
     assert(resource._2.map((x) => x._2.isResourceFilter).seq.forall((x) => x))
-    assert(resource._2.filter((x) => List(1).contains(x._1)).head._2.requiredSolrFieldList == List("id"))
+    assert(resource._2.filter((x) => List(1).contains(x._1)).head._2.requiredFieldList == List("id"))
   }
 
 }

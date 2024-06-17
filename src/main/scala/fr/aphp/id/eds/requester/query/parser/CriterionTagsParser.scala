@@ -6,7 +6,7 @@ import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, BasicResource, GroupResource, Request, TemporalConstraint}
 import fr.aphp.id.eds.requester.query.parser.CriterionTagsParser.queryBuilderConfigs
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
@@ -21,14 +21,14 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
                     val isInTemporalConstraint: Boolean,
                     val temporalConstraintTypeList: List[String] = List[String](),
                     val resourceType: String = FhirResource.UNKNOWN,
-                    val requiredSolrFieldList: List[String] = List[String](),
+                    val requiredFieldList: List[String] = List[String](),
                     val isResourceFilter: Boolean = false,
                     val withOrganizations: Boolean = false,
 )
 
 object CriterionTagsParser {
   private val logger = Logger.getLogger(this.getClass)
-  private val queryBuilderConfigs = FhirResourceResolverFactory.getDefaultConfig
+  private val queryBuilderConfigs = ResourceResolverFactory.getDefaultConfig
 
   def getCriterionTagsMap(request: Request,
                           requestOrganizations: Boolean): Map[Short, CriterionTags] = {
@@ -103,7 +103,7 @@ object CriterionTagsParser {
     if (logger.isDebugEnabled)
       logger.debug(resultingCriterionTagsMap
         .map(x =>
-          "AVAILABLE CRITERION_TAGS_MAP: " + s"${x._1}: ${x._2.isEncounterAvailable}, ${x._2.isDateTimeAvailable}, ${x._2.isInTemporalConstraint}, ${x._2.requiredSolrFieldList}, ${x._2.resourceType}")
+          "AVAILABLE CRITERION_TAGS_MAP: " + s"${x._1}: ${x._2.isEncounterAvailable}, ${x._2.isDateTimeAvailable}, ${x._2.isInTemporalConstraint}, ${x._2.requiredFieldList}, ${x._2.resourceType}")
         .mkString(" || "))
     resultingCriterionTagsMap
   }
@@ -173,7 +173,7 @@ object CriterionTagsParser {
             val criterionId = criterion.i
             val collection: String = criterionTagsMapTmp(criterionId).resourceType
             var requiredSolrFieldList: List[String] =
-              criterionTagsMapTmp(criterionId).requiredSolrFieldList
+              criterionTagsMapTmp(criterionId).requiredFieldList
             val isDateTimeAvailable: Boolean = criterionTagsMapTmp(criterionId).isDateTimeAvailable
             val isEncounterAvailable: Boolean =
               criterionTagsMapTmp(criterionId).isEncounterAvailable
@@ -224,7 +224,7 @@ object CriterionTagsParser {
             mergedMap(i._1).isInTemporalConstraint || i._2.isInTemporalConstraint,
             (mergedMap(i._1).temporalConstraintTypeList ++ i._2.temporalConstraintTypeList).distinct,
             mergedMap(i._1).resourceType,
-            (mergedMap(i._1).requiredSolrFieldList ++ i._2.requiredSolrFieldList).distinct,
+            (mergedMap(i._1).requiredFieldList ++ i._2.requiredFieldList).distinct,
             mergedMap(i._1).isResourceFilter || i._2.isResourceFilter,
             mergedMap(i._1).withOrganizations || i._2.withOrganizations,
           ))

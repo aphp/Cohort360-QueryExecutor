@@ -1,14 +1,11 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import fr.aphp.id.eds.requester.query.engine.{
-  DefaultQueryBuilder,
-  QueryBuilderBasicResource,
-  QueryBuilderGroup
-}
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, QueryParsingOptions}
 import fr.aphp.id.eds.requester.query.parser.QueryParser
-import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolver
+import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
+import fr.aphp.id.eds.requester.query.resolver.solr.{DefaultSolrSparkReader, SolrQueryResolver, SolrSparkReader}
 import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.mockito.ArgumentMatchersSugar
@@ -27,7 +24,8 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
   def testCaseEvaluate(folderCase: String,
                        withOrganizationsDetail: Boolean = false,
                        checkOrder: Boolean = true): DataFrame = {
-    val solrQueryResolver: FhirResourceResolver = mock[FhirResourceResolver]
+    val solrSparkReader: SolrSparkReader = mock[SolrSparkReader]
+    val solrQueryResolver: ResourceResolver = new SolrQueryResolver(solrSparkReader)
     val expected = getClass.getResource(s"/testCases/$folderCase/expected.csv")
     val expectedResult = sparkSession.read
       .format("csv")
@@ -55,10 +53,12 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
           .option("header", "true")
           .load(f.getPath)
         when(
-          solrQueryResolver.getSolrResponseDataFrame(
-            ArgumentMatchersSugar.argThat((res: BasicResource) => res._id == criterionId),
+          solrSparkReader.readDf(
             ArgumentMatchersSugar.*,
-            ArgumentMatchersSugar.*)(
+            ArgumentMatchersSugar.*,
+            ArgumentMatchersSugar.*,
+            ArgumentMatchersSugar.eqTo(criterionId)
+          )(
             ArgumentMatchersSugar.*
           )).thenReturn(
           resourceContent

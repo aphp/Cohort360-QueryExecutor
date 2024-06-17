@@ -4,10 +4,10 @@ import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-abstract class FhirResourceResolver {
-  def getSolrResponseDataFrame(resource: BasicResource,
-                               criterionTags: CriterionTags,
-                               sourcePopulation: SourcePopulation)(
+abstract class ResourceResolver {
+  def getResourceDataFrame(resource: BasicResource,
+                           criterionTags: CriterionTags,
+                           sourcePopulation: SourcePopulation)(
       implicit spark: SparkSession
   ): DataFrame
 

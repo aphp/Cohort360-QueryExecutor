@@ -4,7 +4,7 @@ import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model.{GroupResource, GroupResourceType, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{FhirResourceResolverFactory, QueryElementsConfig}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
@@ -23,7 +23,7 @@ trait QueryBuilder {
 
 class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) extends QueryBuilder {
 
-  val qbUtils: QueryElementsConfig = FhirResourceResolverFactory.getDefaultConfig
+  val qbUtils: ResourceConfig = ResourceResolverFactory.getDefaultConfig
 
   /** Computes the resulting df of a request.
     *

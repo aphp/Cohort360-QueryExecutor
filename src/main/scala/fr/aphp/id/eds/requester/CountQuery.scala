@@ -3,7 +3,7 @@ package fr.aphp.id.eds.requester
 import fr.aphp.id.eds.requester.jobs._
 import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
-import fr.aphp.id.eds.requester.query.resolver.FhirResourceResolverFactory
+import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -79,7 +79,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     }
 
     def countPatientsWithResolver() = {
-      FhirResourceResolverFactory.getDefault
+      ResourceResolverFactory.getDefault
         .countPatients(request.sourcePopulation)
     }
 

@@ -5,9 +5,9 @@ import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.{
-  FhirResourceResolver,
-  FhirResourceResolverFactory,
-  QueryElementsConfig
+  ResourceResolver,
+  ResourceResolverFactory,
+  ResourceConfig
 }
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
@@ -15,9 +15,9 @@ import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 import scala.collection.mutable.ListBuffer
 
 class QueryBuilderBasicResource(
-    val qbConfigs: QueryElementsConfig = FhirResourceResolverFactory.getDefaultConfig,
+    val qbConfigs: ResourceConfig = ResourceResolverFactory.getDefaultConfig,
     val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-    val querySolver: FhirResourceResolver = FhirResourceResolverFactory.getDefault) {
+    val querySolver: ResourceResolver = ResourceResolverFactory.getDefault) {
   private val logger = Logger.getLogger(this.getClass)
 
   /** Changing names of columns so that there is no difference between resources in the name of columns. */
@@ -361,19 +361,7 @@ class QueryBuilderBasicResource(
                                                     List())
     // Resolver request
     var criterionDataFrame: DataFrame =
-      querySolver.getSolrResponseDataFrame(basicResource, criterionTags, sourcePopulation)
-    // Group by exploded resources
-    val resourceConfig = qbConfigs.requestKeyPerCollectionMap(basicResource.resourceType)
-    criterionDataFrame = if (resourceConfig.contains(QueryColumn.GROUP_BY)) {
-      criterionDataFrame
-        .drop(resourceConfig(QueryColumn.ID).head)
-        .withColumnRenamed(resourceConfig(QueryColumn.GROUP_BY).head,
-                           resourceConfig(QueryColumn.ID).head)
-        .dropDuplicates(resourceConfig(QueryColumn.ID).head)
-    } else {
-      criterionDataFrame
-    }
-
+      querySolver.getResourceDataFrame(basicResource, criterionTags, sourcePopulation)
     criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
     if (logger.isDebugEnabled) {
       logger.debug(

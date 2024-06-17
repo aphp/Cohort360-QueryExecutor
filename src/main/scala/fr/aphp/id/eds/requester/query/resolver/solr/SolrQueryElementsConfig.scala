@@ -2,9 +2,9 @@ package fr.aphp.id.eds.requester.query.resolver.solr
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
-import fr.aphp.id.eds.requester.query.resolver.QueryElementsConfig
+import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 
-class SolrQueryElementsConfig extends QueryElementsConfig {
+class SolrQueryElementsConfig extends ResourceConfig {
 
   def buildMap(patientCol: List[String],
                dateColListTarget: List[String]): Map[String, List[String]] = {

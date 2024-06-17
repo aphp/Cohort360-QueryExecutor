@@ -3,7 +3,7 @@ package fr.aphp.id.eds.requester.query.resolver
 import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
 import fr.aphp.id.eds.requester._
 
-abstract class QueryElementsConfig {
+abstract class ResourceConfig {
 
   def requestKeyPerCollectionMap: Map[String, Map[String, List[String]]]
 
