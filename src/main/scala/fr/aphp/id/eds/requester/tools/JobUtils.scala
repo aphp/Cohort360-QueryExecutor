@@ -1,9 +1,7 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.{AppConfig, SolrConfig}
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
-import fr.aphp.id.eds.requester.query._
-import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType, QueryParsingOptions, Request, SourcePopulation}
+import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -55,16 +53,6 @@ object JobUtils extends JobUtilsService {
         "/tmp/postgres-spark-job"
       )
     )
-  }
-
-  def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
-    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
-    s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
-  }
-  def getDefaultSolrFilterQueryPatientAphp(sourcePopulation: SourcePopulation): String = {
-    getDefaultSolrFilterQuery(sourcePopulation) +
-      " AND active:true"+
-      " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
   }
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {

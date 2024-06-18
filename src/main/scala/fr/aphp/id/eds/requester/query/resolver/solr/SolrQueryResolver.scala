@@ -4,8 +4,7 @@ import fr.aphp.id.eds.requester.SolrCollection._
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolver, ResourceResolverFactory}
-import fr.aphp.id.eds.requester.tools.JobUtils.getDefaultSolrFilterQuery
+import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
@@ -47,6 +46,17 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
     val res = solr.query(SolrCollection.PATIENT_APHP, query)
     solr.close()
     res.getResults.getNumFound
+  }
+
+  def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
+    getDefaultSolrFilterQuery(sourcePopulation) +
+      " AND active:true"+
+      " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
+  }
+
+  private def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
+    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
+    s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
   }
 
   /**

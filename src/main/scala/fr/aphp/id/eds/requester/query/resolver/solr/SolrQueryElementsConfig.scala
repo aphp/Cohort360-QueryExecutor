@@ -54,7 +54,7 @@ class SolrQueryElementsConfig extends ResourceConfig {
     FhirResource.UNKNOWN -> Map()
   )
 
-  override def reverseColumnMapping(collection: String, column_name: String): String = {
+  override def reverseColumnMapping(collection: String, columnName: String): String = {
     val dateField =
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.EVENT_DATE, List[String]("")).head
     val patientField =
@@ -65,7 +65,7 @@ class SolrQueryElementsConfig extends ResourceConfig {
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.GROUP_BY, List("")).head
     collection match {
       case FhirResource.ENCOUNTER =>
-        column_name match {
+        columnName match {
           case SolrColumn.Encounter.PERIOD_START => QueryColumn.ENCOUNTER_START_DATE
           case SolrColumn.Encounter.PERIOD_END   => QueryColumn.ENCOUNTER_END_DATE
           case SolrColumn.PATIENT_BIRTHDATE      => QueryColumn.PATIENT_BIRTHDATE
@@ -73,18 +73,18 @@ class SolrQueryElementsConfig extends ResourceConfig {
           case `dateField`                       => EVENT_DATE
           case `patientField`                    => QueryColumn.PATIENT
           case `encounterField`                  => QueryColumn.ENCOUNTER
-          case _                                 => column_name.replace(".", "_")
+          case _                                 => columnName.replace(".", "_")
         }
       case FhirResource.PATIENT =>
-        column_name match {
+        columnName match {
           case SolrColumn.Patient.BIRTHDATE => QueryColumn.PATIENT_BIRTHDATE
           case SolrColumn.ORGANIZATIONS     => QueryColumn.ORGANIZATIONS
           case `dateField`                  => QueryColumn.EVENT_DATE
           case `patientField`               => QueryColumn.PATIENT
-          case _                            => column_name.replace(".", "_")
+          case _                            => columnName.replace(".", "_")
         }
       case _ =>
-        column_name match {
+        columnName match {
           case `dateField`                     => QueryColumn.EVENT_DATE
           case `patientField`                  => QueryColumn.PATIENT
           case SolrColumn.PATIENT_BIRTHDATE    => QueryColumn.PATIENT_BIRTHDATE
@@ -94,7 +94,7 @@ class SolrQueryElementsConfig extends ResourceConfig {
           case SolrColumn.EPISODE_OF_CARE      => QueryColumn.EPISODE_OF_CARE
           case `encounterField`                => QueryColumn.ENCOUNTER
           case `groupByField`                  => QueryColumn.GROUP_BY
-          case _                               => column_name.replace(".", "_")
+          case _                               => columnName.replace(".", "_")
         }
     }
   }

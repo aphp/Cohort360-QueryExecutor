@@ -3,153 +3,139 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import org.hl7.fhir.instance.model.api.IBase
+import org.hl7.fhir.r4.model.{DateTimeType, DateType, Reference, StringType}
 
-case class ResourceMapping(fhirPath: String,
-                                       colName: String,
-                                       fhirType: Class[_ <: IBase],
-                                       nullable: Boolean = true)
+case class QueryColumnMapping(queryColName: String,
+                              fhirPath: String,
+                              fhirType: Class[_ <: IBase],
+                              nullable: Boolean = true)
+
+case class JoinInfo(resource: String, sourceJoinColumn: String)
+
+case class ResourceMapping(columnMapping: QueryColumnMapping, joinInfo: Option[JoinInfo] = None)
 
 class RestFhirQueryElementsConfig extends ResourceConfig {
 
-  override def requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] = Map(
-    FhirResource.PATIENT -> Map(
-      QueryColumn.PATIENT -> List("id"),
-      QueryColumn.EVENT_DATE -> List("birthDate"),
-    ),
-    FhirResource.ENCOUNTER -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.EVENT_DATE -> List("period"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("period.end"),
-    ),
-    FhirResource.OBSERVATION -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("effectiveDateTime"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.CONDITION -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("recordedDate"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.MEDICATION_REQUEST -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("authoredOn"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.MEDICATION_ADMINISTRATION -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("effectiveDateTime"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.DOCUMENT_REFERENCE -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("date"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.CLAIM -> Map(
-      QueryColumn.PATIENT -> List("patient.reference"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("created"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.PROCEDURE -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("date"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.IMAGING_STUDY -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("started"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    ),
-    FhirResource.QUESTIONNAIRE_RESPONSE -> Map(
-      QueryColumn.PATIENT -> List("subject"),
-      QueryColumn.ENCOUNTER -> List("encounter"),
-      QueryColumn.EVENT_DATE -> List("authored"),
-      QueryColumn.EPISODE_OF_CARE -> List("encounter.episodeOfCare"),
-      QueryColumn.ENCOUNTER_START_DATE -> List("encounter.period.start"),
-      QueryColumn.ENCOUNTER_END_DATE -> List("encounter.period.end"),
-    )
-  )
-
-  override def reverseColumnMapping(collection: String, column_name: String): String = {
-    requestKeyPerCollectionMap(collection)
-      .find(_._2.contains(column_name))
-      .map(_._1)
-      .getOrElse(column_name.replace(".", "_"))
-  }
-
   val fhirPathMappings: Map[String, List[ResourceMapping]] = Map(
     FhirResource.PATIENT -> List(
-      ResourceMapping("Patient.id", QueryColumn.PATIENT, classOf[IBase]),
-      ResourceMapping("Patient.birthDate", QueryColumn.PATIENT_BIRTHDATE, classOf[IBase]),
+      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType])),
+      ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "id", classOf[StringType])),
+      ResourceMapping(
+        QueryColumnMapping(QueryColumn.PATIENT_BIRTHDATE, "birthDate", classOf[DateType])),
     ),
-    FhirResource.ENCOUNTER -> List(
-      ResourceMapping("Encounter.subject", QueryColumn.PATIENT, classOf[IBase]),
-      ResourceMapping("Encounter.id", QueryColumn.ENCOUNTER, classOf[IBase]),
-      ResourceMapping("Encounter.period.start", QueryColumn.ENCOUNTER_START_DATE, classOf[IBase]),
-      ResourceMapping("Encounter.period.end", QueryColumn.ENCOUNTER_END_DATE, classOf[IBase]),
-    ),
-    FhirResource.OBSERVATION -> List(
-      ResourceMapping("Observation.id", QueryColumn.ID, classOf[IBase]),
-      ResourceMapping("Observation.subject", QueryColumn.PATIENT, classOf[IBase]),
-      ResourceMapping("Observation.effectiveDateTime", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.CONDITION -> List(
-      ResourceMapping("Condition.id", "id", classOf[IBase]),
-      ResourceMapping("Condition.recordedDate", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.MEDICATION_REQUEST -> List(
-      ResourceMapping("MedicationRequest.id", "id ", classOf[IBase]),
-      ResourceMapping("MedicationRequest.period.start", QueryColumn.EVENT_DATE, classOf[IBase]),
-      ResourceMapping("MedicationRequest.period.end", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.MEDICATION_ADMINISTRATION -> List(
-      ResourceMapping("MedicationAdministration.id", "id", classOf[IBase]),
-      ResourceMapping("MedicationAdministration.period.start",
-                      QueryColumn.EVENT_DATE,
-                      classOf[IBase]),
-    ),
-    FhirResource.DOCUMENT_REFERENCE -> List(
-      ResourceMapping("DocumentReference.id", "id", classOf[IBase]),
-      ResourceMapping("DocumentReference.date", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.CLAIM -> List(
-      ResourceMapping("Claim.id", "id", classOf[IBase]),
-      ResourceMapping("Claim.created", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.PROCEDURE -> List(
-      ResourceMapping("Procedure.id", "id", classOf[IBase]),
-      ResourceMapping("Procedure.date", QueryColumn.EVENT_DATE, classOf[IBase]),
-    ),
-    FhirResource.IMAGING_STUDY -> List(
-      ResourceMapping("ImagingStudy.id", "id", classOf[IBase]),
-      ResourceMapping("ImagingStudy.patient", QueryColumn.PATIENT, classOf[IBase]),
-      ResourceMapping("ImagingStudy.started", QueryColumn.EVENT_DATE, classOf[IBase]),
-      ResourceMapping("ImagingStudy.id", QueryColumn.GROUP_BY, classOf[IBase]),
-    ),
-    FhirResource.QUESTIONNAIRE_RESPONSE -> List(
-      ResourceMapping("QuestionnaireResponse.id", "id", classOf[IBase]),
-      ResourceMapping("QuestionnaireResponse.authored", QueryColumn.EVENT_DATE, classOf[IBase]),
-      ResourceMapping("QuestionnaireResponse.episodeOfCare",
-                      QueryColumn.EPISODE_OF_CARE,
-                      classOf[IBase]),
-    )
+    FhirResource.ENCOUNTER -> addJoinedPatientResourceColumns(
+      List(
+        ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType])),
+        ResourceMapping(QueryColumnMapping(QueryColumn.ENCOUNTER, "id", classOf[StringType])),
+        ResourceMapping(QueryColumnMapping(QueryColumn.EVENT_DATE, "period.start", classOf[DateTimeType])),
+        ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "subject", classOf[Reference])),
+        ResourceMapping(
+          QueryColumnMapping(QueryColumn.ENCOUNTER_START_DATE, "period.start", classOf[DateTimeType])),
+        ResourceMapping(
+          QueryColumnMapping(QueryColumn.ENCOUNTER_END_DATE, "period.end", classOf[DateTimeType])),
+      )),
+    FhirResource.OBSERVATION -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectiveDateTime"))),
+    FhirResource.CONDITION -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("recordedDate"))),
+    FhirResource.MEDICATION_REQUEST -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"),
+                             Some("encounter"),
+                             Some("dispenseRequest.validityPeriod.start"))),
+    FhirResource.MEDICATION_ADMINISTRATION -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectivePeriod.start"))),
+    FhirResource.DOCUMENT_REFERENCE -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
+    FhirResource.CLAIM -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("created"))),
+    FhirResource.PROCEDURE -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
+    FhirResource.IMAGING_STUDY -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("patient"), Some("encounter"), Some("started"))),
+    FhirResource.QUESTIONNAIRE_RESPONSE -> addJoinedResourceColumns(
+      defaultResourceMapping(Some("patient"), Some("encounter"), Some("authored")))
   )
+
+  override def requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] = {
+    fhirPathMappings.map {
+      case (key, value) =>
+        key -> value
+          .map(mapping =>
+            mapping.columnMapping.queryColName -> List(mapping.columnMapping.fhirPath))
+          .toMap
+    }
+  }
+
+  override def reverseColumnMapping(collection: String, columnName: String): String = {
+    requestKeyPerCollectionMap(collection)
+      .find(_._2.contains(columnName))
+      .map(_._1)
+      .getOrElse(columnName.replace(".", "_"))
+  }
+
+  private def addJoinedResourceColumns(resourceMapping: List[ResourceMapping],
+                                       queryColumnRef: String,
+                                       resourceType: String,
+                                       addedColumnsInfo: List[QueryColumnMapping]) = {
+    resourceMapping.find(_.columnMapping.queryColName == queryColumnRef) match {
+      case Some(ResourceMapping(baseColMapping, _)) =>
+        resourceMapping ++ addedColumnsInfo.map {
+          colMapping: QueryColumnMapping =>
+            ResourceMapping(colMapping,
+                            joinInfo = Some(JoinInfo(resourceType, baseColMapping.fhirPath)))
+        }
+      case _ => resourceMapping
+    }
+  }
+
+  private def addJoinedPatientResourceColumns(
+      resourceMapping: List[ResourceMapping]): List[ResourceMapping] = {
+    addJoinedResourceColumns(resourceMapping,
+                             QueryColumn.PATIENT,
+                             FhirResource.PATIENT,
+                             List(
+                               QueryColumnMapping(QueryColumn.PATIENT_BIRTHDATE, "birthDate", classOf[DateType])
+                             ))
+  }
+
+  private def addJoinedEncounterResourceColumns(
+      resourceMapping: List[ResourceMapping]): List[ResourceMapping] = {
+    addJoinedResourceColumns(
+      resourceMapping,
+      QueryColumn.ENCOUNTER,
+      FhirResource.ENCOUNTER,
+      List(
+        QueryColumnMapping(QueryColumn.ENCOUNTER_START_DATE, "period.start", classOf[DateTimeType]),
+        QueryColumnMapping(QueryColumn.ENCOUNTER_END_DATE, "period.end", classOf[DateTimeType]),
+        QueryColumnMapping(QueryColumn.EPISODE_OF_CARE, "episodeOfCare", classOf[Reference])
+      )
+    )
+  }
+
+  private def addJoinedResourceColumns(
+      resourceMapping: List[ResourceMapping]): List[ResourceMapping] = {
+    addJoinedEncounterResourceColumns(addJoinedPatientResourceColumns(resourceMapping))
+  }
+
+  private def defaultResourceMapping(patientColumn: Option[String] = Some("patient"),
+                                     encounterColumn: Option[String] = Some("encounter"),
+                                     eventColumn: Option[String] = None): List[ResourceMapping] = {
+    var resourceMappingList = List(
+      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType]))
+    )
+    if (patientColumn.isDefined) {
+      resourceMappingList = resourceMappingList :+ ResourceMapping(
+        QueryColumnMapping(QueryColumn.PATIENT, patientColumn.get, classOf[Reference]))
+    }
+    if (encounterColumn.isDefined) {
+      resourceMappingList = resourceMappingList :+ ResourceMapping(
+        QueryColumnMapping(QueryColumn.ENCOUNTER, encounterColumn.get, classOf[Reference]))
+    }
+    if (eventColumn.isDefined) {
+      resourceMappingList = resourceMappingList :+ ResourceMapping(
+        QueryColumnMapping(QueryColumn.EVENT_DATE, eventColumn.get, classOf[Reference]))
+    }
+    resourceMappingList
+  }
+
 }

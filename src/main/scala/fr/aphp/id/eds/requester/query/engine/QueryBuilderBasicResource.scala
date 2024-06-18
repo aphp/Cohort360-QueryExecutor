@@ -24,8 +24,8 @@ class QueryBuilderBasicResource(
   private def homogenizeColumns(collectionName: String,
                                 df: DataFrame,
                                 localId: Short): DataFrame = {
-    val convFunc = (column_name: String) =>
-      qbConfigs.reverseColumnMapping(collectionName, column_name)
+    val convFunc = (columnName: String) =>
+      qbConfigs.reverseColumnMapping(collectionName, columnName)
     df.toDF(df.columns.map(c => qbConfigs.buildColName(localId, convFunc(c))).toSeq: _*)
 
   }

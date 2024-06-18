@@ -12,5 +12,7 @@ abstract class ResourceResolver {
   ): DataFrame
 
   def countPatients(sourcePopulation: SourcePopulation): Long
+
+  def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String
 }
 
