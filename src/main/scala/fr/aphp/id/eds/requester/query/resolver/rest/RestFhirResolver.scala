@@ -2,15 +2,17 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 
 import ca.uhn.fhir.fhirpath.IFhirPath
 import ca.uhn.fhir.util.BundleUtil
-import fr.aphp.id.eds.requester.FhirResource
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
+import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.hl7.fhir.instance.model.api.IBase
-import org.hl7.fhir.r4.model.Bundle
+import org.hl7.fhir.r4.model.{Bundle, IdType, Reference}
 
+import java.util.Optional
 import scala.collection.JavaConverters._
 
 class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
@@ -22,26 +24,39 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
+    val requiredFieldList = addPatientRequiredField(resource, criterionTags.requiredFieldList)
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
-      resource.filter,
-      getSubsetElementsFilter(criterionTags.requiredFieldList))
+      addSourcePopulationConstraint(sourcePopulation, resource.filter),
+      getSubsetElementsFilter(requiredFieldList))
     val mapping = qbConfigs
       .fhirPathMappings(resource.resourceType)
-      .filter(el => criterionTags.requiredFieldList.contains(el.columnMapping.fhirPath))
-    val resourceInnerMapping = mapping.filter(_.joinInfo.isEmpty).map(_.columnMapping)
-    var resultsDf = createDataFrameFromBundle(results, resourceInnerMapping)
-    var nextResults = getNextBatch(results, batchSize)
-    while (results != null) {
-      resultsDf = resultsDf.union(createDataFrameFromBundle(nextResults, resourceInnerMapping))
-      nextResults = getNextBatch(nextResults, batchSize)
-    }
+      .filter(el => requiredFieldList.contains(el.columnMapping.fhirPath))
+    val resourceInnerMapping = mapping
+      .map(
+        colMap => {
+          if (colMap.joinInfo.isDefined) {
+            QueryColumnMapping(
+              colMap.joinInfo.get.sourceJoinColumn,
+              colMap.joinInfo.get.sourceJoinColumn,
+              classOf[Reference],
+              colMap.columnMapping.nullable
+            )
+          } else { colMap.columnMapping }
+        }
+      )
+      .groupBy(_.queryColName)
+      .map(_._2.head)
+      .toList
+    var resultsDf = getAllPagesOfResource(results, resourceInnerMapping)
 
     val joinResourceInfo = getJoinResourceInfo(mapping)
     joinResourceInfo.foreach((rq) => {
-      resultsDf = joinResource(resultsDf, rq._1.resource, rq._1.sourceJoinColumn, rq._2)
+      resultsDf =
+        joinResource(resultsDf, sourcePopulation, rq._1.resource, rq._1.sourceJoinColumn, rq._2)
     })
-    resultsDf
+    val selectedColumns = mapping.map(m => m.columnMapping.queryColName)
+    resultsDf.select(selectedColumns.map(col): _*)
   }
 
   override def countPatients(sourcePopulation: SourcePopulation): Long = {
@@ -52,45 +67,80 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       .getTotal
   }
 
-  def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
-    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
+  override def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
     val securityNoList =
       java.net.URLEncoder.encode("http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST", "UTF-8")
-    s"_list=$list&active=true&meta.security:not=$securityNoList"
+    addSourcePopulationConstraint(sourcePopulation,
+                                  s"active=true&meta.security:not=$securityNoList")
   }
 
-  def getJoinResourceInfo(
+  private def addPatientRequiredField(resource: BasicResource, requiredFieldList: List[String]): List[String] = {
+    (requiredFieldList ++ qbConfigs.requestKeyPerCollectionMap(resource.resourceType).getOrElse(QueryColumn.PATIENT, List[String]())).distinct
+  }
+
+  private def getAllPagesOfResource(results: Bundle, mapping: List[QueryColumnMapping])(
+      implicit spark: SparkSession) = {
+    var resultsDf = createDataFrameFromBundle(results, mapping)
+    var nextResults = getNextBatch(results, batchSize)
+    while (nextResults != null) {
+      resultsDf = resultsDf.union(createDataFrameFromBundle(nextResults, mapping))
+      nextResults = getNextBatch(nextResults, batchSize)
+    }
+    resultsDf
+  }
+
+  private def addSourcePopulationConstraint(sourcePopulation: SourcePopulation,
+                                            filter: String): String = {
+    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(",")
+    val constraint = s"_list=$list"
+    if (filter.trim.isEmpty) {
+      constraint
+    } else {
+      s"$filter&$constraint"
+    }
+  }
+
+  private def getJoinResourceInfo(
       requestedColumns: List[ResourceMapping]): Map[JoinInfo, List[QueryColumnMapping]] = {
     requestedColumns
       .filter(_.joinInfo.isDefined)
       .map(rm => rm.joinInfo.get -> rm.columnMapping)
       .groupBy(_._1)
-      .mapValues(_.map(_._2))
+      .mapValues(_.map(m =>
+        m._2.copy(fhirPath = m._2.fhirPath.stripPrefix(m._1.sourceJoinColumn + "."))) ++ List(
+        QueryColumnMapping("id", "id", classOf[IdType], nullable = false)))
   }
 
-  def joinResource(
+  private def joinResource(
       resultDf: DataFrame,
+      sourcePopulation: SourcePopulation,
       resourceType: String,
       joinColumn: String,
       resourceQueryColumns: List[QueryColumnMapping])(implicit spark: SparkSession): DataFrame = {
     val resourceIds =
       resultDf.select(joinColumn).dropDuplicates().collect().map(row => row.getString(0))
-    val resourceIdsChunks = resourceIds.grouped(1000).toList
-    val resourceIdsChunksRDD = spark.sparkContext.parallelize(resourceIdsChunks)
-    val dfToJoin = resourceIdsChunksRDD
+    val resourceIdsChunks = resourceIds.filter(_ != null).grouped(1000).toList
+    val dfToJoin = resourceIdsChunks
       .map(chunk => {
         val results: Bundle =
-          fhirClient.getBundle(resourceType,
-                               f"_id=${chunk.mkString(",")}",
-                               getSubsetElementsFilter(resourceQueryColumns.map(_.fhirPath)))
-        createDataFrameFromBundle(results, resourceQueryColumns)
+          fhirClient.getBundle(
+            resourceType,
+            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.mkString(",")}"),
+            getSubsetElementsFilter(resourceQueryColumns.map(c => c.fhirPath))
+          )
+        getAllPagesOfResource(results, resourceQueryColumns)
       })
       .reduce((df1, df2) => df1.union(df2))
-    resultDf.join(dfToJoin, resultDf(joinColumn) === dfToJoin("id"))
-
+    resultDf
+      .alias("origin")
+      .join(dfToJoin.alias("j"), col(s"origin.${joinColumn}") === col("j.id"), "left")
+      .select(
+        List(col("origin.*")) ++ resourceQueryColumns
+          .filter(_.queryColName != "id")
+          .map(c => col(s"j.`${c.queryColName}`")): _*)
   }
 
-  def getNextBatch(bundle: Bundle, offset: Int): Bundle = {
+  private def getNextBatch(bundle: Bundle, offset: Int): Bundle = {
     val nextLink = bundle.getLink("next")
     if (nextLink != null) {
       if (!bundle.hasTotal || bundle.getTotal > offset + batchSize) {
@@ -104,15 +154,19 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   }
 
   private def getSubsetElementsFilter(filterColList: List[String]): List[String] = {
-    filterColList.map(col => col.split(".").head).distinct
+    filterColList.map(col => col.split("\\.").head).distinct
   }
 
-  def createDataFrameFromBundle(bundle: Bundle, mapping: List[QueryColumnMapping])(
+  private def createDataFrameFromBundle(bundle: Bundle, mapping: List[QueryColumnMapping])(
       implicit spark: SparkSession): DataFrame = {
     val fhirPathEvaluator = ctx.newFhirPath()
     val rows = spark.sparkContext
-      .parallelize(BundleUtil.toListOfResources(ctx, bundle).asScala)
-      .map(resource => createRowFromResource(resource, mapping, fhirPathEvaluator))
+      .parallelize(
+        BundleUtil
+          .toListOfResources(ctx, bundle)
+          .asScala
+          .map(resource => createRowFromResource(resource, mapping, fhirPathEvaluator)))
+
     val schema = StructType(
       mapping.map(
         el =>
@@ -122,36 +176,53 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     spark.createDataFrame(rows, schema)
   }
 
-  def createRowFromResource(resource: IBase,
-                            mapping: List[QueryColumnMapping],
-                            fhirPathEngine: IFhirPath): Row = {
+  private def createRowFromResource(resource: IBase,
+                                    mapping: List[QueryColumnMapping],
+                                    fhirPathEngine: IFhirPath): Row = {
     Row.fromSeq(mapping.map(el => extractElementFromResource(resource, el, fhirPathEngine)))
   }
 
-  def extractElementFromResource(resource: IBase,
-                                 mapping: QueryColumnMapping,
-                                 fhirPathEngine: IFhirPath): Any = {
-    mapFhirTypesToSparkTypes(fhirPathEngine.evaluate(resource, mapping.fhirPath, mapping.fhirType))
+  private def extractElementFromResource(resource: IBase,
+                                         mapping: QueryColumnMapping,
+                                         fhirPathEngine: IFhirPath): Any = {
+    mapFhirTypesToSparkTypes(
+      fhirPathEngine.evaluateFirst(resource, mapping.fhirPath, mapping.fhirType))
   }
 
-  def translateFhirTypesToSparkTypes(fhirType: Class[_]): DataType = {
-    fhirType match {
-      case _: Class[org.hl7.fhir.r4.model.StringType]   => StringType
-      case _: Class[org.hl7.fhir.r4.model.DateType]     => DateType
-      case _: Class[org.hl7.fhir.r4.model.DateTimeType] => DateType
-      case _: Class[org.hl7.fhir.r4.model.Reference]    => StringType
-      case _                                            => StringType
+  private def translateFhirTypesToSparkTypes(fhirType: Class[_]): DataType = {
+    fhirType.getTypeName match {
+      case "org.hl7.fhir.r4.model.IdType"       => StringType
+      case "org.hl7.fhir.r4.model.StringType"   => StringType
+      case "org.hl7.fhir.r4.model.DateType"     => DateType
+      case "org.hl7.fhir.r4.model.DateTimeType" => TimestampType
+      case "org.hl7.fhir.r4.model.Reference"    => StringType
+      case _                                    => StringType
     }
   }
 
-  def mapFhirTypesToSparkTypes(value: Any): Any = {
+  private def mapFhirTypesToSparkTypes(optionalValue: Optional[_ <: IBase]): Any = {
+    if (optionalValue.isEmpty) {
+      return null
+    }
+    val value = optionalValue.get()
     value match {
+      case _: org.hl7.fhir.r4.model.IdType =>
+        value.asInstanceOf[org.hl7.fhir.r4.model.IdType].getIdPart
       case _: org.hl7.fhir.r4.model.StringType =>
         value.asInstanceOf[org.hl7.fhir.r4.model.StringType].getValue
       case _: org.hl7.fhir.r4.model.DateType =>
-        value.asInstanceOf[org.hl7.fhir.r4.model.DateType].getValue
+        java.sql.Date.valueOf(
+          value
+            .asInstanceOf[org.hl7.fhir.r4.model.DateType]
+            .toHumanDisplayLocalTimezone
+        )
       case _: org.hl7.fhir.r4.model.DateTimeType =>
-        value.asInstanceOf[org.hl7.fhir.r4.model.DateTimeType].getValue
+        java.sql.Timestamp.from(
+          value
+            .asInstanceOf[org.hl7.fhir.r4.model.DateTimeType]
+            .getValue
+            .toInstant
+        )
       case _: org.hl7.fhir.r4.model.Reference =>
         value.asInstanceOf[org.hl7.fhir.r4.model.Reference].getReferenceElement.getIdPart
       case _ => value.toString

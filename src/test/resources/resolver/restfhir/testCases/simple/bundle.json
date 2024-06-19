@@ -1,0 +1,920 @@
+{
+  "resourceType": "Bundle",
+  "id": "8721f893-2424-43b4-8c49-ea302c6623b0",
+  "meta": {
+    "lastUpdated": "2024-06-19T11:10:40.199+00:00"
+  },
+  "type": "searchset",
+  "link": [
+    {
+      "relation": "self",
+      "url": "http://localhost:8080/fhir/Procedure"
+    }
+  ],
+  "entry": [
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/59",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "59",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "710824005",
+              "display": "Assessment of health and social care needs (procedure)"
+            }
+          ],
+          "text": "Assessment of health and social care needs (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/39"
+        },
+        "performedPeriod": {
+          "start": "2007-10-04T19:45:05-04:00",
+          "end": "2007-10-04T20:25:23-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/60",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "60",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "430193006",
+              "display": "Medication Reconciliation (procedure)"
+            }
+          ],
+          "text": "Medication Reconciliation (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/39"
+        },
+        "performedPeriod": {
+          "start": "2007-10-04T19:45:05-04:00",
+          "end": "2007-10-04T20:00:05-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/69",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "69",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "76601001",
+              "display": "Intramuscular injection"
+            }
+          ],
+          "text": "Intramuscular injection"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/65"
+        },
+        "performedPeriod": {
+          "start": "2007-10-11T19:45:05-04:00",
+          "end": "2007-10-11T20:03:10-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/70",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "70",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "171207006",
+              "display": "Depression screening (procedure)"
+            }
+          ],
+          "text": "Depression screening (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/65"
+        },
+        "performedPeriod": {
+          "start": "2007-10-04T20:25:23-04:00",
+          "end": "2007-10-04T20:38:02-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/71",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "71",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "454711000124102",
+              "display": "Depression screening using Patient Health Questionnaire Two-Item score (procedure)"
+            }
+          ],
+          "text": "Depression screening using Patient Health Questionnaire Two-Item score (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/65"
+        },
+        "performedPeriod": {
+          "start": "2007-10-04T20:38:02-04:00",
+          "end": "2007-10-04T21:07:02-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/76",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "76",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "76601001",
+              "display": "Intramuscular injection"
+            }
+          ],
+          "text": "Intramuscular injection"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/75"
+        },
+        "performedPeriod": {
+          "start": "2008-01-10T18:45:05-05:00",
+          "end": "2008-01-10T18:57:13-05:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/94",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "94",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "710824005",
+              "display": "Assessment of health and social care needs (procedure)"
+            }
+          ],
+          "text": "Assessment of health and social care needs (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/79"
+        },
+        "performedPeriod": {
+          "start": "2008-03-20T19:45:05-04:00",
+          "end": "2008-03-20T20:35:49-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/102",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "102",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "252160004",
+              "display": "Standard pregnancy test"
+            }
+          ],
+          "text": "Standard pregnancy test"
+        },
+        "subject": {
+          "reference": "Patient/2"
+        },
+        "encounter": {
+          "reference": "Encounter/99"
+        },
+        "performedPeriod": {
+          "start": "2008-05-08T19:45:05-04:00",
+          "end": "2008-05-08T20:00:05-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/103",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "103",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "169230002",
+              "display": "Ultrasound scan for fetal viability"
+            }
+          ],
+          "text": "Ultrasound scan for fetal viability"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/99"
+        },
+        "performedPeriod": {
+          "start": "2008-05-08T19:45:05-04:00",
+          "end": "2008-05-08T20:00:05-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/107",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "107",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "5880005",
+              "display": "Physical examination"
+            }
+          ],
+          "text": "Physical examination"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/106"
+        },
+        "performedPeriod": {
+          "start": "2008-05-21T19:45:05-04:00",
+          "end": "2008-05-21T20:00:05-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/108",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "108",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "171207006",
+              "display": "Depression screening"
+            }
+          ],
+          "text": "Depression screening"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/106"
+        },
+        "performedPeriod": {
+          "start": "2008-05-21T19:45:05-04:00",
+          "end": "2008-05-21T20:00:05-04:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/137",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "137",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "710824005",
+              "display": "Assessment of health and social care needs (procedure)"
+            }
+          ],
+          "text": "Assessment of health and social care needs (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/119"
+        },
+        "performedPeriod": {
+          "start": "2011-03-24T19:45:05-04:00",
+          "end": "2011-03-24T20:32:11-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/138",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "138",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "710841007",
+              "display": "Assessment of anxiety (procedure)"
+            }
+          ],
+          "text": "Assessment of anxiety (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/119"
+        },
+        "performedPeriod": {
+          "start": "2011-03-24T20:32:11-04:00",
+          "end": "2011-03-24T20:58:48-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/139",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "139",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "866148006",
+              "display": "Screening for domestic abuse (procedure)"
+            }
+          ],
+          "text": "Screening for domestic abuse (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/119"
+        },
+        "performedPeriod": {
+          "start": "2011-03-24T20:58:48-04:00",
+          "end": "2011-03-24T21:40:29-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/140",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "140",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "171207006",
+              "display": "Depression screening (procedure)"
+            }
+          ],
+          "text": "Depression screening (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/119"
+        },
+        "performedPeriod": {
+          "start": "2011-03-24T21:40:29-04:00",
+          "end": "2011-03-24T21:50:31-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/141",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "141",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "454711000124102",
+              "display": "Depression screening using Patient Health Questionnaire Two-Item score (procedure)"
+            }
+          ],
+          "text": "Depression screening using Patient Health Questionnaire Two-Item score (procedure)"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/119"
+        },
+        "performedPeriod": {
+          "start": "2011-03-24T21:50:31-04:00",
+          "end": "2011-03-24T22:17:17-04:00"
+        },
+        "location": {
+          "display": "SOUTHCOAST PHYSICIANS GROUP, INC.."
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/155",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "155",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "252160004",
+              "display": "Standard pregnancy test"
+            }
+          ],
+          "text": "Standard pregnancy test"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/153"
+        },
+        "performedPeriod": {
+          "start": "2013-02-07T18:45:05-05:00",
+          "end": "2013-02-07T19:00:05-05:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          },
+          {
+            "reference": "Condition/154",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/156",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "156",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "169230002",
+              "display": "Ultrasound scan for fetal viability"
+            }
+          ],
+          "text": "Ultrasound scan for fetal viability"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/153"
+        },
+        "performedPeriod": {
+          "start": "2013-02-07T18:45:05-05:00",
+          "end": "2013-02-07T19:00:05-05:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          },
+          {
+            "reference": "Condition/154",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/157",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "157",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "274804006",
+              "display": "Evaluation of uterine fundal height"
+            }
+          ],
+          "text": "Evaluation of uterine fundal height"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/153"
+        },
+        "performedPeriod": {
+          "start": "2013-02-07T18:45:05-05:00",
+          "end": "2013-02-07T19:00:05-05:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          },
+          {
+            "reference": "Condition/154",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://localhost:8080/fhir/Procedure/158",
+      "resource": {
+        "resourceType": "Procedure",
+        "id": "158",
+        "meta": {
+          "versionId": "1",
+          "lastUpdated": "2024-05-28T09:22:22.869+00:00",
+          "source": "#abca469539c0906e",
+          "profile": [
+            "http://hl7.org/fhir/us/core/StructureDefinition/us-core-procedure"
+          ]
+        },
+        "status": "completed",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "225158009",
+              "display": "Auscultation of the fetal heart"
+            }
+          ],
+          "text": "Auscultation of the fetal heart"
+        },
+        "subject": {
+          "reference": "Patient/1"
+        },
+        "encounter": {
+          "reference": "Encounter/153"
+        },
+        "performedPeriod": {
+          "start": "2013-02-07T18:45:05-05:00",
+          "end": "2013-02-07T19:00:05-05:00"
+        },
+        "location": {
+          "display": "SAINT ANNE'S HOSPITAL"
+        },
+        "reasonReference": [
+          {
+            "reference": "Condition/100",
+            "display": "Normal pregnancy"
+          },
+          {
+            "reference": "Condition/154",
+            "display": "Normal pregnancy"
+          }
+        ]
+      },
+      "search": {
+        "mode": "match"
+      }
+    }
+  ]
+}

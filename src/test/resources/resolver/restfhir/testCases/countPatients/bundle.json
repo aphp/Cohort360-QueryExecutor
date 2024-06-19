@@ -1,0 +1,16 @@
+{
+  "resourceType": "Bundle",
+  "id": "cb5729f2-491b-4486-af4a-dbbc8f6fa0d7",
+  "meta": {
+    "lastUpdated": "2024-06-19T18:42:00.476+00:00",
+    "tag": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationValue",
+        "code": "SUBSETTED",
+        "display": "Resource encoded in summary mode"
+      }
+    ]
+  },
+  "type": "searchset",
+  "total": 1996
+}

@@ -3,7 +3,7 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import org.hl7.fhir.instance.model.api.IBase
-import org.hl7.fhir.r4.model.{DateTimeType, DateType, Reference, StringType}
+import org.hl7.fhir.r4.model.{DateTimeType, DateType, IdType, Reference, StringType}
 
 case class QueryColumnMapping(queryColName: String,
                               fhirPath: String,
@@ -18,15 +18,15 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
 
   val fhirPathMappings: Map[String, List[ResourceMapping]] = Map(
     FhirResource.PATIENT -> List(
-      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType])),
-      ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "id", classOf[StringType])),
+      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[IdType])),
+      ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "id", classOf[IdType])),
       ResourceMapping(
         QueryColumnMapping(QueryColumn.PATIENT_BIRTHDATE, "birthDate", classOf[DateType])),
     ),
     FhirResource.ENCOUNTER -> addJoinedPatientResourceColumns(
       List(
-        ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType])),
-        ResourceMapping(QueryColumnMapping(QueryColumn.ENCOUNTER, "id", classOf[StringType])),
+        ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[IdType])),
+        ResourceMapping(QueryColumnMapping(QueryColumn.ENCOUNTER, "id", classOf[IdType])),
         ResourceMapping(QueryColumnMapping(QueryColumn.EVENT_DATE, "period.start", classOf[DateTimeType])),
         ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "subject", classOf[Reference])),
         ResourceMapping(
@@ -51,7 +51,7 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
     FhirResource.PROCEDURE -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
     FhirResource.IMAGING_STUDY -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("patient"), Some("encounter"), Some("started"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("started"))),
     FhirResource.QUESTIONNAIRE_RESPONSE -> addJoinedResourceColumns(
       defaultResourceMapping(Some("patient"), Some("encounter"), Some("authored")))
   )
@@ -67,10 +67,7 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
   }
 
   override def reverseColumnMapping(collection: String, columnName: String): String = {
-    requestKeyPerCollectionMap(collection)
-      .find(_._2.contains(columnName))
-      .map(_._1)
-      .getOrElse(columnName.replace(".", "_"))
+    columnName
   }
 
   private def addJoinedResourceColumns(resourceMapping: List[ResourceMapping],
@@ -81,7 +78,7 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
       case Some(ResourceMapping(baseColMapping, _)) =>
         resourceMapping ++ addedColumnsInfo.map {
           colMapping: QueryColumnMapping =>
-            ResourceMapping(colMapping,
+            ResourceMapping(QueryColumnMapping(colMapping.queryColName, s"${baseColMapping.fhirPath}.${colMapping.fhirPath}", colMapping.fhirType, colMapping.nullable),
                             joinInfo = Some(JoinInfo(resourceType, baseColMapping.fhirPath)))
         }
       case _ => resourceMapping
@@ -121,7 +118,7 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
                                      encounterColumn: Option[String] = Some("encounter"),
                                      eventColumn: Option[String] = None): List[ResourceMapping] = {
     var resourceMappingList = List(
-      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[StringType]))
+      ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[IdType]))
     )
     if (patientColumn.isDefined) {
       resourceMappingList = resourceMappingList :+ ResourceMapping(
@@ -133,7 +130,7 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
     }
     if (eventColumn.isDefined) {
       resourceMappingList = resourceMappingList :+ ResourceMapping(
-        QueryColumnMapping(QueryColumn.EVENT_DATE, eventColumn.get, classOf[Reference]))
+        QueryColumnMapping(QueryColumn.EVENT_DATE, eventColumn.get, classOf[DateTimeType]))
     }
     resourceMappingList
   }
