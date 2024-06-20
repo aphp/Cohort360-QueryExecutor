@@ -19,7 +19,8 @@ case class SolrConfig(
 )
 
 case class FhirServerConfig(
-    url: String
+    url: String,
+    accessToken: Option[String]
 )
 
 case class PGConfig(
@@ -80,7 +81,12 @@ class AppConfig(conf: Config) {
   val fhir: Option[FhirServerConfig] = if (conf.hasPath("fhir.url")) {
     Some(
       FhirServerConfig(
-        conf.getString("fhir.url")
+        conf.getString("fhir.url"),
+        if (conf.hasPath("fhir.accessToken")) {
+          Some(conf.getString("fhir.accessToken"))
+        } else {
+          None
+        }
       ))
   } else { None }
   val pg: PGConfig = PGConfig(
