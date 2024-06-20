@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 
 import ca.uhn.fhir.fhirpath.IFhirPath
 import ca.uhn.fhir.util.BundleUtil
-import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
+import fr.aphp.id.eds.requester.{AppConfig, FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
@@ -91,6 +91,9 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
 
   private def addSourcePopulationConstraint(sourcePopulation: SourcePopulation,
                                             filter: String): String = {
+    if (!AppConfig.get.business.queryConfig.useSourcePopulation) {
+      return filter
+    }
     val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(",")
     val constraint = s"_list=$list"
     if (filter.trim.isEmpty) {

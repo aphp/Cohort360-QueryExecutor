@@ -55,6 +55,9 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
   }
 
   private def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
+    if (!AppConfig.get.business.queryConfig.useSourcePopulation) {
+      return ""
+    }
     val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
     s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
   }

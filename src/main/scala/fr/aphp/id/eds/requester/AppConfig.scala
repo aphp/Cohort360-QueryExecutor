@@ -44,12 +44,17 @@ case class CohortConfig(
 case class BusinessConfig(
     jobs: JobConfig,
     cohorts: CohortConfig,
-    enableCache: Boolean
+    enableCache: Boolean,
+    queryConfig: QueryConfig
 )
 
 case class BackConfig(
     url: String,
     authToken: String
+)
+
+case class QueryConfig(
+    useSourcePopulation: Boolean,
 )
 
 class AppConfig(conf: Config) {
@@ -101,7 +106,8 @@ class AppConfig(conf: Config) {
       },
       "Cohort360"
     ),
-    conf.getBoolean("app.enableCache")
+    conf.getBoolean("app.enableCache"),
+    QueryConfig(conf.getBoolean("app.query.useSourcePopulation"))
   )
   val back: BackConfig = BackConfig(
     conf.getString("app.back.url"),
