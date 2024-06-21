@@ -1,1 +1,0 @@
-MAVEN_OPTS="-Dhttp.proxyHost=proxym-inter.aphp.fr -Dhttp.proxyPort=8080 -Dhttps.proxyHost=proxym-inter.aphp.fr -Dhttps.proxyPort=8080 -Djdk.http.auth.tunneling.disabledSchemes="

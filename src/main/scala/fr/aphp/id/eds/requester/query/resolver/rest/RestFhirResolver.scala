@@ -15,6 +15,10 @@ import org.hl7.fhir.r4.model.{Bundle, IdType, Reference}
 import java.util.Optional
 import scala.collection.JavaConverters._
 
+/**
+ * Implementation of ResourceResolver that uses a RestFhirClient to fetch resources from a FHIR server.
+ * @param fhirClient The RestFhirClient to use for fetching resources.
+ */
 class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   private val ctx = fhirClient.getFhirContext
   private val batchSize = 1000
@@ -24,14 +28,18 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
+    // add the patient field (id) to the required field list
     val requiredFieldList = addPatientRequiredField(resource, criterionTags.requiredFieldList)
+    // retrieve the first page of the resource
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
       addSourcePopulationConstraint(sourcePopulation, resource.filter),
       getSubsetElementsFilter(requiredFieldList))
+    // retrieve the query columns mapping of the resource (only those requested by the requiredFieldList)
     val mapping = qbConfigs
       .fhirPathMappings(resource.resourceType)
       .filter(el => requiredFieldList.contains(el.columnMapping.fhirPath))
+    // restrict the column mapping to only the one that are inner to the resource (not those needing a joined resource)
     val resourceInnerMapping = mapping
       .map(
         colMap => {
@@ -48,13 +56,16 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       .groupBy(_.queryColName)
       .map(_._2.head)
       .toList
+    // retrieve all pages of the resource
     var resultsDf = getAllPagesOfResource(results, resourceInnerMapping)
-
+    // get the list of other resource to join for the requested columns that need it
     val joinResourceInfo = getJoinResourceInfo(mapping)
+    // join the other resources with the remaining columns
     joinResourceInfo.foreach((rq) => {
       resultsDf =
         joinResource(resultsDf, sourcePopulation, rq._1.resource, rq._1.sourceJoinColumn, rq._2)
     })
+    // select only the requested columns with their generic alias query column name
     val selectedColumns = mapping.map(m => m.columnMapping.queryColName)
     resultsDf.select(selectedColumns.map(col): _*)
   }

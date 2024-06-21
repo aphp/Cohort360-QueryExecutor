@@ -66,10 +66,6 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
     }
   }
 
-  override def reverseColumnMapping(collection: String, columnName: String): String = {
-    columnName
-  }
-
   private def addJoinedResourceColumns(resourceMapping: List[ResourceMapping],
                                        queryColumnRef: String,
                                        resourceType: String,

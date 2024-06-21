@@ -36,7 +36,8 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
     } else {
       criterionDataFrame
     }
-    criterionDataFrame
+    val convFunc = (columnName: String) => qbConfigs.reverseColumnMapping(resource.resourceType, columnName)
+    criterionDataFrame.toDF(criterionDataFrame.columns.map(c => convFunc(c)).toSeq: _*)
   }
 
   def countPatients(sourcePopulation: SourcePopulation): Long = {

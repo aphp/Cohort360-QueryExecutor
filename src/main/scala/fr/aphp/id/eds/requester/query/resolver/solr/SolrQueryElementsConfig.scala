@@ -54,7 +54,7 @@ class SolrQueryElementsConfig extends ResourceConfig {
     FhirResource.UNKNOWN -> Map()
   )
 
-  override def reverseColumnMapping(collection: String, columnName: String): String = {
+  def reverseColumnMapping(collection: String, columnName: String): String = {
     val dateField =
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.EVENT_DATE, List[String]("")).head
     val patientField =

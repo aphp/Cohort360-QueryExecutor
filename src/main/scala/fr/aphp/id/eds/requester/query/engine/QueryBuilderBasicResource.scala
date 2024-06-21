@@ -20,16 +20,6 @@ class QueryBuilderBasicResource(
     val querySolver: ResourceResolver = ResourceResolverFactory.getDefault) {
   private val logger = Logger.getLogger(this.getClass)
 
-  /** Changing names of columns so that there is no difference between resources in the name of columns. */
-  private def homogenizeColumns(collectionName: String,
-                                df: DataFrame,
-                                localId: Short): DataFrame = {
-    val convFunc = (columnName: String) =>
-      qbConfigs.reverseColumnMapping(collectionName, columnName)
-    df.toDF(df.columns.map(c => qbConfigs.buildColName(localId, convFunc(c))).toSeq: _*)
-
-  }
-
   /** Filter patient of input dataframe based on the date of the occurrence
     *
     * @param criterionDataFrame resulting dataframe of patient of a basicResource
@@ -349,7 +339,6 @@ class QueryBuilderBasicResource(
                            criterionTags: CriterionTags,
                            basicResource: BasicResource): DataFrame = {
     val criterionId: Short = basicResource._id
-    val collectionName: String = basicResource.resourceType
     val isInTemporalConstraint: Boolean = criterionTags.isInTemporalConstraint
     val subjectColumn =
       qbConfigs.getSubjectColumn(criterionId, isPatient = !criterionTags.isResourceFilter)
@@ -362,7 +351,8 @@ class QueryBuilderBasicResource(
     // Resolver request
     var criterionDataFrame: DataFrame =
       querySolver.getResourceDataFrame(basicResource, criterionTags, sourcePopulation)
-    criterionDataFrame = homogenizeColumns(collectionName, criterionDataFrame, criterionId)
+    // set column names with prepended criterionId
+    criterionDataFrame = criterionDataFrame.toDF(criterionDataFrame.columns.map(c => qbConfigs.buildColName(criterionId, c)).toSeq: _*)
     if (logger.isDebugEnabled) {
       logger.debug(
         s"criterionDataFrame recovered, columns are: ${criterionDataFrame.columns.mkString("Array(", ", ", ")")}")

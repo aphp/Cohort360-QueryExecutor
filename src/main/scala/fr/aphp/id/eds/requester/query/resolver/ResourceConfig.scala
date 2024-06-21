@@ -7,8 +7,6 @@ abstract class ResourceConfig {
 
   def requestKeyPerCollectionMap: Map[String, Map[String, List[String]]]
 
-  def reverseColumnMapping(collection: String, columnName: String): String
-
   def buildColName(id: Short, colName: String): String = {
     s"${id}_::_$colName"
   }
