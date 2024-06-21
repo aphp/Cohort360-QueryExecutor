@@ -13,7 +13,6 @@ trait QueryBuilder {
       def processRequest(implicit spark: SparkSession,
                             request: Request,
                             criterionTagsMap: Map[Short, CriterionTags],
-                            omopTools: OmopTools,
                             ownerEntityId: String,
                             cacheEnabled: Boolean,
                             withOrganizationDetails: Boolean,
@@ -29,13 +28,11 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
     *
     * @param request the request object
     * @param criterionTagsMap list of criterion id concerned by tc
-    * @param omopTools instance of object to interact with cache
     * @param ownerEntityId the id of the user to name the cache
     * */
   override def processRequest(implicit spark: SparkSession,
                      request: Request,
                      criterionTagsMap: Map[Short, CriterionTags],
-                     omopTools: OmopTools,
                      ownerEntityId: String,
                      cacheEnabled: Boolean,
                      withOrganizationDetails: Boolean,
@@ -68,7 +65,6 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
       root,
       request.sourcePopulation,
       updatedCriteriontagsMap,
-      omopTools = omopTools,
       ownerEntityId = ownerEntityId,
       enableCurrentGroupCache = false,
       cacheEnabled

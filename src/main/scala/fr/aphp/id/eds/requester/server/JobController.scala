@@ -23,10 +23,10 @@ class JobController(implicit val swagger: Swagger) extends ScalatraServlet with 
   private def parseInput(body: String): SparkJobParameter = {
     val configData = ConfigFactory.parseString(body).getConfig("input")
     SparkJobParameter(
-      configData.getString("cohortDefinitionName"),
+      if (configData.hasPath("cohortDefinitionName")) configData.getString("cohortDefinitionName") else "Unnamed Cohort",
       if (configData.hasPath("cohortDefinitionDescription")) Option(configData.getString("cohortDefinitionDescription")) else Option.empty,
       configData.getString("cohortDefinitionSyntax"),
-      configData.getString("ownerEntityId"),
+      if (configData.hasPath("ownerEntityId")) configData.getString("ownerEntityId") else "0",
       "10000",
       "10000",
       configData.getString("mode"),

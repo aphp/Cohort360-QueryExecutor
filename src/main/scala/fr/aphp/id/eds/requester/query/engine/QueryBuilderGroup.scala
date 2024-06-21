@@ -30,7 +30,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     *                                           - 'isDt' (tells if the criterion contains datetime information).
     *                                           - 'isEncounter' (tells if the criterion contains encounter information).
     *                                           - 'resourceType' (criterion resource name - 'default' for groups).
-    * @param omopTools                         instance of object to interact with cache
     * @param ownerEntityId                     the id of the user to name the cache
     * @param enableCurrentGroupCache           whether to cache the current group or not
     * @param cacheNestedGroup                  whether to cache nested groups or not
@@ -39,7 +38,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                         criterion: BaseQuery,
                         sourcePopulation: SourcePopulation,
                         criterionTagsMap: Map[Short, CriterionTags],
-                        omopTools: OmopTools,
                         ownerEntityId: String,
                         enableCurrentGroupCache: Boolean,
                         cacheNestedGroup: Boolean): DataFrame = {
@@ -53,7 +51,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
       case group: GroupResource =>
         if (enableCurrentGroupCache) { // @todo: this is unused code for now
           logger.debug("cache is enabled for nested groups")
-          val hashDf = omopTools.getCohortHash(criterion.toString)
+          val hashDf = JobUtils.getCohortHash(criterion.toString)
           SparkTools.getCached(spark, hashDf, ownerEntityId) match {
             case Some(groupDataFrame) =>
               if (logger.isDebugEnabled)
@@ -67,7 +65,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
               val groupDataFrame = processRequestGroup(spark,
                                                        criterionTagsMap,
                                                        sourcePopulation,
-                                                       omopTools,
                                                        ownerEntityId,
                                                        cacheNestedGroup,
                                                        group)
@@ -78,7 +75,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
           processRequestGroup(spark,
                               criterionTagsMap,
                               sourcePopulation,
-                              omopTools,
                               ownerEntityId,
                               cacheNestedGroup,
                               group)
@@ -136,14 +132,12 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     * @param criterionWithTcList     list of criterion id concerned by a tc
     * @param sourcePopulation                 caresite and provider source population
     * @param tagsPerId                  map linking id to their tags info.
-    * @param omopTools                         instance of object to interact with cache
     * @param ownerEntityId                     the id of the user to name the cache
     * @param cacheNestedGroup                  whether it is the top level request or not.
     * */
   def processRequestGroup(spark: SparkSession,
                           criterionTagsMap: Map[Short, CriterionTags],
                           sourcePopulation: SourcePopulation,
-                          omopTools: OmopTools,
                           ownerEntityId: String,
                           cacheNestedGroup: Boolean,
                           groupResource: GroupResource): DataFrame = {
@@ -174,7 +168,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
       criteria,
       completedCriterionTagsMap,
       sourcePopulation,
-      omopTools,
       ownerEntityId,
       cacheNestedGroup
     )
@@ -222,13 +215,11 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
     * @param dataFramePerIdMap                        map linking id to their corresponding df
     * @param datePreferencePerIdList list of criterion id concerned by a tc
     * @param sourcePopulation                 caresite and provider source population
-    * @param omopTools                         instance of object to interact with cache
     * */
   private def computeCriteria(implicit spark: SparkSession,
                               criteria: List[BaseQuery],
                               criterionTagsMap: Map[Short, CriterionTags],
                               sourcePopulation: SourcePopulation,
-                              omopTools: OmopTools,
                               ownerEntityId: String,
                               cacheNestedGroup: Boolean): Map[Short, DataFrame] = {
     var dataFramePerIdMapTmp = Map[Short, DataFrame]()
@@ -237,7 +228,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                                                  criterion,
                                                  sourcePopulation,
                                                  criterionTagsMap,
-                                                 omopTools,
                                                  ownerEntityId,
                                                  cacheNestedGroup,
                                                  cacheNestedGroup)

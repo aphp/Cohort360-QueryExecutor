@@ -35,6 +35,10 @@ case class JobConfig(
     threads: Int
 )
 
+case class ServerConfig(
+                      port: Int
+                    )
+
 case class CohortConfig(
     cohortCreationLimit: Int,
     cohortTableName: String,
@@ -50,8 +54,8 @@ case class BusinessConfig(
 )
 
 case class BackConfig(
-    url: String,
-    authToken: String
+    url: Option[String],
+    authToken: Option[String]
 )
 
 case class QueryConfig(
@@ -66,7 +70,7 @@ class AppConfig(conf: Config) {
     if (conf.hasPath("spark.executor.memory")) conf.getString("spark.executor.memory") else "1G"
   )
   val defaultResolver: String = conf.getString("app.defaultResolver")
-  val solr: Option[SolrConfig] = if (conf.hasPath("solr")) {
+  val solr: Option[SolrConfig] = if (conf.hasPath("solr.zk")) {
     Some(
       SolrConfig(
         conf.getString("solr.zk"),
@@ -89,13 +93,16 @@ class AppConfig(conf: Config) {
         }
       ))
   } else { None }
-  val pg: PGConfig = PGConfig(
-    conf.getString("postgres.host"),
-    conf.getString("postgres.port"),
-    conf.getString("postgres.database"),
-    conf.getString("postgres.schema"),
-    conf.getString("postgres.user")
-  )
+  val pg: Option[PGConfig] = if (conf.hasPath("postgres.host")) {
+    Some(
+      PGConfig(
+        conf.getString("postgres.host"),
+        conf.getString("postgres.port"),
+        conf.getString("postgres.database"),
+        conf.getString("postgres.schema"),
+        conf.getString("postgres.user")
+      ))
+  } else { None }
   val business: BusinessConfig = BusinessConfig(
     JobConfig(conf.getInt("app.jobs.threads")),
     CohortConfig(
@@ -115,9 +122,16 @@ class AppConfig(conf: Config) {
     conf.getBoolean("app.enableCache"),
     QueryConfig(conf.getBoolean("app.query.useSourcePopulation"))
   )
+  val server: ServerConfig = ServerConfig(
+    conf.getInt("app.server.port")
+  )
   val back: BackConfig = BackConfig(
-    conf.getString("app.back.url"),
-    conf.getString("app.back.authToken")
+    if (conf.hasPath("app.back.url")) { Some(conf.getString("app.back.url")) } else {
+      None
+    },
+    if (conf.hasPath("app.back.authToken")) { Some(conf.getString("app.back.authToken")) } else {
+      None
+    }
   )
 }
 

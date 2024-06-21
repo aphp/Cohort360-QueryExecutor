@@ -55,15 +55,6 @@ class OmopTools(pg: PGTool) extends LazyLogging {
     result(0)
   }
 
-  def getCohortHash(str: String): String = {
-    import java.security.MessageDigest
-    MessageDigest
-      .getInstance("MD5")
-      .digest(str.getBytes)
-      .map("%02X".format(_))
-      .mkString
-  }
-
   /**
     * This loads both a cohort and its definition into postgres and solr
     */

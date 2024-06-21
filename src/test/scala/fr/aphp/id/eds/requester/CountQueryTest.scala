@@ -56,7 +56,6 @@ class CountQueryTest extends AnyFunSuiteLike {
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
-        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*
       )
     ).thenReturn(expectedResult)
@@ -99,7 +98,6 @@ class CountQueryTest extends AnyFunSuiteLike {
       .withColumn(ResultColumn.ORGANIZATIONS, col(ResultColumn.ORGANIZATIONS).cast("array<long>"))
     when(
       queryBuilderMock.processRequest(
-        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,

@@ -75,8 +75,12 @@ object HttpTools extends LazyLogging {
     }
   }
 
-  def getBasicBearerTokenHeader(token: String): Map[String, String] = {
-    Map("Content-Type" -> "application/json", "Authorization" -> s"Bearer $token")
+  def getBasicBearerTokenHeader(token: Option[String]): Map[String, String] = {
+    val defaultHeaders = Map("Content-Type" -> "application/json")
+    if (token.isEmpty) {
+      return defaultHeaders
+    }
+    defaultHeaders ++ Map("Authorization" -> s"Bearer ${token.get}")
   }
 
 }

@@ -38,8 +38,8 @@ class CreateQueryTest extends AnyFunSuiteLike {
     val queryBuilderMock = mock[QueryBuilder]
     val omopTools = mock[OmopTools]
     class JobUtilsMock extends JobUtilsService {
-      override def getOmopTools(session: SparkSession, env: JobEnv): OmopTools = {
-        omopTools
+      override def getOmopTools(session: SparkSession, env: JobEnv): Option[OmopTools] = {
+        Some(omopTools)
       }
 
       override def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = 99
@@ -109,7 +109,6 @@ class CreateQueryTest extends AnyFunSuiteLike {
       .load(expected.getPath)
     when(
       queryBuilderMock.processRequest(
-        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,

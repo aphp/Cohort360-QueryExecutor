@@ -19,8 +19,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
-    } else if (jobData.cohortUuid.isDefined) {
-      Some(AppConfig.get.back.url + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
+    } else if (jobData.cohortUuid.isDefined && AppConfig.get.back.url.isDefined) {
+      Some(AppConfig.get.back.url.get + "/cohort/cohorts/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }
@@ -50,7 +50,6 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     var cohort = queryBuilder.processRequest(spark,
                                              completeRequest,
                                              completedCriterionTagsMap,
-                                             omopTools,
                                              data.ownerEntityId,
                                              cacheEnabled,
                                              withOrganizationDetails = false)
@@ -68,14 +67,18 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     val cohortSizeBiggerThanLimit = count > LIMIT
 
     // get a new cohortId
-    cohortDefinitionId = omopTools.getCohortDefinitionId(
-      data.cohortDefinitionName,
-      data.cohortDefinitionDescription,
-      data.cohortDefinitionSyntax,
-      data.ownerEntityId,
-      request.resourceType,
-      count
-    )
+    cohortDefinitionId = omopTools
+      .map(
+        t =>
+          t.getCohortDefinitionId(
+            data.cohortDefinitionName,
+            data.cohortDefinitionDescription,
+            data.cohortDefinitionSyntax,
+            data.ownerEntityId,
+            request.resourceType,
+            count
+        ))
+      .getOrElse(-1L)
 
     status =
       if (cohortSizeBiggerThanLimit && request.resourceType == ResourceType.patient)
@@ -83,14 +86,16 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       else JobExecutionStatus.FINISHED
 
     //  upload into pg and solr
-    omopTools.uploadCohort(
-      cohortDefinitionId,
-      cohort,
-      completeRequest.sourcePopulation,
-      count,
-      cohortSizeBiggerThanLimit,
-      request.resourceType
-    )
+    if (omopTools.isDefined) {
+      omopTools.get.uploadCohort(
+        cohortDefinitionId,
+        cohort,
+        completeRequest.sourcePopulation,
+        count,
+        cohortSizeBiggerThanLimit,
+        request.resourceType
+      )
+    }
 
     getCreationResult(cohortDefinitionId, count, status)
   }

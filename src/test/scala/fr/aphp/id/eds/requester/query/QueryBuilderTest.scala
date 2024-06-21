@@ -71,7 +71,6 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
       sparkSession,
       request._1,
       request._2,
-      new OmopTools(mock[PGTool]),
       "",
       false,
       withOrganizationsDetail,

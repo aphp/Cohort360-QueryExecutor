@@ -23,8 +23,8 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     val overrideCallback = super.callbackUrl(jobData)
     if (overrideCallback.isDefined) {
       overrideCallback
-    } else if (jobData.cohortUuid.isDefined) {
-      Some(AppConfig.get.back.url + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
+    } else if (jobData.cohortUuid.isDefined && AppConfig.get.back.url.isDefined) {
+      Some(AppConfig.get.back.url.get + "/cohort/dated-measures/" + jobData.cohortUuid.get + "/")
     } else {
       Option.empty
     }
@@ -34,7 +34,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                       runtime: JobEnv,
                       data: SparkJobParameter): JobBaseResult = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
-    val (request, criterionTagsMap, omopTools, cacheEnabled) =
+    val (request, criterionTagsMap, _, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     def isGroupResourceAndHasCriteria =
@@ -56,7 +56,6 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           spark,
           request,
           criterionTagsMap,
-          omopTools,
           data.ownerEntityId,
           cacheEnabled,
           withOrganizationsDetails,

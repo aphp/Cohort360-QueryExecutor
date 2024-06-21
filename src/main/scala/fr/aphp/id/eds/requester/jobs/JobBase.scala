@@ -14,8 +14,8 @@ trait JobBase {
 
   def callbackUrl(jobData: SparkJobParameter): Option[String] = if (jobData.callbackUrl.isDefined) {
     jobData.callbackUrl
-  } else if(jobData.callbackPath.isDefined) {
-    Some(AppConfig.get.back.url + jobData.callbackPath.get)
+  } else if(jobData.callbackPath.isDefined && AppConfig.get.back.url.isDefined) {
+    Some(AppConfig.get.back.url.get + jobData.callbackPath.get)
   } else {
     Option.empty
   }

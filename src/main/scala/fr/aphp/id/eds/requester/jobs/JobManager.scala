@@ -26,8 +26,7 @@ case class JobInfo(status: String,
 class JobManager() {
   val sparkSession: SparkSession = SparkConfig.sparkSession
   implicit val ec: ExecutionContext =
-    ExecutionContext.fromExecutor(
-      Executors.newFixedThreadPool(AppConfig.get.business.jobs.threads))
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(AppConfig.get.business.jobs.threads))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
   private val logger = Logger.getLogger(this.getClass)
 
@@ -85,17 +84,19 @@ class JobManager() {
                            jobData: SparkJobParameter,
                            jobId: String,
                            result: Either[Throwable, JobBaseResult]): Unit = {
+    val callbackResult = result match {
+      case Left(wrapped) =>
+        Map("request_job_status" -> JobExecutionStatus.ERROR,
+            "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
+      case Right(value) => {
+        Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
+      }
+    }
+
     val callBackUrlOpt = jobExecutor.callbackUrl(jobData)
     if (callBackUrlOpt.isDefined) {
       val callback = callBackUrlOpt.get
       logger.info(s"Calling callback at ${callback} for job ${jobId}")
-      val callbackResult = result match {
-        case Left(wrapped) =>
-          Map("request_job_status" -> JobExecutionStatus.ERROR, "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
-        case Right(value) => {
-          Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
-        }
-      }
       try {
         httpPatchRequest(callback, callbackResult)
       } catch {
@@ -103,6 +104,9 @@ class JobManager() {
           logger.error(s"Failed to call callback ${callback} for job ${jobId}", e)
         }
       }
+    } else {
+      logger.warn(s"No callback defined for job ${jobId}")
+      logger.info("Callback result: " + callbackResult)
     }
   }
 
