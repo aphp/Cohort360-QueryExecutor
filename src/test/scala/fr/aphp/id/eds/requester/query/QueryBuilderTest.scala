@@ -2,11 +2,11 @@ package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
 import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup}
-import fr.aphp.id.eds.requester.query.model.{BasicResource, QueryParsingOptions}
+import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
-import fr.aphp.id.eds.requester.query.resolver.solr.{DefaultSolrSparkReader, SolrQueryResolver, SolrSparkReader}
-import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools, PGTool}
+import fr.aphp.id.eds.requester.query.resolver.solr.{SolrQueryResolver, SolrSparkReader}
+import fr.aphp.id.eds.requester.tools.JobUtilsService
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar.{mock, when}

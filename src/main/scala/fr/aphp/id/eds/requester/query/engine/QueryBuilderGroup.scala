@@ -3,7 +3,7 @@ package fr.aphp.id.eds.requester.query.engine
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
-import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, OmopTools, SparkTools}
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SparkTools}
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -17,7 +17,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
                         val options: QueryExecutionOptions = QueryExecutionOptions(),
                         val jobUtilsService: JobUtilsService = JobUtils) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbUtils = ResourceResolverFactory.getDefaultConfig
+  private val qbUtils = ResourceResolverFactory.getConfig()
   private val qbTc = new QueryBuilderTemporalConstraint(options)
   private val qbLc = new QueryBuilderLogicalConstraint(options)
 

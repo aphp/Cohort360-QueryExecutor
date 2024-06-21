@@ -6,28 +6,7 @@ import org.apache.spark.storage.StorageLevel
 
 object SparkTools {
 
-  /**
-    * Adds a hash column based on several other columns
-    *
-    * @param df               DataFrame
-    * @param columnsToExclude List[String] the columns not to be hashed
-    * @return DataFrame
-    */
-  def dfAddHash(
-      df: DataFrame,
-      columnsToExclude: List[String] = Nil
-  ): DataFrame = {
 
-    df.withColumn(
-      "hash",
-      hash(
-        df.columns
-          .filter(x => !columnsToExclude.contains(x))
-          .map(x => col("`" + x + "`")): _*
-      )
-    )
-
-  }
 
   /**
     * Récupère un dataframe du cache s'il existe

@@ -1,6 +1,7 @@
 package fr.aphp.id.eds.requester.query.resolver.rest
 
 import ca.uhn.fhir.context.FhirContext
+import ca.uhn.fhir.rest.client.api.IGenericClient
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor
 import fr.aphp.id.eds.requester.FhirServerConfig
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -12,11 +13,13 @@ trait RestFhirClient {
   def getBundle(resourceType: String, filter: String, elements: List[String]): Bundle
 
   def getNextPage(bundle: Bundle): Bundle
+
+  def getClient: IGenericClient
 }
 
-class DefaultRestFhirClient(fhirConfig: FhirServerConfig) extends RestFhirClient {
+class DefaultRestFhirClient(fhirConfig: FhirServerConfig, cohortServer: Boolean = false) extends RestFhirClient {
   private val ctx = FhirContext.forR4()
-  private val client = ctx.newRestfulGenericClient(fhirConfig.url)
+  private val client = ctx.newRestfulGenericClient(getServerUrl)
   private val authInterceptor = fhirConfig.accessToken.flatMap(token => Some(new BearerTokenAuthInterceptor(token)))
   authInterceptor.foreach(client.registerInterceptor)
 
@@ -35,5 +38,15 @@ class DefaultRestFhirClient(fhirConfig: FhirServerConfig) extends RestFhirClient
       .loadPage()
       .next(bundle)
       .execute
+  }
+
+  override def getClient: IGenericClient = client
+
+  private def getServerUrl: String = {
+    if (cohortServer) {
+      fhirConfig.cohortUrl.getOrElse(fhirConfig.url)
+    } else {
+      fhirConfig.url
+    }
   }
 }

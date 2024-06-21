@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 
 class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbConfigs = ResourceResolverFactory.getDefaultConfig
+  private val qbConfigs = ResourceResolverFactory.getConfig()
   private val qbUtils = new QueryBuilderUtils()
 
   def getOccurrenceChoice(temporalConstraint: TemporalConstraint,

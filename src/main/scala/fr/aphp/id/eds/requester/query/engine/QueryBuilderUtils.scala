@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, functions => F}
 class QueryBuilderUtils {
   private val logger = Logger.getLogger(this.getClass)
 
-  val qbConfigs = ResourceResolverFactory.getDefaultConfig
+  val qbConfigs = ResourceResolverFactory.getConfig()
 
   /** Build a date column for a ressource based on date_preference.
     *

@@ -1,8 +1,9 @@
 package fr.aphp.id.eds.requester
 
+import fr.aphp.id.eds.requester.cohort.pg.PGCohortCreationService
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobsConfig, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.engine.QueryBuilder
-import fr.aphp.id.eds.requester.tools.{JobUtilsService, OmopTools}
+import fr.aphp.id.eds.requester.tools.JobUtilsService
 import org.apache.spark.sql.SparkSession
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar.{mock, when}
@@ -36,9 +37,9 @@ class CreateQueryTest extends AnyFunSuiteLike {
       .getOrCreate()
 
     val queryBuilderMock = mock[QueryBuilder]
-    val omopTools = mock[OmopTools]
+    val omopTools = mock[PGCohortCreationService]
     class JobUtilsMock extends JobUtilsService {
-      override def getOmopTools(session: SparkSession, env: JobEnv): Option[OmopTools] = {
+      override def getCohortCreationService(session: SparkSession, data: SparkJobParameter): Option[PGCohortCreationService] = {
         Some(omopTools)
       }
 

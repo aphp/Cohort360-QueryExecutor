@@ -1,22 +1,26 @@
 package fr.aphp.id.eds.requester.tools
 
+import fr.aphp.id.eds.requester.{AppConfig, FhirServerConfig, PGConfig}
+import fr.aphp.id.eds.requester.cohort.CohortCreationService
+import fr.aphp.id.eds.requester.cohort.fhir.FhirCohortCreationService
+import fr.aphp.id.eds.requester.cohort.pg.{PGCohortCreationService, PGTool}
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
+import fr.aphp.id.eds.requester.query.resolver.rest.DefaultRestFhirClient
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
-
 
 trait JobUtilsService {
   def initSparkJobRequest(logger: Logger,
                           spark: SparkSession,
                           runtime: JobEnv,
                           data: SparkJobParameter)
-  : (Request, Map[Short, CriterionTags], Option[OmopTools], Boolean) = {
+    : (Request, Map[Short, CriterionTags], Option[CohortCreationService], Boolean) = {
     logger.debug(s"Received data: ${data.toString}")
 
     // init db connectors
-    val omopTools = getOmopTools(spark, runtime)
+    val maybeCohortCreationService = getCohortCreationService(spark, data)
 
     // load input json into object
     val (request, criterionTagsMap) = QueryParser.parse(
@@ -24,15 +28,17 @@ trait JobUtilsService {
       QueryParsingOptions(withOrganizationDetails = data.mode == JobType.countWithDetails)
     )
 
-    logger.info(s"ENTER NEW QUERY JOB : ${data.toString}. Parsed criterionIdWithTcList: $criterionTagsMap")
+    logger.info(
+      s"ENTER NEW QUERY JOB : ${data.toString}. Parsed criterionIdWithTcList: $criterionTagsMap")
 
     (request,
-      criterionTagsMap,
-      omopTools,
-      runtime.contextConfig.business.enableCache)
+     criterionTagsMap,
+     maybeCohortCreationService,
+     runtime.contextConfig.business.enableCache)
   }
 
-  def getOmopTools(session: SparkSession, env: JobEnv): Option[OmopTools]
+  def getCohortCreationService(session: SparkSession,
+                               data: SparkJobParameter): Option[CohortCreationService]
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short
 
@@ -48,23 +54,42 @@ trait JobUtilsService {
 
 object JobUtils extends JobUtilsService {
 
-  /** Read Postgresql passthrough parameters in SJS conf file */
-  override def getOmopTools(spark: SparkSession, runtime: JobEnv): Option[OmopTools] = {
-    if (runtime.contextConfig.pg.isEmpty) {
-        return None
+  override def getCohortCreationService(spark: SparkSession,
+                                        data: SparkJobParameter): Option[CohortCreationService] = {
+    data.cohortCreationService.getOrElse(AppConfig.get.defaultCohortCreationService) match {
+      case "pg"   => getPGCohortCreationService(spark, AppConfig.get.pg)
+      case "fhir" => getFhirCohortCreationService(AppConfig.get.fhir)
+      case _      => None
     }
-    val pgHost = runtime.contextConfig.pg.get.host
-    val pgPort = runtime.contextConfig.pg.get.port
-    val pgDb = runtime.contextConfig.pg.get.database
-    val pgSchema = runtime.contextConfig.pg.get.schema
-    val pgUser = runtime.contextConfig.pg.get.user
-    Some(new OmopTools(
-      PGTool(
-        spark,
-        s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=$pgSchema,public",
-        "/tmp/postgres-spark-job"
-      )
-    ))
+  }
+
+  private def getFhirCohortCreationService(
+      optFhirConfig: Option[FhirServerConfig]): Option[FhirCohortCreationService] = {
+    if (optFhirConfig.isEmpty) {
+      return None
+    }
+    val fhirConfig = optFhirConfig.get
+    Some(
+      new FhirCohortCreationService(
+        new DefaultRestFhirClient(fhirConfig, cohortServer = true)
+      ))
+  }
+
+  private def getPGCohortCreationService(
+      sparkSession: SparkSession,
+      optPgConfig: Option[PGConfig]): Option[PGCohortCreationService] = {
+    if (optPgConfig.isEmpty) {
+      return None
+    }
+    val pgConfig = optPgConfig.get
+    Some(
+      new PGCohortCreationService(
+        PGTool(
+          sparkSession,
+          s"jdbc:postgresql://${pgConfig.host}:${pgConfig.port}/${pgConfig.database}?user=${pgConfig.user}&currentSchema=${pgConfig.schema},public",
+          "/tmp/postgres-spark-job"
+        )
+      ))
   }
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {
@@ -79,9 +104,9 @@ object JobUtils extends JobUtilsService {
 
   def addEmptyGroup(allTabooId: List[Short]): BaseQuery = {
     GroupResource(groupType = GroupResourceType.AND,
-      _id = getRandomIdNotInTabooList(allTabooId),
-      isInclusive = true,
-      criteria = List())
+                  _id = getRandomIdNotInTabooList(allTabooId),
+                  isInclusive = true,
+                  criteria = List())
   }
 
 }

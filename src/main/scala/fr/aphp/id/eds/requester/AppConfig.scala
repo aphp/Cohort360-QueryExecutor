@@ -20,6 +20,7 @@ case class SolrConfig(
 
 case class FhirServerConfig(
     url: String,
+    cohortUrl: Option[String],
     accessToken: Option[String]
 )
 
@@ -70,6 +71,7 @@ class AppConfig(conf: Config) {
     if (conf.hasPath("spark.executor.memory")) conf.getString("spark.executor.memory") else "1G"
   )
   val defaultResolver: String = conf.getString("app.defaultResolver")
+  val defaultCohortCreationService: String = conf.getString("app.defaultCohortCreationService") 
   val solr: Option[SolrConfig] = if (conf.hasPath("solr.zk")) {
     Some(
       SolrConfig(
@@ -86,6 +88,11 @@ class AppConfig(conf: Config) {
     Some(
       FhirServerConfig(
         conf.getString("fhir.url"),
+        if (conf.hasPath("fhir.cohortUrl")) {
+          Some(conf.getString("fhir.cohortUrl"))
+        } else {
+          None
+        },
         if (conf.hasPath("fhir.accessToken")) {
           Some(conf.getString("fhir.accessToken"))
         } else {

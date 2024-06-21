@@ -70,7 +70,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     cohortDefinitionId = omopTools
       .map(
         t =>
-          t.getCohortDefinitionId(
+          t.createCohort(
             data.cohortDefinitionName,
             data.cohortDefinitionDescription,
             data.cohortDefinitionSyntax,
@@ -87,7 +87,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
 
     //  upload into pg and solr
     if (omopTools.isDefined) {
-      omopTools.get.uploadCohort(
+      omopTools.get.updateCohort(
         cohortDefinitionId,
         cohort,
         completeRequest.sourcePopulation,

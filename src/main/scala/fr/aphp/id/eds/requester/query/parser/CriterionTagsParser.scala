@@ -28,7 +28,7 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
 
 object CriterionTagsParser {
   private val logger = Logger.getLogger(this.getClass)
-  private val queryBuilderConfigs = ResourceResolverFactory.getDefaultConfig
+  private val queryBuilderConfigs = ResourceResolverFactory.getConfig()
 
   def getCriterionTagsMap(request: Request,
                           requestOrganizations: Boolean): Map[Short, CriterionTags] = {

@@ -5,8 +5,8 @@ import fr.aphp.id.eds.requester.query.resolver.rest.{DefaultRestFhirClient, Rest
 import fr.aphp.id.eds.requester.query.resolver.solr.{DefaultSolrSparkReader, SolrQueryElementsConfig, SolrQueryResolver, SolrSparkReader}
 
 object ResourceResolverFactory {
-  def getDefault: ResourceResolver = {
-    AppConfig.get.defaultResolver match {
+  def get(resolver: Option[String] = None): ResourceResolver = {
+    resolver.getOrElse(AppConfig.get.defaultResolver) match {
       case "solr" => {
         new SolrQueryResolver(new DefaultSolrSparkReader(AppConfig.get.solr.get))
       }
@@ -15,8 +15,8 @@ object ResourceResolverFactory {
     }
   }
 
-  def getDefaultConfig: ResourceConfig = {
-    AppConfig.get.defaultResolver match {
+  def getConfig(resolver: Option[String] = None): ResourceConfig = {
+    resolver.getOrElse(AppConfig.get.defaultResolver) match {
       case "solr" => new SolrQueryElementsConfig
       case "fhir" => new RestFhirQueryElementsConfig
       case _ => throw new IllegalArgumentException("No default config found")

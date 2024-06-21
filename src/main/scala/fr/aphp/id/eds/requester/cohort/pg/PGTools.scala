@@ -1,4 +1,4 @@
-package fr.aphp.id.eds.requester.tools
+package fr.aphp.id.eds.requester.cohort.pg
 
 import java.io._
 import java.sql.{

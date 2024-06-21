@@ -1,23 +1,18 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{
-  ResourceResolver,
-  ResourceResolverFactory,
-  ResourceConfig
-}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver, ResourceResolverFactory}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
 
 class QueryBuilderBasicResource(
-    val qbConfigs: ResourceConfig = ResourceResolverFactory.getDefaultConfig,
+    val qbConfigs: ResourceConfig = ResourceResolverFactory.getConfig(),
     val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-    val querySolver: ResourceResolver = ResourceResolverFactory.getDefault) {
+    val querySolver: ResourceResolver = ResourceResolverFactory.get()) {
   private val logger = Logger.getLogger(this.getClass)
 
   /** Filter patient of input dataframe based on the date of the occurrence

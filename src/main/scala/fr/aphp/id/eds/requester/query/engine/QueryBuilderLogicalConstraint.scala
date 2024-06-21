@@ -1,16 +1,14 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderUtils
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
+import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
 import org.apache.log4j.Logger
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.{functions => F}
+import org.apache.spark.sql.{DataFrame, functions => F}
 
 class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
 
-  private val qbConfigs = ResourceResolverFactory.getDefaultConfig
+  private val qbConfigs = ResourceResolverFactory.getConfig()
   private val qbUtils = new QueryBuilderUtils()
   private val logger = Logger.getLogger(this.getClass)
 

@@ -10,7 +10,11 @@ case class SparkJobParameter(
     mode: String = JobType.count,
     cohortUuid: Option[String] = Option.empty,
     callbackPath: Option[String] = Option.empty,
-    callbackUrl: Option[String] = Option.empty
+    callbackUrl: Option[String] = Option.empty,
+    // this is the resolver to use, which default to `AppConfig.get.defaultResolver`
+    resolver: Option[String] = Option.empty,
+    // this is the cohort creation service to use, which default to `AppConfig.get.defaultCohortCreationService`
+    cohortCreationService: Option[String] = Option.empty
 )
 
 object JobType extends Enumeration {

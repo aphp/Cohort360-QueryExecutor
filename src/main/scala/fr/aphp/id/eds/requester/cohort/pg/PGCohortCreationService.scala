@@ -1,36 +1,29 @@
-package fr.aphp.id.eds.requester.tools
+package fr.aphp.id.eds.requester.cohort.pg
 
 import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
+import fr.aphp.id.eds.requester.cohort.CohortCreationService
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import fr.aphp.id.eds.requester.query.model.SourcePopulation
+import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, functions => F}
 
 /**
   * @param pg           pgTool obj
   */
-class OmopTools(pg: PGTool) extends LazyLogging {
+class PGCohortCreationService(pg: PGTool) extends CohortCreationService with LazyLogging {
   private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName
   private final val cohort_table_rw = AppConfig.get.business.cohorts.cohortTableName
   private final val cohort_provider_name = AppConfig.get.business.cohorts.cohortProviderName
 
-  /**
-    * @param cohortDefinitionName        : The name of the cohort
-    * @param cohortDefinitionDescription : the full description of the cohort
-    * @param cohortDefinitionSyntax      : the full json of the cohort
-    * @param ownerEntityId               : the owner of the cohort
-    * @return
-    */
-  def getCohortDefinitionId(
-      cohortDefinitionName: String,
-      cohortDefinitionDescription: Option[String],
-      cohortDefinitionSyntax: String,
-      ownerEntityId: String,
-      resourceType: String,
-      size: Long
-  ): Long = {
+  override def createCohort(cohortDefinitionName: String,
+                            cohortDefinitionDescription: Option[String],
+                            cohortDefinitionSyntax: String,
+                            ownerEntityId: String,
+                            resourceType: String,
+                            size: Long): Long = {
     val stmt =
       s"""
          |insert into ${cohort_table_rw}
@@ -56,21 +49,20 @@ class OmopTools(pg: PGTool) extends LazyLogging {
   }
 
   /**
-    * This loads both a cohort and its definition into postgres and solr
-    */
-  def uploadCohort(cohortDefinitionId: Long,
-                   cohort: DataFrame,
-                   sourcePopulation: SourcePopulation,
-                   count: Long,
-                   delayCohortCreation: Boolean,
-                   resourceType: String,
-                  ): Unit = {
+   * This loads both a cohort and its definition into postgres and solr
+   */
+  override def updateCohort(cohortId: Long,
+                            cohort: DataFrame,
+                            sourcePopulation: SourcePopulation,
+                            count: Long,
+                            delayCohortCreation: Boolean,
+                            resourceType: String): Unit = {
     try {
-      uploadCount(cohortDefinitionId, count)
-      uploadRelationship(cohortDefinitionId, sourcePopulation)
+      uploadCount(cohortId, count)
+      uploadRelationship(cohortId, sourcePopulation)
 
       val dataframe = cohort
-        .withColumn("_listid", lit(cohortDefinitionId))
+        .withColumn("_listid", lit(cohortId))
         .withColumn("_provider", lit(cohort_provider_name))
         .withColumnRenamed(ResultColumn.SUBJECT, "_itemreferenceid")
         .withColumn("item__reference", concat(lit(s"${resourceType}/"), col("_itemreferenceid")))
@@ -81,11 +73,12 @@ class OmopTools(pg: PGTool) extends LazyLogging {
 
       uploadCohortTableToPG(dataframe)
 
-      if (!delayCohortCreation && resourceType == ResourceType.patient) uploadCohortTableToSolr(cohortDefinitionId, dataframe, count)
+      if (!delayCohortCreation && resourceType == ResourceType.patient)
+        uploadCohortTableToSolr(cohortId, dataframe, count)
     } catch {
       case e: Exception =>
-        setOmopCohortStatus(cohortDefinitionId, CohortStatus.ERROR)
-        setOmopCohortActive(cohortDefinitionId, status = false)
+        setOmopCohortStatus(cohortId, CohortStatus.ERROR)
+        setOmopCohortActive(cohortId, status = false)
         throw e
     } finally {
       pg.purgeTmp()
@@ -93,7 +86,8 @@ class OmopTools(pg: PGTool) extends LazyLogging {
     }
   }
 
-  private def uploadRelationship(cohortDefinitionId: Long, sourcePopulation: SourcePopulation): Unit = {
+  private def uploadRelationship(cohortDefinitionId: Long,
+                                 sourcePopulation: SourcePopulation): Unit = {
     if (sourcePopulation.caresiteCohortList.isDefined) {
       for (sc_id <- sourcePopulation.caresiteCohortList.get) {
         val (list_list_id, list_relationship_concept_id) =
@@ -177,10 +171,34 @@ class OmopTools(pg: PGTool) extends LazyLogging {
       ).toSet == df.columns.toSet,
       "cohort dataframe shall have _listid, _provider, _provider and item__reference"
     )
-    pg.outputBulk(cohort_item_table_rw, SparkTools.dfAddHash(df), Some(4))
+    pg.outputBulk(cohort_item_table_rw, dfAddHash(df), Some(4))
   }
 
-  private def uploadCohortTableToSolr(cohortDefinitionId: Long, df: DataFrame, count: Long): Unit = {
+  /**
+    * Adds a hash column based on several other columns
+    *
+    * @param df               DataFrame
+    * @param columnsToExclude List[String] the columns not to be hashed
+    * @return DataFrame
+    */
+  private def dfAddHash(
+      df: DataFrame,
+      columnsToExclude: List[String] = Nil
+  ): DataFrame = {
+    df.withColumn(
+      "hash",
+      hash(
+        df.columns
+          .filter(x => !columnsToExclude.contains(x))
+          .map(x => col("`" + x + "`")): _*
+      )
+    )
+
+  }
+
+  private def uploadCohortTableToSolr(cohortDefinitionId: Long,
+                                      df: DataFrame,
+                                      count: Long): Unit = {
     val solrConf = AppConfig.get.solr
     if (solrConf.isEmpty) {
       return
@@ -189,9 +207,9 @@ class OmopTools(pg: PGTool) extends LazyLogging {
     val solrOptions = solrTools.getSolrConf
     // Change in the dataframe are not saved, its purpose is only to format the dataframe for Solr
     df.withColumn(
-      "id",
-      concat(col("_listid"), lit("_"), col("_itemreferenceid"))
-    )
+        "id",
+        concat(col("_listid"), lit("_"), col("_itemreferenceid"))
+      )
       .withColumnRenamed("_listid", "groupId")
       .withColumnRenamed("_itemreferenceid", "resourceId")
       .withColumn("_lastUpdated", current_timestamp())

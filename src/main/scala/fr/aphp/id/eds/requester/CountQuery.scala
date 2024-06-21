@@ -78,12 +78,14 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     }
 
     def countPatientsWithResolver() = {
-      ResourceResolverFactory.getDefault
+      ResourceResolverFactory
+        .get(data.resolver)
         .countPatients(request.sourcePopulation)
     }
 
     def countPatientsInQuery() = {
-      if (theRequestHasAtLeastOneCriteria()) countPatientsWithSpark() else countPatientsWithResolver()
+      if (theRequestHasAtLeastOneCriteria()) countPatientsWithSpark()
+      else countPatientsWithResolver()
     }
 
     if (request.sourcePopulation.caresiteCohortList.isEmpty)
