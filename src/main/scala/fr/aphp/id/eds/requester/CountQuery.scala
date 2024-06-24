@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderGroup, QueryExecutionOptions}
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
@@ -34,7 +34,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                       runtime: JobEnv,
                       data: SparkJobParameter): JobBaseResult = {
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
-    val (request, criterionTagsMap, _, cacheEnabled) =
+    val (request, criterionTagsMap, _, resourceResolver, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     def isGroupResourceAndHasCriteria =
@@ -60,7 +60,8 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           cacheEnabled,
           withOrganizationsDetails,
           new QueryBuilderGroup(
-            options = QueryExecutionOptions(withOrganizations = withOrganizationsDetails),
+            new QueryBuilderBasicResource(resourceResolver),
+            options = QueryExecutionOptions(resourceResolver.getConfig, withOrganizations = withOrganizationsDetails),
             jobUtilsService = jobUtilsService)
         )
       val t1 = System.nanoTime()

@@ -35,5 +35,11 @@ abstract class ResourceResolver {
    * @return The default filter query for the patient.
    */
   def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String
+
+  /**
+   * Returns the resource configuration for the resource resolver.
+   * @return The resource configuration for the resource resolver.
+   */
+  def getConfig: ResourceConfig
 }
 

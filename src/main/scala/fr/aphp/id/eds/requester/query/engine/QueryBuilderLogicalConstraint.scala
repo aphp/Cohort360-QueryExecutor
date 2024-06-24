@@ -6,10 +6,9 @@ import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, functions => F}
 
-class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
+class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions) {
 
-  private val qbConfigs = ResourceResolverFactory.getConfig()
-  private val qbUtils = new QueryBuilderUtils()
+  private val qbUtils = new QueryBuilderUtils(options.resourceConfig)
   private val logger = Logger.getLogger(this.getClass)
 
   def processGroupWithoutTemporalConstraint(dataFramePerIdMap: Map[Short, DataFrame],
@@ -61,7 +60,7 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
       : Boolean = groupResource._type == GroupResourceType.N_AMONG_M && isGroupInTemporalConstraint
     val selectedColumns = List(groupIdColumnName) ++ (if (criterionTagsMap(groupId).withOrganizations)
                                                         List(
-                                                          qbConfigs.getOrganizationsColumn(groupId))
+                                                          QueryBuilderUtils.getOrganizationsColumn(groupId))
                                                       else List())
 
     def initGroupDataFrame(): DataFrame = {
@@ -73,7 +72,7 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
 
     def initFilteringDataFrame(groupDataFrame: DataFrame): Option[DataFrame] = {
       if (doWeNeedAFilteringDataFrame) {
-        val firstCol = qbConfigs.getSubjectColumn(firstId)
+        val firstCol = QueryBuilderUtils.getSubjectColumn(firstId)
         Some(
           groupDataFrame
             .select(groupIdColumnName)
@@ -103,7 +102,10 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
           patientListDataFrame,
           groupDataFrame(groupIdColumnName) === patientListDataFrame(groupIdColumnName),
           "left_semi_join")
-        qbUtils.cleanDataFrame(filteredDf, isGroupInTemporalConstraint, selectedColumns, groupIdColumnName)
+        qbUtils.cleanDataFrame(filteredDf,
+                               isGroupInTemporalConstraint,
+                               selectedColumns,
+                               groupIdColumnName)
       } else {
         groupDataFrame
           .groupBy(groupIdColumnName)
@@ -149,7 +151,11 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
     groupDataFrame = groupResource._type match {
       case GroupResourceType.N_AMONG_M =>
         processGroupDataFrameForNAmongMGroup(groupDataFrame, filteringDataFrame)
-      case GroupResourceType.OR => qbUtils.cleanDataFrame(groupDataFrame, isGroupInTemporalConstraint, selectedColumns, groupIdColumnName)
+      case GroupResourceType.OR =>
+        qbUtils.cleanDataFrame(groupDataFrame,
+                               isGroupInTemporalConstraint,
+                               selectedColumns,
+                               groupIdColumnName)
 
     }
 
@@ -175,13 +181,13 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
       criterionTagsMap: Map[Short, CriterionTags]): DataFrame = {
     // build groupDataFrame
     val firstId = inclusionCriteriaId.head
-    val firstCriterionIdColumnName = qbConfigs.getSubjectColumn(firstId)
+    val firstCriterionIdColumnName = QueryBuilderUtils.getSubjectColumn(firstId)
     val isGroupInTemporalConstraint: Boolean = criterionTagsMap(groupId).isInTemporalConstraint
     val doWeNeedLongInsteadOfWideDataFrame: Boolean =
       criterionTagsMap(groupId).temporalConstraintTypeList.contains("directChronologicalOrdering")
     val selectedColumns = List(groupIdColumnName) ++ (if (criterionTagsMap(groupId).withOrganizations)
                                                         List(
-                                                          qbConfigs.getOrganizationsColumn(groupId))
+                                                          QueryBuilderUtils.getOrganizationsColumn(groupId))
                                                       else List())
 
     def initGroupDataFrame(): DataFrame = {
@@ -197,13 +203,13 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
     def updateGroupDataFrame(groupDataFrame: DataFrame, criterionId: Short): DataFrame = {
       val dfTmpJoin: DataFrame =
         if (doWeNeedLongInsteadOfWideDataFrame)
-          dataFramePerIdMap(criterionId).select(qbConfigs.getSubjectColumn(criterionId))
+          dataFramePerIdMap(criterionId).select(QueryBuilderUtils.getSubjectColumn(criterionId))
         else dataFramePerIdMap(criterionId)
 
-      groupDataFrame.join(
-        dfTmpJoin,
-        groupDataFrame(groupIdColumnName) === dfTmpJoin(qbConfigs.getSubjectColumn(criterionId)),
-        "inner")
+      groupDataFrame.join(dfTmpJoin,
+                          groupDataFrame(groupIdColumnName) === dfTmpJoin(
+                            QueryBuilderUtils.getSubjectColumn(criterionId)),
+                          "inner")
     }
 
     def getLongInsteadOfWideDataFrame(groupDataFrame: DataFrame): DataFrame = {
@@ -224,9 +230,10 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
           dataFramePerIdMap(criterionId).join(
             patientListDataFrame,
             dataFramePerIdMap(criterionId)(
-              qbConfigs
+              QueryBuilderUtils
                 .getSubjectColumn(criterionId)) === patientListDataFrame(groupIdColumnName),
-            "left_semi")
+            "left_semi"
+          )
         additionalDataFrame = normalizeColumnNamesInGroupDataFrame(additionalDataFrame,
                                                                    criterionId,
                                                                    groupId,
@@ -247,7 +254,10 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
       if (doWeNeedLongInsteadOfWideDataFrame) {
         getLongInsteadOfWideDataFrame(groupDataFrame)
       } else {
-        qbUtils.cleanDataFrame(groupDataFrame, isGroupInTemporalConstraint, selectedColumns, groupIdColumnName)
+        qbUtils.cleanDataFrame(groupDataFrame,
+                               isGroupInTemporalConstraint,
+                               selectedColumns,
+                               groupIdColumnName)
       }
 
     if (logger.isDebugEnabled)
@@ -274,7 +284,7 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
       logger.debug(
         s"JOIN EXCLUSION CRITERIA : modifyingGroupDataFrame.count=${modifyingGroupDataFrame.count()}, ")
     for (exclusionCriterion <- exclusionCriteria) {
-      val patientColumnName = qbConfigs.getSubjectColumn(exclusionCriterion.i)
+      val patientColumnName = QueryBuilderUtils.getSubjectColumn(exclusionCriterion.i)
       var joiningDataFrame = dataFramePerIdMap(exclusionCriterion.i)
       // @todo : not clean, temporal constraint on exclusion criteria is forbidden for now
       if (!criterionTagsMap(exclusionCriterion.i).isInTemporalConstraint) {
@@ -305,21 +315,22 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions = QueryEx
       else dataFrame
     }
     var targetDataframe: DataFrame = sourceDataframe
-      .withColumnRenamed(qbConfigs.getSubjectColumn(sourceId), qbConfigs.getSubjectColumn(targetId))
-      .withColumnRenamed(qbConfigs.getOrganizationsColumn(sourceId),
-                         qbConfigs.getOrganizationsColumn(targetId))
+      .withColumnRenamed(QueryBuilderUtils.getSubjectColumn(sourceId),
+                         QueryBuilderUtils.getSubjectColumn(targetId))
+      .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(sourceId),
+                         QueryBuilderUtils.getOrganizationsColumn(targetId))
     targetDataframe = renameColumn(targetDataframe,
-                                   qbConfigs.getEncounterColumn(sourceId),
-                                   qbConfigs.getEncounterColumn(targetId))
+                                   QueryBuilderUtils.getEncounterColumn(sourceId),
+                                   QueryBuilderUtils.getEncounterColumn(targetId))
     targetDataframe = renameColumn(targetDataframe,
-                                   qbConfigs.getEncounterStartDateColumn(sourceId),
-                                   qbConfigs.getEncounterStartDateColumn(targetId))
+                                   QueryBuilderUtils.getEncounterStartDateColumn(sourceId),
+                                   QueryBuilderUtils.getEncounterStartDateColumn(targetId))
     targetDataframe = renameColumn(targetDataframe,
-                                   qbConfigs.getEncounterEndDateColumn(sourceId),
-                                   qbConfigs.getEncounterEndDateColumn(targetId))
+                                   QueryBuilderUtils.getEncounterEndDateColumn(sourceId),
+                                   QueryBuilderUtils.getEncounterEndDateColumn(targetId))
     targetDataframe = renameColumn(targetDataframe,
-                                   qbConfigs.getEventDateColumn(sourceId),
-                                   qbConfigs.getEventDateColumn(targetId))
+                                   QueryBuilderUtils.getEventDateColumn(sourceId),
+                                   QueryBuilderUtils.getEventDateColumn(targetId))
     targetDataframe
   }
 }

@@ -1,11 +1,10 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model.{GroupResource, GroupResourceType, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
+import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 trait QueryBuilder {
@@ -16,13 +15,11 @@ trait QueryBuilder {
                             ownerEntityId: String,
                             cacheEnabled: Boolean,
                             withOrganizationDetails: Boolean,
-                            recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup()
+                            recursiveQueryBuilder: QueryBuilderGroup
                           ): DataFrame
 }
 
 class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) extends QueryBuilder {
-
-  val qbUtils: ResourceConfig = ResourceResolverFactory.getConfig()
 
   /** Computes the resulting df of a request.
     *
@@ -36,7 +33,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
                      ownerEntityId: String,
                      cacheEnabled: Boolean,
                      withOrganizationDetails: Boolean,
-                     recursiveQueryBuilder: QueryBuilderGroup = new QueryBuilderGroup(jobUtilsService = jobUtilsService)
+                     recursiveQueryBuilder: QueryBuilderGroup
                     ): DataFrame = {
 
     // wrap the first group in a higher group is it is not inclusive
@@ -72,8 +69,8 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
 
     // need to rename final column to uniformize any results being processed after (count and/or upload in databases).
     val renamedDf = cohortDataFrame
-      .withColumnRenamed(qbUtils.getSubjectColumn(root.i, isPatient = request.resourceType == ResourceType.patient), ResultColumn.SUBJECT)
-      .withColumnRenamed(qbUtils.getOrganizationsColumn(root.i), ResultColumn.ORGANIZATIONS)
+      .withColumnRenamed(QueryBuilderUtils.getSubjectColumn(root.i, isPatient = request.resourceType == ResourceType.patient), ResultColumn.SUBJECT)
+      .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(root.i), ResultColumn.ORGANIZATIONS)
     if (withOrganizationDetails) {
       renamedDf.select(F.col(ResultColumn.SUBJECT), F.col(ResultColumn.ORGANIZATIONS))
     } else {

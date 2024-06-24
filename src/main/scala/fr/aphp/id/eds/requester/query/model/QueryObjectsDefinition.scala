@@ -1,6 +1,7 @@
 package fr.aphp.id.eds.requester.query.model
 
 import fr.aphp.id.eds.requester.jobs.ResourceType
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
 
 abstract class BaseQuery(val _type: String, _id: Short, isInclusive: Boolean) {
   val i: Short = _id
@@ -15,16 +16,16 @@ case class Occurrence(n: Int,
                       timeDelayMax: Option[String])
 
 case class PatientAge(
-                       minAge: Option[String],
-                       maxAge: Option[String],
-                       datePreference: Option[List[String]], // [EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE]
-                       dateIsNotNull: Option[Boolean]) // true
+    minAge: Option[String],
+    maxAge: Option[String],
+    datePreference: Option[List[String]], // [EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE]
+    dateIsNotNull: Option[Boolean]) // true
 
 case class DateRange(
-                      minDate: Option[String],
-                      maxDate: Option[String],
-                      datePreference: Option[List[String]], // [EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE]
-                      dateIsNotNull: Option[Boolean]) // true
+    minDate: Option[String],
+    maxDate: Option[String],
+    datePreference: Option[List[String]], // [EVENT_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE]
+    dateIsNotNull: Option[Boolean]) // true
 
 case class BasicResource(_id: Short,
                          isInclusive: Boolean,
@@ -35,18 +36,18 @@ case class BasicResource(_id: Short,
                          dateRangeList: Option[List[DateRange]] = None,
                          encounterDateRange: Option[DateRange] = None,
                          nullAvailableFieldList: Option[List[String]] = None)
-  extends BaseQuery("basic_resource", _id, isInclusive) {
+    extends BaseQuery("basic_resource", _id, isInclusive) {
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
 }
 case class TemporalConstraint(
-                               idList: Either[String, List[Short]],
-                               constraintType: String,
-                               occurrenceChoice: Option[Map[Short, String]], // "any"
-                               timeRelationMinDuration: Option[TemporalConstraintDuration], // None
-                               timeRelationMaxDuration: Option[TemporalConstraintDuration], // None
-                               datePreference: Option[Map[Short, List[String]]], // List(SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, EVENT_DATE),
-                               dateIsNotNull: Option[Either[Boolean, Map[Short, Boolean]]], // true
-                               filteredCriteriaId: Option[Either[String, List[Short]]]) // "all"
+    idList: Either[String, List[Short]],
+    constraintType: String,
+    occurrenceChoice: Option[Map[Short, String]], // "any"
+    timeRelationMinDuration: Option[TemporalConstraintDuration], // None
+    timeRelationMaxDuration: Option[TemporalConstraintDuration], // None
+    datePreference: Option[Map[Short, List[String]]], // List(SolrColumn.Encounter.ENCOUNTER_PLANNED_START_DATE, SolrColumn.Encounter.ENCOUNTER_PLANNED_END_DATE, EVENT_DATE),
+    dateIsNotNull: Option[Either[Boolean, Map[Short, Boolean]]], // true
+    filteredCriteriaId: Option[Either[String, List[Short]]]) // "all"
 
 case class GroupResource(groupType: String,
                          _id: Short,
@@ -54,14 +55,14 @@ case class GroupResource(groupType: String,
                          criteria: List[BaseQuery],
                          temporalConstraints: Option[List[TemporalConstraint]] = None,
                          nAmongMOptions: Option[Occurrence] = None)
-  extends BaseQuery(groupType, _id, isInclusive) {
+    extends BaseQuery(groupType, _id, isInclusive) {
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
 }
 
 object GroupResourceType {
-    final val AND = "andGroup"
-    final val OR = "orGroup"
-    final val N_AMONG_M = "nAmongM"
+  final val AND = "andGroup"
+  final val OR = "orGroup"
+  final val N_AMONG_M = "nAmongM"
 }
 
 object TemporalConstraintType {
@@ -72,20 +73,25 @@ object TemporalConstraintType {
 }
 
 case class TemporalConstraintDuration(
-                                       years: Option[Int],
-                                       months: Option[Int],
-                                       days: Option[Int],
-                                       hours: Option[Int],
-                                       minutes: Option[Int],
-                                       seconds: Option[Int]
-                                     )
+    years: Option[Int],
+    months: Option[Int],
+    days: Option[Int],
+    hours: Option[Int],
+    minutes: Option[Int],
+    seconds: Option[Int]
+)
 
 case class SourcePopulation(caresiteCohortList: Option[List[Int]],
                             providerCohortList: Option[List[Int]])
 
-case class Request(_type: String = "request", sourcePopulation: SourcePopulation, request: Option[BaseQuery], resourceType: String = ResourceType.patient)
+case class Request(_type: String = "request",
+                   sourcePopulation: SourcePopulation,
+                   request: Option[BaseQuery],
+                   resourceType: String = ResourceType.patient)
 
-case class QueryParsingOptions(withOrganizationDetails: Boolean = false)
+case class QueryParsingOptions(resourceConfig: ResourceConfig,
+                               withOrganizationDetails: Boolean = false,
+                               useFilterSolr: Boolean = true)
 
 /** The 4 classes below correspond to json obj {_id: ..., value: ...} */
 case class IdWithString(_id: Short, occurrenceChoice: String) {

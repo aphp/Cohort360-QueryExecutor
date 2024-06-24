@@ -3,17 +3,16 @@ package fr.aphp.id.eds.requester.query.engine
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver, ResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable.ListBuffer
 
-class QueryBuilderBasicResource(
-    val qbConfigs: ResourceConfig = ResourceResolverFactory.getConfig(),
-    val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(),
-    val querySolver: ResourceResolver = ResourceResolverFactory.get()) {
+class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
   private val logger = Logger.getLogger(this.getClass)
+  private val qbConfigs: ResourceConfig = querySolver.getConfig
+  private val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(qbConfigs)
 
   /** Filter patient of input dataframe based on the date of the occurrence
     *
@@ -65,12 +64,12 @@ class QueryBuilderBasicResource(
     def getDateRangeSparkFilter(dateRange: DateRange, dateIsNotNull: Boolean): Column = {
       val sparkFilterList = new ListBuffer[Column]()
       if (dateRange.maxDate.isDefined)
-        sparkFilterList += F.col(qbConfigs.getDateColumn(criterionId)) <= s"${dateRange.maxDate.get}"
+        sparkFilterList += F.col(QueryBuilderUtils.getDateColumn(criterionId)) <= s"${dateRange.maxDate.get}"
       if (dateRange.minDate.isDefined)
-        sparkFilterList += F.col(qbConfigs.getDateColumn(criterionId)) >= s"${dateRange.minDate.get}"
+        sparkFilterList += F.col(QueryBuilderUtils.getDateColumn(criterionId)) >= s"${dateRange.minDate.get}"
       val unifiedSparkFilter: Column = sparkFilterList.toList.reduce(_ && _)
       if (!dateIsNotNull) // F.col(qbConfigs.getDateColumn(criterionId)).isNull
-        unifiedSparkFilter || F.col(qbConfigs.getDateColumn(criterionId)).isNull
+        unifiedSparkFilter || F.col(QueryBuilderUtils.getDateColumn(criterionId)).isNull
       else unifiedSparkFilter
     }
 
@@ -81,7 +80,7 @@ class QueryBuilderBasicResource(
       for (dateRange <- dateRangeList.get) {
         val datePreference =
           dateRange.datePreference.getOrElse(
-            qbConfigs.defaultDatePreferencePerCollection(basicResource.resourceType))
+            QueryBuilderUtils.defaultDatePreferencePerCollection(basicResource.resourceType))
         val dateIsNotNull = dateRange.dateIsNotNull.getOrElse(true)
         filteredCriterionDataFrame = qbUtils.buildLocalDateColumn(filteredCriterionDataFrame,
                                                                   criterionId,
@@ -121,7 +120,7 @@ class QueryBuilderBasicResource(
     def dropTemporaryAgeColumns(criterionDataFrameWithAgeColumn: DataFrame): DataFrame = {
       val selectedColumns = criterionDataFrameWithAgeColumn.columns
         .filter(c =>
-          !List(QueryColumn.AGE, qbConfigs.getPatientBirthColumn(criterionId)).contains(c))
+          !List(QueryColumn.AGE, QueryBuilderUtils.getPatientBirthColumn(criterionId)).contains(c))
         .map(x => F.col(x))
         .toList
       criterionDataFrameWithAgeColumn.select(selectedColumns: _*)
@@ -138,14 +137,16 @@ class QueryBuilderBasicResource(
     def addAgeColumn(dataFrame: DataFrame, patientAge: PatientAge): DataFrame = {
       val (year_min, _, _, year_max, _, _) = getDecomposedAgeMinAndMax(patientAge)
       if (year_max == 0 & year_min == 0) {
-        dataFrame.withColumn(QueryColumn.AGE,
-                             F.datediff(F.col(s"${qbConfigs.getDateColumn(criterionId)}"),
-                                        F.col(qbConfigs.getPatientBirthColumn(criterionId))))
+        dataFrame.withColumn(
+          QueryColumn.AGE,
+          F.datediff(F.col(s"${QueryBuilderUtils.getDateColumn(criterionId)}"),
+                     F.col(QueryBuilderUtils.getPatientBirthColumn(criterionId))))
       } else {
         dataFrame.withColumn(
           colName = QueryColumn.AGE,
-          F.datediff(F.col(s"${qbConfigs.getDateColumn(criterionId)}"),
-                     F.col(qbConfigs.getPatientBirthColumn(criterionId))) / 365.25)
+          F.datediff(F.col(s"${QueryBuilderUtils.getDateColumn(criterionId)}"),
+                     F.col(QueryBuilderUtils.getPatientBirthColumn(criterionId))) / 365.25
+        )
       }
     }
 
@@ -172,7 +173,7 @@ class QueryBuilderBasicResource(
       }
       val unifiedSparkFilter = sparkFilterList.toList.reduce(_ && _)
       if (!dateIsNotNull)
-        unifiedSparkFilter || F.col(qbConfigs.getDateColumn(criterionId)).isNull
+        unifiedSparkFilter || F.col(QueryBuilderUtils.getDateColumn(criterionId)).isNull
       else unifiedSparkFilter
     }
 
@@ -182,7 +183,7 @@ class QueryBuilderBasicResource(
 
       val datePreference =
         patientAge.datePreference.getOrElse(
-          qbConfigs.defaultDatePreferencePerCollection(basicResource.resourceType))
+          QueryBuilderUtils.defaultDatePreferencePerCollection(basicResource.resourceType))
       val dateIsNotNull = patientAge.dateIsNotNull.getOrElse(true)
 
       val criterionDataFrameWithDateColumn =
@@ -219,20 +220,21 @@ class QueryBuilderBasicResource(
                                        basicResource: BasicResource,
                                        criterionId: Short,
                                        isInTemporalConstraint: Boolean): DataFrame = {
-    val sameDayColumn: String = s"${qbConfigs.getDateColumn(criterionId)}Day"
+    val sameDayColumn: String = s"${QueryBuilderUtils.getDateColumn(criterionId)}Day"
 
     def addSameDayConstraintColumns(dataframe: DataFrame, sameDay: Boolean): DataFrame = {
       if (sameDay) {
         // @todo : datePreference is not an option here
         val datePreference =
-          qbConfigs.defaultDatePreferencePerCollection(basicResource.resourceType)
+          QueryBuilderUtils.defaultDatePreferencePerCollection(basicResource.resourceType)
         val dataFrameWithSameDayColumn =
           qbUtils
             .buildLocalDateColumn(dataframe,
                                   criterionId,
                                   datePreference,
                                   basicResource.resourceType)
-            .withColumn(sameDayColumn, F.to_date(F.col(qbConfigs.getDateColumn(criterionId))))
+            .withColumn(sameDayColumn,
+                        F.to_date(F.col(QueryBuilderUtils.getDateColumn(criterionId))))
         dataFrameWithSameDayColumn
       } else dataframe
     }
@@ -246,7 +248,7 @@ class QueryBuilderBasicResource(
     def addSameEncounterGroupByColumns(sameEncounter: Boolean,
                                        groupByColumns: ListBuffer[String]): ListBuffer[String] = {
       if (sameEncounter) {
-        groupByColumns += qbConfigs.getEncounterColumn(criterionId)
+        groupByColumns += QueryBuilderUtils.getEncounterColumn(criterionId)
       } else groupByColumns
     }
 
@@ -283,7 +285,7 @@ class QueryBuilderBasicResource(
           .join(renamedPatientListDataFrame, joinExprs, "right")
           .drop(groupByColumns.map(x => x.split('_').last).toList: _*)
       } else {
-        val joinId: String = qbConfigs.getSubjectColumn(criterionId)
+        val joinId: String = QueryBuilderUtils.getSubjectColumn(criterionId)
         criterionDataFrame.join(patientListDataFrame,
                                 criterionDataFrame(joinId) <=> patientListDataFrame(joinId),
                                 "left_semi")
@@ -301,7 +303,7 @@ class QueryBuilderBasicResource(
 
         operator = if (operator == "=") "==" else operator
 
-        var groupByColumns = ListBuffer[String](qbConfigs.getSubjectColumn(criterionId))
+        var groupByColumns = ListBuffer[String](QueryBuilderUtils.getSubjectColumn(criterionId))
         val criterionDataFrameWithSameDayColumn: DataFrame =
           addSameDayConstraintColumns(criterionDataFrame, sameDay)
 
@@ -336,10 +338,10 @@ class QueryBuilderBasicResource(
     val criterionId: Short = basicResource._id
     val isInTemporalConstraint: Boolean = criterionTags.isInTemporalConstraint
     val subjectColumn =
-      qbConfigs.getSubjectColumn(criterionId, isPatient = !criterionTags.isResourceFilter)
+      QueryBuilderUtils.getSubjectColumn(criterionId, isPatient = !criterionTags.isResourceFilter)
     val selectedColumns = List(subjectColumn) ++ (if (criterionTags.withOrganizations)
                                                     List(
-                                                      qbConfigs
+                                                      QueryBuilderUtils
                                                         .getOrganizationsColumn(criterionId))
                                                   else
                                                     List())
@@ -347,7 +349,8 @@ class QueryBuilderBasicResource(
     var criterionDataFrame: DataFrame =
       querySolver.getResourceDataFrame(basicResource, criterionTags, sourcePopulation)
     // set column names with prepended criterionId
-    criterionDataFrame = criterionDataFrame.toDF(criterionDataFrame.columns.map(c => qbConfigs.buildColName(criterionId, c)).toSeq: _*)
+    criterionDataFrame = criterionDataFrame.toDF(
+      criterionDataFrame.columns.map(c => QueryBuilderUtils.buildColName(criterionId, c)).toSeq: _*)
     if (logger.isDebugEnabled) {
       logger.debug(
         s"criterionDataFrame recovered, columns are: ${criterionDataFrame.columns.mkString("Array(", ", ", ")")}")

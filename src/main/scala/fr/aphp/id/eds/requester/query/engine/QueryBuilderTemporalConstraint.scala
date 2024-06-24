@@ -13,10 +13,9 @@ import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions => F}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryExecutionOptions()) {
+class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbConfigs = ResourceResolverFactory.getConfig()
-  private val qbUtils = new QueryBuilderUtils()
+  private val qbUtils = new QueryBuilderUtils(options.resourceConfig)
 
   def getOccurrenceChoice(temporalConstraint: TemporalConstraint,
                           idList: List[Short]): Map[Short, String] = {
@@ -92,7 +91,7 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
         if (datePreferenceMap.contains(i))
           datePreferenceMap(i)
         else
-          qbConfigs.defaultDatePreferencePerCollection(tagsPerId(i).resourceType)
+          QueryBuilderUtils.defaultDatePreferencePerCollection(tagsPerId(i).resourceType)
       datePreferenceMap += (i -> datePreference)
     })
     if (logger.isDebugEnabled)
@@ -108,9 +107,9 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
       withOrganizations: Boolean): Option[DataFrame] = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
-    val groupIdColumName = qbConfigs.getSubjectColumn(groupId)
-    val criterionIdColumnName = qbConfigs.getSubjectColumn(firstCriterionId)
-    val organizationColumnName = qbConfigs.getOrganizationsColumn(firstCriterionId)
+    val groupIdColumName = QueryBuilderUtils.getSubjectColumn(groupId)
+    val criterionIdColumnName = QueryBuilderUtils.getSubjectColumn(firstCriterionId)
+    val organizationColumnName = QueryBuilderUtils.getOrganizationsColumn(firstCriterionId)
     val selectedColumns = List(criterionIdColumnName) ++ (if (withOrganizations)
                                                             List(organizationColumnName)
                                                           else List())
@@ -121,8 +120,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
         .dropDuplicates(groupIdColumName)
     if (withOrganizations) {
       patientListDataFrame = patientListDataFrame
-        .withColumnRenamed(qbConfigs.getOrganizationsColumn(firstCriterionId),
-                           qbConfigs.getOrganizationsColumn(groupId))
+        .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(firstCriterionId),
+                           QueryBuilderUtils.getOrganizationsColumn(groupId))
     }
     patientListDataFrame = if (groupDataFrame.isEmpty) {
       patientListDataFrame
@@ -165,8 +164,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
         .flatMap(x1 => joinEncounterCol.map(x2 => dfGroup(x1) <=> dfJoin(x2)))
         .reduce(_ && _)
       // @todo : the following line useless if one patient per encounter
-      joinOn = dfGroup(qbConfigs.getSubjectColumn(firstId)) <=> dfJoin(
-        qbConfigs.getSubjectColumn(id_)) && joinOn
+      joinOn = dfGroup(QueryBuilderUtils.getSubjectColumn(firstId)) <=> dfJoin(
+        QueryBuilderUtils.getSubjectColumn(id_)) && joinOn
       if (logger.isDebugEnabled) logger.debug(s"joinOn: $joinOn")
       dfGroup = dfGroup.join(dfJoin, joinOn, joinType = "leftsemi")
     }
@@ -225,8 +224,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
       idList.tail.foreach(
         criterionId =>
           groupDf = groupDf.join(dataFrameWithDateTimeColumnsPerIdMap(criterionId),
-                                 F.col(qbConfigs.getSubjectColumn(firstId)) === F.col(
-                                   qbConfigs.getSubjectColumn(criterionId)),
+                                 F.col(QueryBuilderUtils.getSubjectColumn(firstId)) === F.col(
+                                   QueryBuilderUtils.getSubjectColumn(criterionId)),
                                  "inner"))
       if (logger.isDebugEnabled)
         logger.debug(
@@ -251,8 +250,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
       for (i_ <- 0 to idList.size - 2) {
         val (id1, id2, dt1, dt2) =
           (idList(i_), idList(i_ + 1), dateTimeColumnList(i_), dateTimeColumnList(i_ + 1))
-        val criterion1DateTimeColumnName = qbConfigs.buildColName(id1, dt1)
-        val criterion2DateTimeColumnName = qbConfigs.buildColName(id2, dt2)
+        val criterion1DateTimeColumnName = QueryBuilderUtils.buildColName(id1, dt1)
+        val criterion2DateTimeColumnName = QueryBuilderUtils.buildColName(id2, dt2)
         val defaultFilter: Column = F.col(criterion1DateTimeColumnName) <= F.col(
           criterion2DateTimeColumnName)
         if (minDuration.isDefined || maxDuration.isDefined) {
@@ -323,21 +322,21 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
       criteriaToAddIsList: List[Short]): DataFrame = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
-    val groupIdColumnName = qbConfigs.getSubjectColumn(groupId)
-    val initialDataFrameIdColumnName = qbConfigs.getSubjectColumn(initialDataFrameId)
+    val groupIdColumnName = QueryBuilderUtils.getSubjectColumn(groupId)
+    val initialDataFrameIdColumnName = QueryBuilderUtils.getSubjectColumn(initialDataFrameId)
     if (logger.isDebugEnabled)
       logger.debug(
         s"dfGroup.columns:${initialDataFrame.columns.toList}, groupIdColumnName:$groupIdColumnName, initialDataFrameIdColumnName:$initialDataFrameIdColumnName")
     var resultDataFrame = initialDataFrame
       .withColumnRenamed(initialDataFrameIdColumnName, groupIdColumnName)
-      .withColumnRenamed(qbConfigs.getOrganizationsColumn(initialDataFrameId),
-                         qbConfigs.getOrganizationsColumn(groupId))
+      .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(initialDataFrameId),
+                         QueryBuilderUtils.getOrganizationsColumn(groupId))
       .dropDuplicates()
     criteriaToAddIsList
       .filter(x => x != initialDataFrameId)
       .foreach(id_ => {
         val joinDataFrame = dataFramePerIdMap(id_)
-        val joinColumnName = qbConfigs.getSubjectColumn(id_)
+        val joinColumnName = QueryBuilderUtils.getSubjectColumn(id_)
         resultDataFrame = resultDataFrame
           .join(joinDataFrame,
                 resultDataFrame(groupIdColumnName) <=> joinDataFrame(joinColumnName),
@@ -445,7 +444,7 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions = QueryE
         .map(x => x.i)
 
     val selectedColumns = List(groupIdColumnName) ++ (if (withOrganizations)
-      List(qbConfigs.getOrganizationsColumn(groupId))
+      List(QueryBuilderUtils.getOrganizationsColumn(groupId))
     else List())
 
     joinAllCriteriaConcernedOrNotByATemporalConstraint(

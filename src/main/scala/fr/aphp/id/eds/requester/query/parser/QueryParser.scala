@@ -138,7 +138,8 @@ object QueryParser {
     * (required for naming the cache properly).
     * Extracts also the "request" object.
     * */
-  def parse(cohortDefinitionSyntaxJsonString: String, options: QueryParsingOptions = QueryParsingOptions()): (Request, Map[Short, CriterionTags]) = {
+  def parse(cohortDefinitionSyntaxJsonString: String,
+            options: QueryParsingOptions): (Request, Map[Short, CriterionTags]) = {
     import org.json4s._
     import play.api.libs.json._
     implicit val formats = Serialization.formats(NoTypeHints)
@@ -156,24 +157,25 @@ object QueryParser {
     val cohortRequestOption =
       Json.parse(cohortDefinitionSyntaxJsonString).validate[GenericQuery]
     val cohortRequest = cohortRequestOption.get
-    val request = specJson(cohortRequest).right.get
-    val criterionTagsMap =
-      CriterionTagsParser.getCriterionTagsMap(
-        request,
-        options.withOrganizationDetails
-      )
+    val request = specJson(cohortRequest, options).right.get
+    val criterionTagsMap = new CriterionTagsParser(options.resourceConfig).getCriterionTagsMap(
+      request,
+      options.withOrganizationDetails
+    )
     if (logger.isDebugEnabled)
       logger.debug(s"Json parsed : request=${request}, criterionIdWithTcMap=${criterionTagsMap}")
     (request, criterionTagsMap)
   }
 
   protected def specJson(genericQuery: GenericQuery,
+                         options: QueryParsingOptions,
                          parentTemporalConstraint: Option[List[TemporalConstraint]] = Option.empty)
     : Either[BaseQuery, Request] = {
 
     def isNotEmptyGroup(x: GenericQuery): Boolean = {
-      List("request", "basicResource").contains(x._type) || (List("andGroup", "orGroup", "nAmongM").contains(x._type) &&
-        x.criteria.getOrElse(List[GenericQuery]()).exists(isNotEmptyGroup))
+      List("request", "basicResource").contains(x._type) || (List("andGroup", "orGroup", "nAmongM")
+        .contains(x._type) &&
+      x.criteria.getOrElse(List[GenericQuery]()).exists(isNotEmptyGroup))
     }
 
     /** Convert a GenericTemporalConstraint object to a TemporalConstraint */
@@ -245,8 +247,12 @@ object QueryParser {
       BasicResource(
         _id = genericQuery._id.get,
         isInclusive = genericQuery.isInclusive.get,
-        resourceType = tmpCompatOldResourceType(if (genericQuery.resourceType.get == IPP_LIST) FhirResource.PATIENT else genericQuery.resourceType.get),
-        filter = genericQuery.filterSolr.getOrElse(genericQuery.filterFhir.get),
+        resourceType = tmpCompatOldResourceType(
+          if (genericQuery.resourceType.get == IPP_LIST) FhirResource.PATIENT
+          else genericQuery.resourceType.get),
+        filter =
+          if (options.useFilterSolr) genericQuery.filterSolr.getOrElse(genericQuery.filterFhir.get)
+          else genericQuery.filterFhir.get,
         occurrence = genericQuery.occurrence,
         patientAge = genericQuery.patientAge,
         nullAvailableFieldList = genericQuery.nullAvailableFieldList,
@@ -270,7 +276,7 @@ object QueryParser {
       val criterion = genericQuery.criteria
         .getOrElse(List[GenericQuery]())
         .filter(isNotEmptyGroup)
-        .map(x => specJson(x, tcWithIds).left.get)
+        .map(x => specJson(x, options, tcWithIds).left.get)
       val criterionIds = criterion.map((c) => c.i)
 
       // filter the tc with ids (from parent and own) to match those who match sub criteria ids

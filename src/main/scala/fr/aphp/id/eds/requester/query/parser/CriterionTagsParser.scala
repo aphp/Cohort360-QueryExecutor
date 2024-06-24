@@ -3,10 +3,10 @@ package fr.aphp.id.eds.requester.query.parser
 import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START_DATE, EVENT_DATE}
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.jobs.ResourceType
+import fr.aphp.id.eds.requester.query.engine.QueryBuilderUtils
 import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
-import fr.aphp.id.eds.requester.query.model.{BaseQuery, BasicResource, GroupResource, Request, TemporalConstraint}
-import fr.aphp.id.eds.requester.query.parser.CriterionTagsParser.queryBuilderConfigs
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
+import fr.aphp.id.eds.requester.query.model._
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
@@ -26,9 +26,8 @@ class CriterionTags(val isDateTimeAvailable: Boolean,
                     val withOrganizations: Boolean = false,
 )
 
-object CriterionTagsParser {
+class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
   private val logger = Logger.getLogger(this.getClass)
-  private val queryBuilderConfigs = ResourceResolverFactory.getConfig()
 
   def getCriterionTagsMap(request: Request,
                           requestOrganizations: Boolean): Map[Short, CriterionTags] = {
@@ -138,9 +137,9 @@ object CriterionTagsParser {
             val localDatePreference =
               temporalConstraint.datePreference.get.getOrElse(criterion.i, List[String]())
             if (localDatePreference.isEmpty)
-              queryBuilderConfigs.defaultDatePreferencePerCollection(collection)
+              QueryBuilderUtils.defaultDatePreferencePerCollection(collection)
             else localDatePreference
-          } else queryBuilderConfigs.defaultDatePreferencePerCollection(collection)
+          } else QueryBuilderUtils.defaultDatePreferencePerCollection(collection)
         }
       normalizedDatePreferenceList = normalizedDatePreferenceList ++ (if (temporalConstraint.constraintType == SAME_EPISODE_OF_CARE) {
                                                                         List(
@@ -265,7 +264,7 @@ object CriterionTagsParser {
               if (dateRange.datePreference.isDefined)
                 dateTimeListTmp ++ dateRange.datePreference.get
               else
-                dateTimeListTmp ++ queryBuilderConfigs.defaultDatePreferencePerCollection(
+                dateTimeListTmp ++ QueryBuilderUtils.defaultDatePreferencePerCollection(
                   collection)
         )
         dateTimeListTmp.distinct
@@ -277,13 +276,13 @@ object CriterionTagsParser {
         if (genericQuery.patientAge.get.datePreference.isDefined)
           (dateTimeList ++ genericQuery.patientAge.get.datePreference.get).distinct
         else
-          (dateTimeList ++ queryBuilderConfigs.defaultDatePreferencePerCollection(collection)).distinct
+          (dateTimeList ++ QueryBuilderUtils.defaultDatePreferencePerCollection(collection)).distinct
       } else dateTimeList
     }
 
     def getSameDayOccurrenceDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
       if (genericQuery.occurrence.isDefined && genericQuery.occurrence.get.sameDay.isDefined && genericQuery.occurrence.get.sameDay.get) {
-        (dateTimeList ++ queryBuilderConfigs.defaultDatePreferencePerCollection(collection)).distinct
+        (dateTimeList ++ QueryBuilderUtils.defaultDatePreferencePerCollection(collection)).distinct
       } else dateTimeList
     }
 

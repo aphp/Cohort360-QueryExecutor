@@ -4,7 +4,7 @@ import fr.aphp.id.eds.requester.SolrCollection._
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver}
 import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
@@ -98,6 +98,13 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
 
     addDefaultCohortFqParameter(filterSolr)
   }
+
+  /**
+   * Returns the resource configuration for the resource resolver.
+   *
+   * @return The resource configuration for the resource resolver.
+   */
+  override def getConfig: ResourceConfig = qbConfigs
 }
 
 object SolrCollections {

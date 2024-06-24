@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SparkTools}
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
@@ -10,14 +10,12 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.language.postfixOps
 
-case class QueryExecutionOptions(withOrganizations: Boolean = false)
+case class QueryExecutionOptions(resourceConfig: ResourceConfig, withOrganizations: Boolean = false)
 
-class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
-                          new QueryBuilderBasicResource(),
-                        val options: QueryExecutionOptions = QueryExecutionOptions(),
+class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
+                        val options: QueryExecutionOptions,
                         val jobUtilsService: JobUtilsService = JobUtils) {
   private val logger = Logger.getLogger(this.getClass)
-  private val qbUtils = ResourceResolverFactory.getConfig()
   private val qbTc = new QueryBuilderTemporalConstraint(options)
   private val qbLc = new QueryBuilderLogicalConstraint(options)
 
@@ -117,7 +115,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
           List[String](),
           FhirResource.PATIENT,
           if (options.withOrganizations) {
-            qbBasicResource.qbConfigs
+            options.resourceConfig
               .requestKeyPerCollectionMap(FhirResource.PATIENT)
               .getOrElse(QueryColumn.ORGANIZATIONS, List())
           } else List[String](),
@@ -172,7 +170,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource =
       cacheNestedGroup
     )
 
-    val groupIdColumnName = qbUtils.getSubjectColumn(groupId)
+    val groupIdColumnName = QueryBuilderUtils.getSubjectColumn(groupId)
     var dfGroup =
       if (temporalConstraints.isEmpty) {
         qbLc.processGroupWithoutTemporalConstraint(dataFramePerIdMap,

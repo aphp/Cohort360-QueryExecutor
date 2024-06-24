@@ -1,10 +1,7 @@
 package fr.aphp.id.eds.requester.cohort
 
-import fr.aphp.id.eds.requester.AppConfig
-import fr.aphp.id.eds.requester.cohort.pg.{PGCohortCreationService, PGTool}
-import fr.aphp.id.eds.requester.jobs.JobEnv
 import fr.aphp.id.eds.requester.query.model.SourcePopulation
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 
 trait CohortCreationService {
   /**

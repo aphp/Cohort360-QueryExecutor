@@ -1,15 +1,84 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.QueryColumn
-import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
+import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
+import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, functions => F}
 
-class QueryBuilderUtils {
+object QueryBuilderUtils {
+
+  def buildColName(id: Short, colName: String): String = {
+    s"${id}_::_$colName"
+  }
+
+  def getSubjectColumn(id: Short, isPatient: Boolean = true): String =
+    buildColName(id, if (isPatient) QueryColumn.PATIENT else QueryColumn.ID)
+
+  def getEncounterColumn(id: Short): String = buildColName(id, QueryColumn.ENCOUNTER)
+
+  def getEpisodeOfCareColumn(id: Short): String = buildColName(id, QueryColumn.EPISODE_OF_CARE)
+
+  def getDateColumn(id: Short): String = buildColName(id, LOCAL_DATE)
+
+  def getEventDateColumn(id: Short): String = buildColName(id, EVENT_DATE)
+
+  def getOrganizationsColumn(id: Short): String = buildColName(id, QueryColumn.ORGANIZATIONS)
+
+  def getEncounterStartDateColumn(id: Short): String =
+    buildColName(id, QueryColumn.ENCOUNTER_START_DATE)
+
+  def getEncounterEndDateColumn(id: Short): String =
+    buildColName(id, QueryColumn.ENCOUNTER_END_DATE)
+
+  def getPatientBirthColumn(id: Short): String = buildColName(id, QueryColumn.PATIENT_BIRTHDATE)
+
+  val defaultDatePreferencePerCollection: Map[String, List[String]] =
+    Map[String, List[String]](
+      FhirResource.ENCOUNTER -> List(QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.CONDITION -> List(QueryColumn.ENCOUNTER_END_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        EVENT_DATE),
+      FhirResource.PATIENT -> List(QueryColumn.PATIENT_BIRTHDATE),
+      FhirResource.DOCUMENT_REFERENCE -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.COMPOSITION -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.GROUP -> List(),
+      FhirResource.CLAIM -> List(QueryColumn.ENCOUNTER_END_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        EVENT_DATE),
+      FhirResource.PROCEDURE -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_END_DATE,
+        QueryColumn.ENCOUNTER_START_DATE),
+      FhirResource.MEDICATION_ADMINISTRATION -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.MEDICATION_REQUEST -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.OBSERVATION -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.IMAGING_STUDY -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.QUESTIONNAIRE_RESPONSE -> List(EVENT_DATE,
+        QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE),
+      FhirResource.UNKNOWN -> List(QueryColumn.ENCOUNTER_START_DATE,
+        QueryColumn.ENCOUNTER_END_DATE,
+        EVENT_DATE)
+    )
+}
+
+class QueryBuilderUtils(val qbConfigs: ResourceConfig) {
   private val logger = Logger.getLogger(this.getClass)
 
-  val qbConfigs = ResourceResolverFactory.getConfig()
+
 
   /** Build a date column for a ressource based on date_preference.
     *
@@ -26,15 +95,15 @@ class QueryBuilderUtils {
     def filterIrrelevantDatePreference(): List[String] = {
       datePreference.filter(x =>
         x match {
-          case EVENT_DATE => qbConfigs.listCollectionWithEventDatetimeFields.contains(collection)
+          case EVENT_DATE => listCollectionWithEventDatetimeFields.contains(collection)
           case QueryColumn.ENCOUNTER_START_DATE | QueryColumn.ENCOUNTER_END_DATE =>
-            qbConfigs.listCollectionWithEncounterFields.contains(collection)
+            listCollectionWithEncounterFields.contains(collection)
           case _ => false
       })
     }
 
     val cleanedDatePreference: List[String] = filterIrrelevantDatePreference()
-    val newDateColumnName = s"${qbConfigs.getDateColumn(localId)}$suffixe"
+    val newDateColumnName = s"${QueryBuilderUtils.getDateColumn(localId)}$suffixe"
 
     if (logger.isDebugEnabled) {
       logger.debug(
@@ -49,13 +118,25 @@ class QueryBuilderUtils {
             s"for subrequest id=$localId because there is no datetime information for encounter and event")
       case 1 =>
         val dp = cleanedDatePreference.head
-        df.withColumn(newDateColumnName, F.col(qbConfigs.buildColName(localId,dp)))
+        df.withColumn(newDateColumnName, F.col(QueryBuilderUtils.buildColName(localId,dp)))
       case _ =>
         df.withColumn(newDateColumnName,
-                      F.coalesce(cleanedDatePreference.map(x => F.col(qbConfigs.buildColName(localId,x))): _*))
+                      F.coalesce(cleanedDatePreference.map(x => F.col(QueryBuilderUtils.buildColName(localId,x))): _*))
 
     }
   }
+
+  private def listCollectionWithEventDatetimeFields: List[String] =
+    qbConfigs.requestKeyPerCollectionMap
+      .filter(el => el._2.contains(QueryColumn.EVENT_DATE))
+      .keys
+      .toList
+
+  private def listCollectionWithEncounterFields: List[String] =
+    qbConfigs.requestKeyPerCollectionMap
+      .filter(el => el._2.contains(QueryColumn.ENCOUNTER) && el._2(QueryColumn.ENCOUNTER).nonEmpty)
+      .keys
+      .toList
 
   /**
    * Remove unecessary columns and deduplicate dataframe (if needed)

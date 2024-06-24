@@ -1,12 +1,17 @@
 package fr.aphp.id.eds.requester.tools
 
 import fr.aphp.id.eds.requester.{AppConfig, FhirServerConfig, PGConfig}
-import fr.aphp.id.eds.requester.cohort.CohortCreationService
+import fr.aphp.id.eds.requester.cohort.{CohortCreationService, CohortCreationServices}
 import fr.aphp.id.eds.requester.cohort.fhir.FhirCohortCreationService
 import fr.aphp.id.eds.requester.cohort.pg.{PGCohortCreationService, PGTool}
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
+import fr.aphp.id.eds.requester.query.resolver.{
+  ResourceResolver,
+  ResourceResolverFactory,
+  ResourceResolvers
+}
 import fr.aphp.id.eds.requester.query.resolver.rest.DefaultRestFhirClient
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -15,17 +20,25 @@ trait JobUtilsService {
   def initSparkJobRequest(logger: Logger,
                           spark: SparkSession,
                           runtime: JobEnv,
-                          data: SparkJobParameter)
-    : (Request, Map[Short, CriterionTags], Option[CohortCreationService], Boolean) = {
+                          data: SparkJobParameter): (Request,
+                                                     Map[Short, CriterionTags],
+                                                     Option[CohortCreationService],
+                                                     ResourceResolver,
+                                                     Boolean) = {
     logger.debug(s"Received data: ${data.toString}")
 
     // init db connectors
     val maybeCohortCreationService = getCohortCreationService(spark, data)
+    val resourceResolver = ResourceResolverFactory.get(data.resolver)
 
     // load input json into object
     val (request, criterionTagsMap) = QueryParser.parse(
       data.cohortDefinitionSyntax,
-      QueryParsingOptions(withOrganizationDetails = data.mode == JobType.countWithDetails)
+      QueryParsingOptions(
+        resourceConfig = resourceResolver.getConfig,
+        withOrganizationDetails = data.mode == JobType.countWithDetails,
+        useFilterSolr = data.resolver == ResourceResolvers.solr,
+      )
     )
 
     logger.info(
@@ -33,7 +46,7 @@ trait JobUtilsService {
 
     (request,
      criterionTagsMap,
-     maybeCohortCreationService,
+     maybeCohortCreationService, resourceResolver,
      runtime.contextConfig.business.enableCache)
   }
 
@@ -56,10 +69,10 @@ object JobUtils extends JobUtilsService {
 
   override def getCohortCreationService(spark: SparkSession,
                                         data: SparkJobParameter): Option[CohortCreationService] = {
-    data.cohortCreationService.getOrElse(AppConfig.get.defaultCohortCreationService) match {
-      case "pg"   => getPGCohortCreationService(spark, AppConfig.get.pg)
-      case "fhir" => getFhirCohortCreationService(AppConfig.get.fhir)
-      case _      => None
+    data.cohortCreationService match {
+      case CohortCreationServices.pg   => getPGCohortCreationService(spark, AppConfig.get.pg)
+      case CohortCreationServices.fhir => getFhirCohortCreationService(AppConfig.get.fhir)
+      case _                           => None
     }
   }
 

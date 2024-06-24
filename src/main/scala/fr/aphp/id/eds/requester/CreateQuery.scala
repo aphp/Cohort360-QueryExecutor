@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder}
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
@@ -31,7 +31,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       runtime: JobEnv,
       data: SparkJobParameter
   ): JobBaseResult = {
-    implicit val (request, criterionTagsMap, omopTools, cacheEnabled) =
+    implicit val (request, criterionTagsMap, omopTools, resourceResolver, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
 
     validateRequestOrThrow(request)
@@ -52,7 +52,12 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                                              completedCriterionTagsMap,
                                              data.ownerEntityId,
                                              cacheEnabled,
-                                             withOrganizationDetails = false)
+                                             withOrganizationDetails = false,
+      new QueryBuilderGroup(
+        new QueryBuilderBasicResource(resourceResolver),
+        options = QueryExecutionOptions(resourceResolver.getConfig),
+        jobUtilsService = jobUtilsService)
+    )
 
     // filter df columns
     cohort = cohort
