@@ -1,14 +1,13 @@
 package fr.aphp.id.eds.requester.tools
 
 import com.typesafe.scalalogging.LazyLogging
-import fr.aphp.id.eds.requester.{AppConfig, SolrConfig}
+import fr.aphp.id.eds.requester.SolrConfig
 import org.apache.solr.client.solrj.SolrQuery
 import org.apache.solr.client.solrj.impl.{CloudSolrClient, HttpSolrClient}
 import org.apache.solr.client.solrj.request.CollectionAdminRequest
 import play.api.libs.json.{JsObject, JsValue, Json}
 
 import scala.compat.java8.OptionConverters.RichOptionForJava8
-
 
 class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
 
@@ -38,8 +37,6 @@ class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
     new CloudSolrClient.Builder(zkHostList, (None: Option[String]).asJava)
       .build()
   }
-
-
 
   /**
     * Check cohort creation
@@ -76,26 +73,30 @@ class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
         grp.asInstanceOf[JsObject].value("shards").asInstanceOf[JsObject].value
 
       val urlsAliveNode: List[String] = shards
-        .flatMap(shard =>
-          shard._2
-            .asInstanceOf[JsObject]
-            .value("replicas")
-            .asInstanceOf[JsObject]
-            .value
-            .filter(replicat => replicat._2.asInstanceOf[JsObject]
-              .value("state")
-              .toString
-              .replaceAll("^\"|\"$", "").equals("active")
-            )
-            .map(replicat => {
-              replicat._2.asInstanceOf[JsObject]
-                .value("base_url")
-                .toString
-                .replaceAll("^\"|\"$", "")
-            }))
+        .flatMap(
+          shard =>
+            shard._2
+              .asInstanceOf[JsObject]
+              .value("replicas")
+              .asInstanceOf[JsObject]
+              .value
+              .filter(
+                replicat =>
+                  replicat._2
+                    .asInstanceOf[JsObject]
+                    .value("state")
+                    .toString
+                    .replaceAll("^\"|\"$", "")
+                    .equals("active"))
+              .map(replicat => {
+                replicat._2
+                  .asInstanceOf[JsObject]
+                  .value("base_url")
+                  .toString
+                  .replaceAll("^\"|\"$", "")
+              }))
         .toList
         .distinct
-
 
       warnDownNodes(shards)
 
@@ -114,28 +115,34 @@ class SolrTools(solrConfig: SolrConfig) extends LazyLogging {
 
   private def warnDownNodes(shards: scala.collection.Map[String, JsValue]): Unit = {
     val urlsNodeDown: List[String] = shards
-      .flatMap(shard =>
-        shard._2
-          .asInstanceOf[JsObject]
-          .value("replicas")
-          .asInstanceOf[JsObject]
-          .value
-          .filter(replicat => !replicat._2.asInstanceOf[JsObject]
-            .value("state")
-            .toString
-            .replaceAll("^\"|\"$", "").equals("active")
-          )
-          .map(replicat => {
-            replicat._2.asInstanceOf[JsObject]
-              .value("base_url")
-              .toString
-              .replaceAll("^\"|\"$", "")
-          }))
+      .flatMap(
+        shard =>
+          shard._2
+            .asInstanceOf[JsObject]
+            .value("replicas")
+            .asInstanceOf[JsObject]
+            .value
+            .filter(
+              replicat =>
+                !replicat._2
+                  .asInstanceOf[JsObject]
+                  .value("state")
+                  .toString
+                  .replaceAll("^\"|\"$", "")
+                  .equals("active"))
+            .map(replicat => {
+              replicat._2
+                .asInstanceOf[JsObject]
+                .value("base_url")
+                .toString
+                .replaceAll("^\"|\"$", "")
+            }))
       .toList
       .distinct
 
-    if(urlsNodeDown.nonEmpty){
-      logger.warn(s"[checking cohort creation] **** following SolR nodes are note available: $urlsNodeDown")
+    if (urlsNodeDown.nonEmpty) {
+      logger.warn(
+        s"[checking cohort creation] **** following SolR nodes are note available: $urlsNodeDown")
     }
   }
 

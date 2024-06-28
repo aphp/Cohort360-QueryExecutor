@@ -1,8 +1,9 @@
 package fr.aphp.id.eds.requester
 
-import fr.aphp.id.eds.requester.cohort.pg.PGCohortCreationService
+import fr.aphp.id.eds.requester.cohort.CohortCreation
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobsConfig, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.engine.QueryBuilder
+import fr.aphp.id.eds.requester.query.resolver.{ResourceResolver, ResourceResolvers}
 import fr.aphp.id.eds.requester.tools.JobUtilsService
 import org.apache.spark.sql.SparkSession
 import org.mockito.ArgumentMatchersSugar
@@ -20,13 +21,25 @@ class CreateQueryTest extends AnyFunSuiteLike {
   }
 
   test("testCallbackUrl") {
-    var callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("path"), Some("url")))
+    var callbackUrl = JobsConfig.createJob.callbackUrl(
+      SparkJobParameter("test",
+                        Some("test"),
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        Some("test"),
+                        Some("path"),
+                        Some("url")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "url")
-    callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
+    callbackUrl = JobsConfig.createJob.callbackUrl(
+      SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/cohort/cohorts/id/")
-    callbackUrl = JobsConfig.createJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test"))
+    callbackUrl = JobsConfig.createJob.callbackUrl(
+      SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test"))
     assert(callbackUrl.isEmpty)
   }
 
@@ -37,13 +50,16 @@ class CreateQueryTest extends AnyFunSuiteLike {
       .getOrCreate()
 
     val queryBuilderMock = mock[QueryBuilder]
-    val omopTools = mock[PGCohortCreationService]
+    val omopTools = mock[CohortCreation]
+    val resourceResolver = ResourceResolver.get(ResourceResolvers.solr)
     class JobUtilsMock extends JobUtilsService {
-      override def getCohortCreationService(session: SparkSession, data: SparkJobParameter): Option[PGCohortCreationService] = {
-        Some(omopTools)
-      }
-
       override def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = 99
+
+      override def getCohortCreationService(data: SparkJobParameter,
+                                            spark: SparkSession): Option[CohortCreation] =
+        Some(omopTools)
+
+      override def getResourceResolver(data: SparkJobParameter): ResourceResolver = resourceResolver
     }
 
     val createJob = CreateQuery(queryBuilderMock, new JobUtilsMock)
@@ -102,9 +118,9 @@ class CreateQueryTest extends AnyFunSuiteLike {
     }
     assert(error.getMessage == "Non-patient resource filter request should be a basic resource")
 
-
     val expected = getClass.getResource(s"/testCases/simple/expected.csv")
-    val expectedResult = sparkSession.read.format("csv")
+    val expectedResult = sparkSession.read
+      .format("csv")
       .option("delimiter", ";")
       .option("header", "true")
       .load(expected.getPath)

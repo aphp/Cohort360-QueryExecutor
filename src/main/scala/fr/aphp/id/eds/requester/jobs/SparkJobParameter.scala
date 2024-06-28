@@ -5,18 +5,18 @@ import fr.aphp.id.eds.requester.cohort.CohortCreationServices.CohortCreationServ
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolvers.ResourceResolvers
 
 case class SparkJobParameter(
-                              cohortDefinitionName: String,
-                              cohortDefinitionDescription: Option[String],
-                              cohortDefinitionSyntax: String,
-                              ownerEntityId: String,
-                              solrRows: String = "10000",
-                              commitWithin: String = "10000",
-                              mode: String = JobType.count,
-                              cohortUuid: Option[String] = Option.empty,
-                              callbackPath: Option[String] = Option.empty,
-                              callbackUrl: Option[String] = Option.empty,
-                              resolver: ResourceResolvers = AppConfig.get.defaultResolver,
-                              cohortCreationService: CohortCreationServices = AppConfig.get.defaultCohortCreationService
+    cohortDefinitionName: String,
+    cohortDefinitionDescription: Option[String],
+    cohortDefinitionSyntax: String,
+    ownerEntityId: String,
+    solrRows: String = "10000",
+    commitWithin: String = "10000",
+    mode: String = JobType.count,
+    cohortUuid: Option[String] = Option.empty,
+    callbackPath: Option[String] = Option.empty,
+    callbackUrl: Option[String] = Option.empty,
+    resolver: ResourceResolvers = AppConfig.get.defaultResolver,
+    cohortCreationService: CohortCreationServices = AppConfig.get.defaultCohortCreationService
 )
 
 object JobType extends Enumeration {

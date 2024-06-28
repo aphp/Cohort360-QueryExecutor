@@ -20,13 +20,24 @@ class CountQueryTest extends AnyFunSuiteLike {
   }
 
   test("testCallbackUrl") {
-    var callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("test"), Some("/url")))
+    var callbackUrl = JobsConfig.countJob.callbackUrl(
+      SparkJobParameter("test",
+                        Some("test"),
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        Some("test"),
+                        Some("/url")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/url")
-    callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
+    callbackUrl = JobsConfig.countJob.callbackUrl(
+      SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/cohort/dated-measures/id/")
-    callbackUrl = JobsConfig.countJob.callbackUrl(SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test"))
+    callbackUrl = JobsConfig.countJob.callbackUrl(
+      SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test"))
     assert(callbackUrl.isEmpty)
   }
 
@@ -42,9 +53,9 @@ class CountQueryTest extends AnyFunSuiteLike {
         {"cohortUuid":"ecd89963-ac90-470d-a397-c846882615a6","sourcePopulation":{"caresiteCohortList":[31558]},"_type":"request","request":{"_type":"andGroup","_id":0,"isInclusive":true,"criteria":[{"_type":"basicResource","_id":1,"isInclusive":true,"resourceType":"patientAphp","filterSolr":"fq=gender:f&fq=deceased:false&fq=active:true","filterFhir":"active=true&gender=f&deceased=false&age-day=ge0&age-day=le130"}],"temporalConstraints":[]}}"
       """.stripMargin
 
-
     val expected = getClass.getResource(s"/testCases/simple/expected.csv")
-    val expectedResult = sparkSession.read.format("csv")
+    val expectedResult = sparkSession.read
+      .format("csv")
       .option("delimiter", ";")
       .option("header", "true")
       .load(expected.getPath)
@@ -88,9 +99,9 @@ class CountQueryTest extends AnyFunSuiteLike {
         {"cohortUuid":"ecd89963-ac90-470d-a397-c846882615a6","sourcePopulation":{"caresiteCohortList":[31558]},"_type":"request","request":{"_type":"andGroup","_id":0,"isInclusive":true,"criteria":[{"_type":"basicResource","_id":1,"isInclusive":true,"resourceType":"patientAphp","filterSolr":"fq=gender:f&fq=deceased:false&fq=active:true","filterFhir":"active=true&gender=f&deceased=false&age-day=ge0&age-day=le130"}],"temporalConstraints":[]}}"
       """.stripMargin
 
-
     val expected = getClass.getResource(s"/testCases/withOrganizationDetails/expected.csv")
-    val expectedResult = sparkSession.read.format("csv")
+    val expectedResult = sparkSession.read
+      .format("csv")
       .option("delimiter", ";")
       .option("header", "true")
       .load(expected.getPath)
@@ -127,4 +138,3 @@ class CountQueryTest extends AnyFunSuiteLike {
   }
 
 }
-

@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.QueryColumn.{EVENT_DATE, LOCAL_DATE}
-import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, functions => F}
 
@@ -36,49 +36,47 @@ object QueryBuilderUtils {
   val defaultDatePreferencePerCollection: Map[String, List[String]] =
     Map[String, List[String]](
       FhirResource.ENCOUNTER -> List(QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                     QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.CONDITION -> List(QueryColumn.ENCOUNTER_END_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        EVENT_DATE),
+                                     QueryColumn.ENCOUNTER_START_DATE,
+                                     EVENT_DATE),
       FhirResource.PATIENT -> List(QueryColumn.PATIENT_BIRTHDATE),
       FhirResource.DOCUMENT_REFERENCE -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                              QueryColumn.ENCOUNTER_START_DATE,
+                                              QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.COMPOSITION -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                       QueryColumn.ENCOUNTER_START_DATE,
+                                       QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.GROUP -> List(),
       FhirResource.CLAIM -> List(QueryColumn.ENCOUNTER_END_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        EVENT_DATE),
+                                 QueryColumn.ENCOUNTER_START_DATE,
+                                 EVENT_DATE),
       FhirResource.PROCEDURE -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_END_DATE,
-        QueryColumn.ENCOUNTER_START_DATE),
+                                     QueryColumn.ENCOUNTER_END_DATE,
+                                     QueryColumn.ENCOUNTER_START_DATE),
       FhirResource.MEDICATION_ADMINISTRATION -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                                     QueryColumn.ENCOUNTER_START_DATE,
+                                                     QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.MEDICATION_REQUEST -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                              QueryColumn.ENCOUNTER_START_DATE,
+                                              QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.OBSERVATION -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                       QueryColumn.ENCOUNTER_START_DATE,
+                                       QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.IMAGING_STUDY -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                         QueryColumn.ENCOUNTER_START_DATE,
+                                         QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.QUESTIONNAIRE_RESPONSE -> List(EVENT_DATE,
-        QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE),
+                                                  QueryColumn.ENCOUNTER_START_DATE,
+                                                  QueryColumn.ENCOUNTER_END_DATE),
       FhirResource.UNKNOWN -> List(QueryColumn.ENCOUNTER_START_DATE,
-        QueryColumn.ENCOUNTER_END_DATE,
-        EVENT_DATE)
+                                   QueryColumn.ENCOUNTER_END_DATE,
+                                   EVENT_DATE)
     )
 }
 
 class QueryBuilderUtils(val qbConfigs: ResourceConfig) {
   private val logger = Logger.getLogger(this.getClass)
-
-
 
   /** Build a date column for a ressource based on date_preference.
     *
@@ -118,10 +116,11 @@ class QueryBuilderUtils(val qbConfigs: ResourceConfig) {
             s"for subrequest id=$localId because there is no datetime information for encounter and event")
       case 1 =>
         val dp = cleanedDatePreference.head
-        df.withColumn(newDateColumnName, F.col(QueryBuilderUtils.buildColName(localId,dp)))
+        df.withColumn(newDateColumnName, F.col(QueryBuilderUtils.buildColName(localId, dp)))
       case _ =>
         df.withColumn(newDateColumnName,
-                      F.coalesce(cleanedDatePreference.map(x => F.col(QueryBuilderUtils.buildColName(localId,x))): _*))
+                      F.coalesce(cleanedDatePreference.map(x =>
+                        F.col(QueryBuilderUtils.buildColName(localId, x))): _*))
 
     }
   }
@@ -139,14 +138,17 @@ class QueryBuilderUtils(val qbConfigs: ResourceConfig) {
       .toList
 
   /**
-   * Remove unecessary columns and deduplicate dataframe (if needed)
-   * @param groupDataFrame the dataframe to clean
-   * @param keepAll weither or not to keep all columns
-   * @param selectedColumns the list of columns to keep
-   * @param deduplicationCol the column to use for deduplication
-   * @return the cleaned dataframe
-   */
-  def cleanDataFrame(groupDataFrame: DataFrame, keepAll: Boolean, selectedColumns: List[String], deduplicationCol: String): DataFrame = {
+    * Remove unecessary columns and deduplicate dataframe (if needed)
+    * @param groupDataFrame the dataframe to clean
+    * @param keepAll weither or not to keep all columns
+    * @param selectedColumns the list of columns to keep
+    * @param deduplicationCol the column to use for deduplication
+    * @return the cleaned dataframe
+    */
+  def cleanDataFrame(groupDataFrame: DataFrame,
+                     keepAll: Boolean,
+                     selectedColumns: List[String],
+                     deduplicationCol: String): DataFrame = {
     if (keepAll) {
       groupDataFrame
     } else {

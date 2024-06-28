@@ -2,18 +2,18 @@ package fr.aphp.id.eds.requester.cohort.pg
 
 import com.lucidworks.spark.util.SolrDataFrameImplicits._
 import com.typesafe.scalalogging.LazyLogging
-import fr.aphp.id.eds.requester.cohort.CohortCreationService
+import fr.aphp.id.eds.requester.cohort.CohortCreation
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import fr.aphp.id.eds.requester.query.model.SourcePopulation
 import fr.aphp.id.eds.requester.tools.SolrTools
+import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, functions => F}
 
 /**
   * @param pg           pgTool obj
   */
-class PGCohortCreationService(pg: PGTool) extends CohortCreationService with LazyLogging {
+class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
   private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName
   private final val cohort_table_rw = AppConfig.get.business.cohorts.cohortTableName
   private final val cohort_provider_name = AppConfig.get.business.cohorts.cohortProviderName

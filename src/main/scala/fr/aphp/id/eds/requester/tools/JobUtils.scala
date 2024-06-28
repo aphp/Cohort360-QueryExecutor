@@ -1,18 +1,10 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.{AppConfig, FhirServerConfig, PGConfig}
-import fr.aphp.id.eds.requester.cohort.{CohortCreationService, CohortCreationServices}
-import fr.aphp.id.eds.requester.cohort.fhir.FhirCohortCreationService
-import fr.aphp.id.eds.requester.cohort.pg.{PGCohortCreationService, PGTool}
+import fr.aphp.id.eds.requester.cohort.CohortCreation
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
-import fr.aphp.id.eds.requester.query.resolver.{
-  ResourceResolver,
-  ResourceResolverFactory,
-  ResourceResolvers
-}
-import fr.aphp.id.eds.requester.query.resolver.rest.DefaultRestFhirClient
+import fr.aphp.id.eds.requester.query.resolver.{ResourceResolver, ResourceResolvers}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
@@ -20,16 +12,13 @@ trait JobUtilsService {
   def initSparkJobRequest(logger: Logger,
                           spark: SparkSession,
                           runtime: JobEnv,
-                          data: SparkJobParameter): (Request,
-                                                     Map[Short, CriterionTags],
-                                                     Option[CohortCreationService],
-                                                     ResourceResolver,
-                                                     Boolean) = {
+                          data: SparkJobParameter)
+  : (Request, Map[Short, CriterionTags], Option[CohortCreation], ResourceResolver, Boolean) = {
     logger.debug(s"Received data: ${data.toString}")
 
     // init db connectors
-    val maybeCohortCreationService = getCohortCreationService(spark, data)
-    val resourceResolver = ResourceResolverFactory.get(data.resolver)
+    val maybeCohortCreationService = getCohortCreationService(data, spark)
+    val resourceResolver = getResourceResolver(data)
 
     // load input json into object
     val (request, criterionTagsMap) = QueryParser.parse(
@@ -45,13 +34,15 @@ trait JobUtilsService {
       s"ENTER NEW QUERY JOB : ${data.toString}. Parsed criterionIdWithTcList: $criterionTagsMap")
 
     (request,
-     criterionTagsMap,
-     maybeCohortCreationService, resourceResolver,
-     runtime.contextConfig.business.enableCache)
+      criterionTagsMap,
+      maybeCohortCreationService,
+      resourceResolver,
+      runtime.contextConfig.business.enableCache)
   }
 
-  def getCohortCreationService(session: SparkSession,
-                               data: SparkJobParameter): Option[CohortCreationService]
+  def getCohortCreationService(data: SparkJobParameter, spark: SparkSession): Option[CohortCreation]
+
+  def getResourceResolver(data: SparkJobParameter): ResourceResolver
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short
 
@@ -67,43 +58,10 @@ trait JobUtilsService {
 
 object JobUtils extends JobUtilsService {
 
-  override def getCohortCreationService(spark: SparkSession,
-                                        data: SparkJobParameter): Option[CohortCreationService] = {
-    data.cohortCreationService match {
-      case CohortCreationServices.pg   => getPGCohortCreationService(spark, AppConfig.get.pg)
-      case CohortCreationServices.fhir => getFhirCohortCreationService(AppConfig.get.fhir)
-      case _                           => None
-    }
-  }
+  def getCohortCreationService(data: SparkJobParameter, spark: SparkSession): Option[CohortCreation] =
+    CohortCreation.get(data.cohortCreationService)(spark)
 
-  private def getFhirCohortCreationService(
-      optFhirConfig: Option[FhirServerConfig]): Option[FhirCohortCreationService] = {
-    if (optFhirConfig.isEmpty) {
-      return None
-    }
-    val fhirConfig = optFhirConfig.get
-    Some(
-      new FhirCohortCreationService(
-        new DefaultRestFhirClient(fhirConfig, cohortServer = true)
-      ))
-  }
-
-  private def getPGCohortCreationService(
-      sparkSession: SparkSession,
-      optPgConfig: Option[PGConfig]): Option[PGCohortCreationService] = {
-    if (optPgConfig.isEmpty) {
-      return None
-    }
-    val pgConfig = optPgConfig.get
-    Some(
-      new PGCohortCreationService(
-        PGTool(
-          sparkSession,
-          s"jdbc:postgresql://${pgConfig.host}:${pgConfig.port}/${pgConfig.database}?user=${pgConfig.user}&currentSchema=${pgConfig.schema},public",
-          "/tmp/postgres-spark-job"
-        )
-      ))
-  }
+  def getResourceResolver(data: SparkJobParameter): ResourceResolver = ResourceResolver.get(data.resolver)
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {
     val rnd = new scala.util.Random

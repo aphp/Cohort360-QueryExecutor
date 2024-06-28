@@ -1,8 +1,8 @@
 package fr.aphp.id.eds.requester.query.resolver.solr
 
 import fr.aphp.id.eds.requester.QueryColumn.EVENT_DATE
-import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 
 class SolrQueryElementsConfig extends ResourceConfig {
 
@@ -38,15 +38,18 @@ class SolrQueryElementsConfig extends ResourceConfig {
       List(SolrColumn.MedicationAdministration.PERIOD_START)),
     FhirResource.OBSERVATION -> buildMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME)),
     FhirResource.CONDITION -> buildMap(List(SolrColumn.Condition.RECORDED_DATE)),
-    FhirResource.PATIENT -> Map(QueryColumn.PATIENT -> List(SolrColumn.PATIENT), QueryColumn.ID -> List(SolrColumn.ID), QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS)),
+    FhirResource.PATIENT -> Map(QueryColumn.PATIENT -> List(SolrColumn.PATIENT),
+                                QueryColumn.ID -> List(SolrColumn.ID),
+                                QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS)),
     FhirResource.DOCUMENT_REFERENCE -> buildMap(List(SolrColumn.Document.DATE)),
     FhirResource.COMPOSITION -> buildMap(List(SolrColumn.Document.DATE)),
-    FhirResource.GROUP -> Map(QueryColumn.PATIENT -> List(SolrColumn.Group.RESOURCE_ID), QueryColumn.ID -> List(SolrColumn.ID)),
+    FhirResource.GROUP -> Map(QueryColumn.PATIENT -> List(SolrColumn.Group.RESOURCE_ID),
+                              QueryColumn.ID -> List(SolrColumn.ID)),
     FhirResource.CLAIM -> buildMap(List(SolrColumn.Claim.CREATED)),
     FhirResource.PROCEDURE -> buildMap(List(SolrColumn.Procedure.DATE)),
     FhirResource.IMAGING_STUDY -> (buildMap(List(SolrColumn.PATIENT),
-      List(SolrColumn.ImagingStudy.STARTED,
-        SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(
+                                            List(SolrColumn.ImagingStudy.STARTED,
+                                                 SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(
       QueryColumn.GROUP_BY -> List(SolrColumn.ImagingStudy.STUDY_ID))),
     FhirResource.QUESTIONNAIRE_RESPONSE -> (buildMap(
       List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(
@@ -56,7 +59,9 @@ class SolrQueryElementsConfig extends ResourceConfig {
 
   def reverseColumnMapping(collection: String, columnName: String): String = {
     val dateField =
-      requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.EVENT_DATE, List[String]("")).head
+      requestKeyPerCollectionMap(collection)
+        .getOrElse(QueryColumn.EVENT_DATE, List[String](""))
+        .head
     val patientField =
       requestKeyPerCollectionMap(collection).getOrElse(QueryColumn.PATIENT, List[String]("")).head
     val encounterField =

@@ -1,9 +1,9 @@
 package fr.aphp.id.eds.requester.query.resolver.rest
 
-import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.hl7.fhir.instance.model.api.IBase
-import org.hl7.fhir.r4.model.{DateTimeType, DateType, IdType, Reference, StringType}
+import org.hl7.fhir.r4.model.{DateTimeType, DateType, IdType, Reference}
 
 case class QueryColumnMapping(queryColName: String,
                               fhirPath: String,
@@ -27,10 +27,13 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
       List(
         ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[IdType])),
         ResourceMapping(QueryColumnMapping(QueryColumn.ENCOUNTER, "id", classOf[IdType])),
-        ResourceMapping(QueryColumnMapping(QueryColumn.EVENT_DATE, "period.start", classOf[DateTimeType])),
+        ResourceMapping(
+          QueryColumnMapping(QueryColumn.EVENT_DATE, "period.start", classOf[DateTimeType])),
         ResourceMapping(QueryColumnMapping(QueryColumn.PATIENT, "subject", classOf[Reference])),
         ResourceMapping(
-          QueryColumnMapping(QueryColumn.ENCOUNTER_START_DATE, "period.start", classOf[DateTimeType])),
+          QueryColumnMapping(QueryColumn.ENCOUNTER_START_DATE,
+                             "period.start",
+                             classOf[DateTimeType])),
         ResourceMapping(
           QueryColumnMapping(QueryColumn.ENCOUNTER_END_DATE, "period.end", classOf[DateTimeType])),
       )),
@@ -72,10 +75,14 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
                                        addedColumnsInfo: List[QueryColumnMapping]) = {
     resourceMapping.find(_.columnMapping.queryColName == queryColumnRef) match {
       case Some(ResourceMapping(baseColMapping, _)) =>
-        resourceMapping ++ addedColumnsInfo.map {
-          colMapping: QueryColumnMapping =>
-            ResourceMapping(QueryColumnMapping(colMapping.queryColName, s"${baseColMapping.fhirPath}.${colMapping.fhirPath}", colMapping.fhirType, colMapping.nullable),
-                            joinInfo = Some(JoinInfo(resourceType, baseColMapping.fhirPath)))
+        resourceMapping ++ addedColumnsInfo.map { colMapping: QueryColumnMapping =>
+          ResourceMapping(
+            QueryColumnMapping(colMapping.queryColName,
+                               s"${baseColMapping.fhirPath}.${colMapping.fhirPath}",
+                               colMapping.fhirType,
+                               colMapping.nullable),
+            joinInfo = Some(JoinInfo(resourceType, baseColMapping.fhirPath))
+          )
         }
       case _ => resourceMapping
     }
@@ -83,12 +90,13 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
 
   private def addJoinedPatientResourceColumns(
       resourceMapping: List[ResourceMapping]): List[ResourceMapping] = {
-    addJoinedResourceColumns(resourceMapping,
-                             QueryColumn.PATIENT,
-                             FhirResource.PATIENT,
-                             List(
-                               QueryColumnMapping(QueryColumn.PATIENT_BIRTHDATE, "birthDate", classOf[DateType])
-                             ))
+    addJoinedResourceColumns(
+      resourceMapping,
+      QueryColumn.PATIENT,
+      FhirResource.PATIENT,
+      List(
+        QueryColumnMapping(QueryColumn.PATIENT_BIRTHDATE, "birthDate", classOf[DateType])
+      ))
   }
 
   private def addJoinedEncounterResourceColumns(

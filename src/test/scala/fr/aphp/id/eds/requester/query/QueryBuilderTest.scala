@@ -1,7 +1,12 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
+import fr.aphp.id.eds.requester.query.engine.{
+  DefaultQueryBuilder,
+  QueryBuilderBasicResource,
+  QueryBuilderGroup,
+  QueryExecutionOptions
+}
 import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
@@ -39,7 +44,8 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
         .fromFile(getClass.getResource(s"/testCases/$folderCase/request.json").getFile)
         .getLines
         .mkString,
-      QueryParsingOptions(solrQueryResolver.getConfig, withOrganizationDetails = withOrganizationsDetail)
+      QueryParsingOptions(solrQueryResolver.getConfig,
+                          withOrganizationDetails = withOrganizationsDetail)
     )
 
     val folder = getClass.getResource(s"/testCases/$folderCase").getPath

@@ -2,7 +2,6 @@ package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, GroupResourceType}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, functions => F}
 
@@ -60,7 +59,8 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions) {
       : Boolean = groupResource._type == GroupResourceType.N_AMONG_M && isGroupInTemporalConstraint
     val selectedColumns = List(groupIdColumnName) ++ (if (criterionTagsMap(groupId).withOrganizations)
                                                         List(
-                                                          QueryBuilderUtils.getOrganizationsColumn(groupId))
+                                                          QueryBuilderUtils.getOrganizationsColumn(
+                                                            groupId))
                                                       else List())
 
     def initGroupDataFrame(): DataFrame = {
@@ -187,7 +187,8 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions) {
       criterionTagsMap(groupId).temporalConstraintTypeList.contains("directChronologicalOrdering")
     val selectedColumns = List(groupIdColumnName) ++ (if (criterionTagsMap(groupId).withOrganizations)
                                                         List(
-                                                          QueryBuilderUtils.getOrganizationsColumn(groupId))
+                                                          QueryBuilderUtils.getOrganizationsColumn(
+                                                            groupId))
                                                       else List())
 
     def initGroupDataFrame(): DataFrame = {

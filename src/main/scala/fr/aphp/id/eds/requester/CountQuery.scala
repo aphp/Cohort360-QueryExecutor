@@ -1,9 +1,9 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
+import fr.aphp.id.eds.requester.query.engine._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
-import fr.aphp.id.eds.requester.query.resolver.ResourceResolverFactory
+import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
@@ -61,8 +61,10 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           withOrganizationsDetails,
           new QueryBuilderGroup(
             new QueryBuilderBasicResource(resourceResolver),
-            options = QueryExecutionOptions(resourceResolver.getConfig, withOrganizations = withOrganizationsDetails),
-            jobUtilsService = jobUtilsService)
+            options = QueryExecutionOptions(resourceResolver.getConfig,
+                                            withOrganizations = withOrganizationsDetails),
+            jobUtilsService = jobUtilsService
+          )
         )
       val t1 = System.nanoTime()
       logger.info("Query Count final dataframe processed in: " + (t1 - t0) / 1000 + "ms")
@@ -79,7 +81,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     }
 
     def countPatientsWithResolver() = {
-      ResourceResolverFactory
+      ResourceResolver
         .get(data.resolver)
         .countPatients(request.sourcePopulation)
     }

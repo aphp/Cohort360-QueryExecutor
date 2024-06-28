@@ -5,9 +5,11 @@ import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-
 trait SolrSparkReader {
-  def readDf(solrCollection: String, solrFilterQuery: String, solrFilterList: String, resourceId: Short)(implicit spark: SparkSession): DataFrame
+  def readDf(solrCollection: String,
+             solrFilterQuery: String,
+             solrFilterList: String,
+             resourceId: Short)(implicit spark: SparkSession): DataFrame
 }
 
 class DefaultSolrSparkReader(solrConfig: SolrConfig) extends SolrSparkReader {
@@ -27,7 +29,10 @@ class DefaultSolrSparkReader(solrConfig: SolrConfig) extends SolrSparkReader {
     }
   }
 
-  def readDf(solrCollection: String, solrFilterQuery: String, solrFilterList: String, resourceId: Short)(implicit spark: SparkSession): DataFrame = {
+  def readDf(solrCollection: String,
+             solrFilterQuery: String,
+             solrFilterList: String,
+             resourceId: Short)(implicit spark: SparkSession): DataFrame = {
     logger.info(
       s"SolR REQUEST: ${Map("collection" -> solrCollection, "fields" -> solrFilterList, "solr.params" -> solrFilterQuery)}")
     val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map(

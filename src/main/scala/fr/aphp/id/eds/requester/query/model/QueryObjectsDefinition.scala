@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.query.model
 
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 
 abstract class BaseQuery(val _type: String, _id: Short, isInclusive: Boolean) {
   val i: Short = _id

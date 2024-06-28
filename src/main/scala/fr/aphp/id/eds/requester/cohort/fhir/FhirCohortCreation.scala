@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.cohort.fhir
 
 import fr.aphp.id.eds.requester.ResultColumn
-import fr.aphp.id.eds.requester.cohort.CohortCreationService
+import fr.aphp.id.eds.requester.cohort.CohortCreation
 import fr.aphp.id.eds.requester.query.model.SourcePopulation
 import fr.aphp.id.eds.requester.query.resolver.rest.RestFhirClient
 import org.apache.spark.sql.{DataFrame, Row}
@@ -9,7 +9,7 @@ import org.hl7.fhir.r4.model.{ListResource, Reference}
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
-class FhirCohortCreationService(restFhirClient: RestFhirClient) extends CohortCreationService {
+class FhirCohortCreation(restFhirClient: RestFhirClient) extends CohortCreation {
 
   /**
     * @param cohortDefinitionName        : The name of the cohort

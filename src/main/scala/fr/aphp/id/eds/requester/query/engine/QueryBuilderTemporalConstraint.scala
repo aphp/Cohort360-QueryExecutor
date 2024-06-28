@@ -1,10 +1,19 @@
 package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.QueryColumn
-import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
-import fr.aphp.id.eds.requester.query.model.{BaseQuery, GroupResource, TemporalConstraint, TemporalConstraintDuration}
+import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{
+  DIFFERENT_ENCOUNTER,
+  DIRECT_CHRONOLOGICAL_ORDERING,
+  SAME_ENCOUNTER,
+  SAME_EPISODE_OF_CARE
+}
+import fr.aphp.id.eds.requester.query.model.{
+  BaseQuery,
+  GroupResource,
+  TemporalConstraint,
+  TemporalConstraintDuration
+}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceResolverFactory, ResourceConfig}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.functions.expr
 import org.apache.spark.sql.types.TimestampType
@@ -39,7 +48,7 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
     def infoToCheck(idTags: CriterionTags, constraintType: String): Boolean =
       if (List[String](SAME_ENCOUNTER, DIFFERENT_ENCOUNTER).contains(constraintType))
         idTags.isEncounterAvailable
-      else if(SAME_EPISODE_OF_CARE.equals(constraintType))
+      else if (SAME_EPISODE_OF_CARE.equals(constraintType))
         idTags.isEpisodeOfCareAvailable
       else idTags.isDateTimeAvailable
 
@@ -140,11 +149,14 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
 
   private def filterEncounterColumn(columnName: String): Boolean = {
     columnName.contains(s"_::_${QueryColumn.ENCOUNTER}") &&
-      !(columnName.contains(QueryColumn.ENCOUNTER_START_DATE) ||
-        columnName.contains(QueryColumn.ENCOUNTER_END_DATE))
+    !(columnName.contains(QueryColumn.ENCOUNTER_START_DATE) ||
+      columnName.contains(QueryColumn.ENCOUNTER_END_DATE))
   }
 
-  private def processSameRefTc(idList: List[Short], inDictDf: Map[Short, DataFrame], filterColumnNamesToJoinOn: (String) => Boolean = filterEncounterColumn): DataFrame = {
+  private def processSameRefTc(idList: List[Short],
+                               inDictDf: Map[Short, DataFrame],
+                               filterColumnNamesToJoinOn: (String) => Boolean =
+                                 filterEncounterColumn): DataFrame = {
     def keepEncounterIdColumnNames(dataFrame: DataFrame): List[String] = {
       if (logger.isDebugEnabled)
         logger.debug(s"input df.columns: ${dataFrame.columns.mkString("Array(", ", ", ")")}")
@@ -223,10 +235,12 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
       var groupDf = dataFrameWithDateTimeColumnsPerIdMap(firstId)
       idList.tail.foreach(
         criterionId =>
-          groupDf = groupDf.join(dataFrameWithDateTimeColumnsPerIdMap(criterionId),
-                                 F.col(QueryBuilderUtils.getSubjectColumn(firstId)) === F.col(
-                                   QueryBuilderUtils.getSubjectColumn(criterionId)),
-                                 "inner"))
+          groupDf = groupDf.join(
+            dataFrameWithDateTimeColumnsPerIdMap(criterionId),
+            F.col(QueryBuilderUtils.getSubjectColumn(firstId)) === F.col(
+              QueryBuilderUtils.getSubjectColumn(criterionId)),
+            "inner"
+        ))
       if (logger.isDebugEnabled)
         logger.debug(
           s"apply_temporal_constraint : joinedDf.columns:${groupDf.columns.toList}, " +
@@ -413,8 +427,11 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
           if (constraintType == SAME_ENCOUNTER && occurrenceChoice
                 .count(x => x._2 == "any") == occurrenceChoice.size) {
             processSameRefTc(idList, dataFramePerIdMap)
-          } else if (constraintType == SAME_EPISODE_OF_CARE && occurrenceChoice.count(x => x._2 == "any") == occurrenceChoice.size) {
-            processSameRefTc(idList, dataFramePerIdMap, _.contains(s"_::_${QueryColumn.EPISODE_OF_CARE}"))
+          } else if (constraintType == SAME_EPISODE_OF_CARE && occurrenceChoice.count(
+                       x => x._2 == "any") == occurrenceChoice.size) {
+            processSameRefTc(idList,
+                             dataFramePerIdMap,
+                             _.contains(s"_::_${QueryColumn.EPISODE_OF_CARE}"))
           } else if (constraintType == DIRECT_CHRONOLOGICAL_ORDERING && occurrenceChoice
                        .count(x => x._2 == "any") == occurrenceChoice.size) {
             val datePreferenceMap = getDatePreference(temporalConstraint, idList, criterionTagsMap)
@@ -444,8 +461,10 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
         .map(x => x.i)
 
     val selectedColumns = List(groupIdColumnName) ++ (if (withOrganizations)
-      List(QueryBuilderUtils.getOrganizationsColumn(groupId))
-    else List())
+                                                        List(
+                                                          QueryBuilderUtils.getOrganizationsColumn(
+                                                            groupId))
+                                                      else List())
 
     joinAllCriteriaConcernedOrNotByATemporalConstraint(
       criterionConcernedByATemporalConstraintDataFrame: Option[DataFrame],

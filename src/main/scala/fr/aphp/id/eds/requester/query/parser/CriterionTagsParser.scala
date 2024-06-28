@@ -4,9 +4,14 @@ import fr.aphp.id.eds.requester.QueryColumn.{ENCOUNTER_END_DATE, ENCOUNTER_START
 import fr.aphp.id.eds.requester._
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.engine.QueryBuilderUtils
-import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{DIFFERENT_ENCOUNTER, DIRECT_CHRONOLOGICAL_ORDERING, SAME_ENCOUNTER, SAME_EPISODE_OF_CARE}
+import fr.aphp.id.eds.requester.query.model.TemporalConstraintType.{
+  DIFFERENT_ENCOUNTER,
+  DIRECT_CHRONOLOGICAL_ORDERING,
+  SAME_ENCOUNTER,
+  SAME_EPISODE_OF_CARE
+}
 import fr.aphp.id.eds.requester.query.model._
-import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import org.apache.log4j.Logger
 
 /** Tags for each criterion.
@@ -264,8 +269,7 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
               if (dateRange.datePreference.isDefined)
                 dateTimeListTmp ++ dateRange.datePreference.get
               else
-                dateTimeListTmp ++ QueryBuilderUtils.defaultDatePreferencePerCollection(
-                  collection)
+                dateTimeListTmp ++ QueryBuilderUtils.defaultDatePreferencePerCollection(collection)
         )
         dateTimeListTmp.distinct
       } else dateTimeList
@@ -391,7 +395,8 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
       case QueryColumn.ID =>
         dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ID, List[String]())
       case QueryColumn.ORGANIZATIONS =>
-        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ORGANIZATIONS, List[String]())
+        dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.ORGANIZATIONS,
+                                                           List[String]())
       case EVENT_DATE =>
         dateTimeSolrFieldList ++= translationMap.getOrElse(QueryColumn.EVENT_DATE, List[String]())
       case QueryColumn.ENCOUNTER =>

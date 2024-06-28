@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester
 
 import fr.aphp.id.eds.requester.jobs._
-import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
+import fr.aphp.id.eds.requester.query.engine._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
@@ -47,16 +47,16 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
         addOneEmptyGroupToRequest(request)
       else (request, criterionTagsMap)
 
-    var cohort = queryBuilder.processRequest(spark,
-                                             completeRequest,
-                                             completedCriterionTagsMap,
-                                             data.ownerEntityId,
-                                             cacheEnabled,
-                                             withOrganizationDetails = false,
-      new QueryBuilderGroup(
-        new QueryBuilderBasicResource(resourceResolver),
-        options = QueryExecutionOptions(resourceResolver.getConfig),
-        jobUtilsService = jobUtilsService)
+    var cohort = queryBuilder.processRequest(
+      spark,
+      completeRequest,
+      completedCriterionTagsMap,
+      data.ownerEntityId,
+      cacheEnabled,
+      withOrganizationDetails = false,
+      new QueryBuilderGroup(new QueryBuilderBasicResource(resourceResolver),
+                            options = QueryExecutionOptions(resourceResolver.getConfig),
+                            jobUtilsService = jobUtilsService)
     )
 
     // filter df columns

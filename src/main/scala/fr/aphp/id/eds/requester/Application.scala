@@ -15,7 +15,8 @@ object Application {
     context setContextPath "/"
     context.setResourceBase("src/main/webapp")
     context.addEventListener(new ScalatraListener)
-    context.setInitParameter(ScalatraListener.LifeCycleKey, "fr.aphp.id.eds.requester.server.CohortRequestServer")
+    context.setInitParameter(ScalatraListener.LifeCycleKey,
+                             "fr.aphp.id.eds.requester.server.CohortRequestServer")
     context.addServlet(classOf[DefaultServlet], "/")
 
     server.setHandler(context)

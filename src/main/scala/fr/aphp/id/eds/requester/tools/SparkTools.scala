@@ -1,12 +1,9 @@
 package fr.aphp.id.eds.requester.tools
 
-import org.apache.spark.sql.functions.{col, hash}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
 object SparkTools {
-
-
 
   /**
     * Récupère un dataframe du cache s'il existe
@@ -25,8 +22,7 @@ object SparkTools {
       .filter(s"lower(name) = lower('${hash}_$user')")
       .count match {
       case 1L =>
-        val resultDf = Some(
-          spark.sql(s"select * from `${hash.toLowerCase()}_$user`"))
+        val resultDf = Some(spark.sql(s"select * from `${hash.toLowerCase()}_$user`"))
         resultDf
       case _ => None
     }
@@ -41,5 +37,5 @@ object SparkTools {
     df.persist(StorageLevel.DISK_ONLY)
       .createOrReplaceTempView(s"${hash.toLowerCase()}_$user")
   }
-  
+
 }

@@ -24,19 +24,21 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
     val solrCollection = SolrCollections.mapping.getOrElse(
       resource.resourceType,
       throw new Exception(s"Fhir resource ${resource.resourceType} not found in SolR mapping."))
-    var criterionDataFrame = solrSparkReader.readDf(solrCollection, solrFilterQuery, solrFilterList, resource._id)
+    var criterionDataFrame =
+      solrSparkReader.readDf(solrCollection, solrFilterQuery, solrFilterList, resource._id)
     // Group by exploded resources
     val resourceConfig = qbConfigs.requestKeyPerCollectionMap(resource.resourceType)
     criterionDataFrame = if (resourceConfig.contains(QueryColumn.GROUP_BY)) {
       criterionDataFrame
         .drop(resourceConfig(QueryColumn.ID).head)
         .withColumnRenamed(resourceConfig(QueryColumn.GROUP_BY).head,
-          resourceConfig(QueryColumn.ID).head)
+                           resourceConfig(QueryColumn.ID).head)
         .dropDuplicates(resourceConfig(QueryColumn.ID).head)
     } else {
       criterionDataFrame
     }
-    val convFunc = (columnName: String) => qbConfigs.reverseColumnMapping(resource.resourceType, columnName)
+    val convFunc = (columnName: String) =>
+      qbConfigs.reverseColumnMapping(resource.resourceType, columnName)
     criterionDataFrame.toDF(criterionDataFrame.columns.map(c => convFunc(c)).toSeq: _*)
   }
 
@@ -51,7 +53,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
 
   def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
     getDefaultSolrFilterQuery(sourcePopulation) +
-      " AND active:true"+
+      " AND active:true" +
       " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
   }
 
@@ -100,10 +102,10 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
   }
 
   /**
-   * Returns the resource configuration for the resource resolver.
-   *
-   * @return The resource configuration for the resource resolver.
-   */
+    * Returns the resource configuration for the resource resolver.
+    *
+    * @return The resource configuration for the resource resolver.
+    */
   override def getConfig: ResourceConfig = qbConfigs
 }
 

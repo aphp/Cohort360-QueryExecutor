@@ -1,7 +1,6 @@
 package fr.aphp.id.eds.requester
 
 import com.typesafe.config.{Config, ConfigFactory}
-import fr.aphp.id.eds.requester.AppConfig.get
 
 case class SparkConfig(
     master: String,
@@ -37,8 +36,8 @@ case class JobConfig(
 )
 
 case class ServerConfig(
-                      port: Int
-                    )
+    port: Int
+)
 
 case class CohortConfig(
     cohortCreationLimit: Int,
@@ -71,7 +70,7 @@ class AppConfig(conf: Config) {
     if (conf.hasPath("spark.executor.memory")) conf.getString("spark.executor.memory") else "1G"
   )
   val defaultResolver: String = conf.getString("app.defaultResolver")
-  val defaultCohortCreationService: String = conf.getString("app.defaultCohortCreationService") 
+  val defaultCohortCreationService: String = conf.getString("app.defaultCohortCreationService")
   val solr: Option[SolrConfig] = if (conf.hasPath("solr.zk")) {
     Some(
       SolrConfig(

@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolverFactory}
+import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SparkTools}
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
@@ -85,7 +85,8 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
                                            sourcePopulation: SourcePopulation,
                                            exclusionCriteriaId: List[Short]): List[BaseQuery] = {
     if (isInclusionCriteriaEmpty) {
-      val defaultSolrFilterQuery: String = qbBasicResource.querySolver.getDefaultFilterQueryPatient(sourcePopulation)
+      val defaultSolrFilterQuery: String =
+        qbBasicResource.querySolver.getDefaultFilterQueryPatient(sourcePopulation)
       val allTabooId: List[Short] = inclusionCriteria.map(x => x.i) ++ exclusionCriteriaId
       val newCriterionIdList: Short = jobUtilsService.getRandomIdNotInTabooList(allTabooId)
       List(

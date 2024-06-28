@@ -1,15 +1,5 @@
 package fr.aphp.id.eds.requester.cohort.pg
 
-import java.io._
-import java.sql.{
-  Connection,
-  DriverManager,
-  PreparedStatement,
-  ResultSetMetaData,
-  Timestamp
-}
-import java.util.UUID.randomUUID
-import java.util.Properties
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -19,6 +9,11 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.postgresql.copy.CopyManager
 import org.postgresql.core.BaseConnection
+
+import java.io._
+import java.sql._
+import java.util.Properties
+import java.util.UUID.randomUUID
 
 sealed trait BulkLoadMode
 
@@ -306,9 +301,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
     schema
   }
 
-  def indexDeactivate(url: String,
-                      table: String,
-                      password: String = ""): Unit = {
+  def indexDeactivate(url: String, table: String, password: String = ""): Unit = {
     val schema = getSchema(url)
     val query =
       s"""
@@ -323,9 +316,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
     logger.debug(s"Deactivating indexes from $schema.$table")
   }
 
-  def indexReactivate(url: String,
-                      table: String,
-                      password: String = ""): Unit = {
+  def indexReactivate(url: String, table: String, password: String = ""): Unit = {
 
     val schema = getSchema(url)
     val query =
@@ -435,8 +426,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
     }
   }
 
-  def parametrize(st: PreparedStatement,
-                  params: List[Any]): PreparedStatement = {
+  def parametrize(st: PreparedStatement, params: List[Any]): PreparedStatement = {
     for ((obj, i) <- params.zipWithIndex) {
       obj match {
         case s: String       => st.setString(i + 1, s)

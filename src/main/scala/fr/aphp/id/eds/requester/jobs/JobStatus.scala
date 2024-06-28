@@ -6,6 +6,4 @@ case class JobStatus(status: String,
                      startTime: String,
                      duration: String,
                      result: AnyRef,
-                     classPath: String) {
-
-}
+                     classPath: String) {}

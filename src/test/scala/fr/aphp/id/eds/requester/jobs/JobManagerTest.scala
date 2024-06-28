@@ -2,12 +2,15 @@ package fr.aphp.id.eds.requester.jobs
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, getAllServeEvents, stubFor, urlEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock.{
+  aResponse,
+  getAllServeEvents,
+  stubFor,
+  urlEqualTo
+}
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
 import com.github.tomakehurst.wiremock.extension.{Parameters, ServeEventListener}
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent
-import com.typesafe.config.ConfigFactory
-import fr.aphp.id.eds.requester.CountQuery
 import org.apache.spark.sql.SparkSession
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuiteLike
@@ -25,7 +28,8 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
 
   val Port = 8080
   val Host = "localhost"
-  val wireMockServer = new WireMockServer(wireMockConfig().extensions(new MyServeEventListener()).port(Port))
+  val wireMockServer = new WireMockServer(
+    wireMockConfig().extensions(new MyServeEventListener()).port(Port))
 
   class MyServeEventListener extends ServeEventListener {
 
@@ -45,20 +49,27 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
   }
 
   class JobTest extends JobBase {
-    override def runJob(spark: SparkSession, runtime: JobEnv, data: SparkJobParameter): JobBaseResult = {
+    override def runJob(spark: SparkSession,
+                        runtime: JobEnv,
+                        data: SparkJobParameter): JobBaseResult = {
       jobStart.await()
-      JobBaseResult(JobExecutionStatus.FINISHED, Map("ok"-> "ok"))
+      JobBaseResult(JobExecutionStatus.FINISHED, Map("ok" -> "ok"))
     }
   }
 
-  def testJob(jobObject: JobBase, jobParam: SparkJobParameter, result: JobResult, callbackResult: String): Unit = {
+  def testJob(jobObject: JobBase,
+              jobParam: SparkJobParameter,
+              result: JobResult,
+              callbackResult: String): Unit = {
     val job = jobManager.execJob(jobObject, jobParam)
     assert(jobManager.list().size == 1)
     assert(jobManager.status(job.jobId).status == JobExecutionStatus.RUNNING)
 
-    stubFor(WireMock.patch(urlEqualTo("/"))
-      .willReturn(aResponse()
-        .withStatus(200)))
+    stubFor(
+      WireMock
+        .patch(urlEqualTo("/"))
+        .willReturn(aResponse()
+          .withStatus(200)))
 
     jobStart.countDown()
     jobEnd.await()
@@ -73,18 +84,18 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
   test("testJobsTypes") {
     testJob(
       new JobTest(),
-      SparkJobParameter(
-        "test",
-        Some("test"),
-        "test",
-        "test",
-        "test",
-        "test",
-        "test",
-        Some("test"),
-        callbackUrl=Some(wireMockServer.baseUrl())),
-      JobResult("test", JobBaseResult(JobExecutionStatus.FINISHED, Map("ok"-> "ok")).toString),
-      "{\"request_job_status\":\"FINISHED\",\"ok\":\"ok\",\"extra\":{}}")
+      SparkJobParameter("test",
+                        Some("test"),
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        Some("test"),
+                        callbackUrl = Some(wireMockServer.baseUrl())),
+      JobResult("test", JobBaseResult(JobExecutionStatus.FINISHED, Map("ok" -> "ok")).toString),
+      "{\"request_job_status\":\"FINISHED\",\"ok\":\"ok\",\"extra\":{}}"
+    )
   }
 
 }

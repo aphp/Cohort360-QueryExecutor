@@ -4,7 +4,6 @@ import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.rest.client.api.IGenericClient
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor
 import fr.aphp.id.eds.requester.FhirServerConfig
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.hl7.fhir.r4.model.Bundle
 
 trait RestFhirClient {
@@ -17,10 +16,12 @@ trait RestFhirClient {
   def getClient: IGenericClient
 }
 
-class DefaultRestFhirClient(fhirConfig: FhirServerConfig, cohortServer: Boolean = false) extends RestFhirClient {
+class DefaultRestFhirClient(fhirConfig: FhirServerConfig, cohortServer: Boolean = false)
+    extends RestFhirClient {
   private val ctx = FhirContext.forR4()
   private val client = ctx.newRestfulGenericClient(getServerUrl)
-  private val authInterceptor = fhirConfig.accessToken.flatMap(token => Some(new BearerTokenAuthInterceptor(token)))
+  private val authInterceptor =
+    fhirConfig.accessToken.flatMap(token => Some(new BearerTokenAuthInterceptor(token)))
   authInterceptor.foreach(client.registerInterceptor)
 
   override def getFhirContext: FhirContext = ctx

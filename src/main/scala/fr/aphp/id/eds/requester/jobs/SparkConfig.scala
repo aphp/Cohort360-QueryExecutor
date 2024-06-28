@@ -1,6 +1,5 @@
 package fr.aphp.id.eds.requester.jobs
 
-import com.typesafe.config.ConfigFactory
 import fr.aphp.id.eds.requester.AppConfig
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession

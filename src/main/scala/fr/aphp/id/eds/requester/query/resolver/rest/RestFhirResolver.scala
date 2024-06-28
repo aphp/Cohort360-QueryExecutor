@@ -2,10 +2,10 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 
 import ca.uhn.fhir.fhirpath.IFhirPath
 import ca.uhn.fhir.util.BundleUtil
-import fr.aphp.id.eds.requester.{AppConfig, FhirResource, QueryColumn}
 import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver}
+import fr.aphp.id.eds.requester.{AppConfig, FhirResource, QueryColumn}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -16,9 +16,9 @@ import java.util.Optional
 import scala.collection.JavaConverters._
 
 /**
- * Implementation of ResourceResolver that uses a RestFhirClient to fetch resources from a FHIR server.
- * @param fhirClient The RestFhirClient to use for fetching resources.
- */
+  * Implementation of ResourceResolver that uses a RestFhirClient to fetch resources from a FHIR server.
+  * @param fhirClient The RestFhirClient to use for fetching resources.
+  */
 class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   private val ctx = fhirClient.getFhirContext
   private val batchSize = 1000
@@ -85,8 +85,11 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
                                   s"active=true&meta.security:not=$securityNoList")
   }
 
-  private def addPatientRequiredField(resource: BasicResource, requiredFieldList: List[String]): List[String] = {
-    (requiredFieldList ++ qbConfigs.requestKeyPerCollectionMap(resource.resourceType).getOrElse(QueryColumn.PATIENT, List[String]())).distinct
+  private def addPatientRequiredField(resource: BasicResource,
+                                      requiredFieldList: List[String]): List[String] = {
+    (requiredFieldList ++ qbConfigs
+      .requestKeyPerCollectionMap(resource.resourceType)
+      .getOrElse(QueryColumn.PATIENT, List[String]())).distinct
   }
 
   private def getAllPagesOfResource(results: Bundle, mapping: List[QueryColumnMapping])(
@@ -244,9 +247,9 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   }
 
   /**
-   * Returns the resource configuration for the resource resolver.
-   *
-   * @return The resource configuration for the resource resolver.
-   */
+    * Returns the resource configuration for the resource resolver.
+    *
+    * @return The resource configuration for the resource resolver.
+    */
   override def getConfig: ResourceConfig = qbConfigs
 }
