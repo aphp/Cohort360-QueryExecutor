@@ -29,6 +29,7 @@ case class PGConfig(
     database: String,
     schema: String,
     user: String,
+    cohortConfig: CohortConfig
 )
 
 case class JobConfig(
@@ -40,7 +41,6 @@ case class ServerConfig(
 )
 
 case class CohortConfig(
-    cohortCreationLimit: Int,
     cohortTableName: String,
     cohortItemsTableName: String,
     cohortProviderName: String
@@ -48,7 +48,7 @@ case class CohortConfig(
 
 case class BusinessConfig(
     jobs: JobConfig,
-    cohorts: CohortConfig,
+    cohortCreationLimit: Int,
     enableCache: Boolean,
     queryConfig: QueryConfig
 )
@@ -106,25 +106,17 @@ class AppConfig(conf: Config) {
         conf.getString("postgres.port"),
         conf.getString("postgres.database"),
         conf.getString("postgres.schema"),
-        conf.getString("postgres.user")
+        conf.getString("postgres.user"),
+        CohortConfig(
+          conf.getString("postgres.tables.cohortTableName"),
+          conf.getString("postgres.tables.cohortTableItemsName"),
+          conf.getString("postgres.options.providerName")
+        )
       ))
   } else { None }
   val business: BusinessConfig = BusinessConfig(
     JobConfig(conf.getInt("app.jobs.threads")),
-    CohortConfig(
-      conf.getInt("app.cohortCreationLimit"),
-      if (conf.hasPath("app.cohortTableName")) {
-        conf.getString("app.cohortTableName")
-      } else {
-        "list_cohort360"
-      },
-      if (conf.hasPath("app.cohortTableItemsName")) {
-        conf.getString("app.cohortTableItemsName")
-      } else {
-        "list__entry_cohort360"
-      },
-      "Cohort360"
-    ),
+    conf.getInt("app.cohortCreationLimit"),
     conf.getBoolean("app.enableCache"),
     QueryConfig(conf.getBoolean("app.query.useSourcePopulation"))
   )

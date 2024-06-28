@@ -14,9 +14,9 @@ import org.apache.spark.sql.{DataFrame, functions => F}
   * @param pg           pgTool obj
   */
 class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
-  private final val cohort_item_table_rw = AppConfig.get.business.cohorts.cohortItemsTableName
-  private final val cohort_table_rw = AppConfig.get.business.cohorts.cohortTableName
-  private final val cohort_provider_name = AppConfig.get.business.cohorts.cohortProviderName
+  private final val cohort_item_table_rw = AppConfig.get.pg.get.cohortConfig.cohortItemsTableName
+  private final val cohort_table_rw = AppConfig.get.pg.get.cohortConfig.cohortTableName
+  private final val cohort_provider_name = AppConfig.get.pg.get.cohortConfig.cohortProviderName
 
   override def createCohort(cohortDefinitionName: String,
                             cohortDefinitionDescription: Option[String],

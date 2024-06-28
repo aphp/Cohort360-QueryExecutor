@@ -13,7 +13,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                        jobUtilsService: JobUtilsService = JobUtils)
     extends JobBase {
   private val logger: Logger = Logger.getLogger(this.getClass)
-  private val LIMIT = AppConfig.get.business.cohorts.cohortCreationLimit
+  private val LIMIT = AppConfig.get.business.cohortCreationLimit
 
   override def callbackUrl(jobData: SparkJobParameter): Option[String] = {
     val overrideCallback = super.callbackUrl(jobData)
