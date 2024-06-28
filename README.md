@@ -48,9 +48,102 @@ curl -X POST http://localhost:8090/jobs -H "Content-Type: application/json" -d '
 
 ## Job Queries
 
-// TODO : Add a description of the job query format
+The job query format is as follows :
+```json
+{
+    "input": {
+        "cohortDefinitionSyntax": "<cohort definition syntax>",
+        "mode": "<mode>"
+    }
+}
+```
+
+with `mode` being one of the following values:
+- `count` : Return the number of patients that match the criteria of the `cohortDefinitionSyntax`
+- `create`: Create a cohort of patients that match the criteria of the `cohortDefinitionSyntax`
+
+and `cohortDefinitionSyntax` being a JSON string that represents the criteria described in the following section.
+        
 
 ## Query Format
 
-// TODO : Add a description of the query format
+The query format of the `cohortDefinitionSyntax` field is as follows (described in `typescript`):
+
+```typescript
+type REQUEST = {
+    sourcePopulation: {
+        caresiteCohortList?: Array<Integer> // Optional list of caresite ids that will be used to filter the resource with the fhir param `_list` 
+    },
+    _type: "request",
+    request: CRITERIA,
+    resourceType?: string // The fhir resource type of the cohort (Patient being the default)
+} 
+
+type CRITERIA = {
+    _type: "andGroup" | "orGroup" | "nAmongM" | "basicResource",
+    _id: Integer, // Unique identifier of the criteria
+    isInclusive: Boolean // If true, the criteria is inclusive, if false, the criteria is exclusive
+}
+
+type GROUP_CRITERIA = CRITERIA & {
+    _type: "andGroup" | "orGroup" | "nAmongM", // the type of the group "and" or "or" or "at least n matches among subcriterias"
+    criteria: Array<CRITERIA>, // list of subcriterias (can be basicResource or group)
+    temporalConstraints: Array<TEMPORAL_CONSTRAINT>, // list of temporal constraints between the subcriterias
+    nAmongMOptions: Array<OCCURENCE_CONSTRAINT> // list of occurrence constraints for the nAmongM type
+}
+
+type BASIC_RESOURCE = CRITERIA & {
+    _type: "basicResource",
+    resourceType: string, // The fhir resource type to filter
+    filterFhir: string, // The fhir query string to filter the resource
+    filterSolr?: string, // The solr query string to filter the resource (if using solr resolver)
+    occurrence?: OCCURENCE_CONSTRAINT, // The occurrence constraint of the resource
+    patientAge?: PATIENT_AGE, // The age constraint of the patient
+    dateRangeList?: Array<DATE_RANGE>, // The date range constraint of the resource
+    encounterDateRange?: DATE_RANGE // The date range constraint of the related encounter
+}
+
+type PATIENT_AGE = {
+    minAge?: string, // with the format {year}-{month}-{day}, eg. for someone of 21 years old this would be 21-0-0
+    maxAge?: string, // with the format {year}-{month}-{day}, eg. for someone of 21 years old this would be 21-0-0
+    datePreference?: string[], // resource reference field of the date to calculate the age
+    dateIsNotNull?: boolean
+}
+
+type DATE_RANGE = {
+    minDate?: string, // with the standard format {year}-{month}-{day}, eg. for 2024-01-25
+    maxDate?: string, // with the standard format {year}-{month}-{day}, eg. for 2024-01-25
+    datePreference?: string[], // resource reference field of the date to filter
+    dateIsNotNull?: boolean
+}
+
+type TEMPORAL_CONSTRAINT = {
+    idList: string | Array<number>,
+    constraintType: "sameEncounter" | "differentEncounter" | "directChronologicalOrdering" | "sameEpisodeOfCare",
+    occurrenceChoiceList?: Array<{_id: number, occurrenceChoice: string}>,
+    timeRelationMinDuration?: TEMPORAL_CONSTRAINT_DURATION,
+    timeRelationMaxDuration?: TEMPORAL_CONSTRAINT_DURATION,
+    datePreferenceList?: Array<{_id: number, occurrenceChoice: string}>,
+    filteredCriteriaIdList?: string | Array<number>,
+    dateIsNotNullList?: boolean | {_id: number, dateIsNotNull: boolean}
+}
+
+type TEMPORAL_CONSTRAINT_DURATION = {
+    years?: number,
+    months?: number,
+    days?: number,
+    hours?: number,
+    minutes?: number,
+    seconds?: number
+}
+
+type OCCURENCE_CONSTRAINT = {
+    n: number,
+    operator: string,
+    sameEncounter?: boolean,
+    sameDay?: boolean,
+    timeDelayMin?: boolean,
+    timeDelayMax?: boolean
+}
+```
 
