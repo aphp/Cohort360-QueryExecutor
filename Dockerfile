@@ -1,4 +1,4 @@
-FROM harbor.eds.aphp.fr/cohort360/openjdk:11
+FROM eclipse-temurin:11
 
 RUN useradd -m -s /bin/bash -u 185 spark
 USER spark
