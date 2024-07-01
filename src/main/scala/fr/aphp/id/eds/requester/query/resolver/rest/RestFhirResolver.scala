@@ -142,7 +142,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
         val results: Bundle =
           fhirClient.getBundle(
             resourceType,
-            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.mkString(",")}"),
+            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.sorted.mkString(",")}"),
             getSubsetElementsFilter(resourceQueryColumns.map(c => c.fhirPath))
           )
         getAllPagesOfResource(results, resourceQueryColumns)
