@@ -130,7 +130,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
           restFhirClient,
           "/resolver/restfhir/testCases/withPatientJoinResource/bundle.patient.json",
           FhirResource.PATIENT,
-          "_id=1900536,1566947&_list=1,2,3,4,5,6,7,8,9,10",
+          "_id=1566947,1900536&_list=1,2,3,4,5,6,7,8,9,10",
           List("birthDate", "id")
         )
       },
