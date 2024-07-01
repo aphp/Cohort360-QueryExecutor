@@ -19,7 +19,7 @@
     <scala.version>2.12.15</scala.version>
     <spark.version>3.4.0</spark.version>
     <scala-logging.version>3.9.2</scala-logging.version>
-    <postgres.version>42.4.3</postgres.version>
+    <postgres.version>42.4.4</postgres.version>
     <scalactic.version>3.2.10</scalactic.version>
     <scalatest.version>3.2.10</scalatest.version>
     <mockito.version>1.17.14</mockito.version>
