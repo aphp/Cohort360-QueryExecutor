@@ -1,10 +1,14 @@
 name: build
+
 on:
+  pull_request:
+    branches:
+      - '*'
   push:
     branches:
-      - "**"
+      - main
     tags:
-      - "**"
+      - '*'
 
 jobs:
   build:
@@ -47,6 +51,7 @@ jobs:
           -Dsonar.organization=aphp
           -Dsonar.projectKey=aphp_Cohort360-QueryExecutor
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   publish:
