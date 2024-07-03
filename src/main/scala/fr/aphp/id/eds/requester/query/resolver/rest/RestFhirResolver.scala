@@ -82,7 +82,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     val securityNoList =
       java.net.URLEncoder.encode("http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST", "UTF-8")
     addSourcePopulationConstraint(sourcePopulation,
-                                  s"active=true&meta.security:not=$securityNoList")
+                                  s"active=true&_security:not=$securityNoList")
   }
 
   private def addPatientRequiredField(resource: BasicResource,

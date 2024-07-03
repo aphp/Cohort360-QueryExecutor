@@ -182,7 +182,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
     when(
       restFhirClient.getBundle(
         FhirResource.PATIENT,
-        "active=true&meta.security:not=http%3A%2F%2Fterminology.hl7.org%2FCodeSystem%2Fv3-ActCode%7CNOLIST&_list=1,2,3,4,5,6,7,8,9,10&_count=0",
+        "active=true&_security:not=http%3A%2F%2Fterminology.hl7.org%2FCodeSystem%2Fv3-ActCode%7CNOLIST&_list=1,2,3,4,5,6,7,8,9,10&_count=0",
         List()
       )).thenReturn(bundle)
 
