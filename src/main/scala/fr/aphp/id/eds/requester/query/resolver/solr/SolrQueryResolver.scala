@@ -19,6 +19,9 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
+    if (resource.resourceType == FhirResource.MEDICATION_REQUEST) {
+      throw new Exception("MedicationRequest is not supported in Solr")
+    }
     val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.filter)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
     val solrCollection = SolrCollections.mapping.getOrElse(
