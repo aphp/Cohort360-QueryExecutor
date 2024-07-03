@@ -4,6 +4,8 @@
 [![Coverage Status](https://sonarcloud.io/api/project_badges/measure?project=aphp_Cohort360-QueryExecutor&metric=coverage)](https://sonarcloud.io/component_measures?id=aphp_Cohort360-QueryExecutor&metric=coverage)
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=aphp_Cohort360-QueryExecutor&metric=alert_status)](https://sonarcloud.io/dashboard?id=aphp_Cohort360-QueryExecutor)
 
+[![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+
 The Cohort Requester is a spark application server for querying FHIR data with a set of criteria and return a count or list of patients that match the criteria. 
 
 ## Quick Start
