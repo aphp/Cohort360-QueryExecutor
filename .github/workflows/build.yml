@@ -24,7 +24,7 @@ jobs:
         run: >
           ./mvnw clean install
       - name: Upload the artifact
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v2
         with:
           name: query-executor
