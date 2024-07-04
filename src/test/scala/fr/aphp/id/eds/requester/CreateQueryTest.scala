@@ -29,13 +29,22 @@ class CreateQueryTest extends AnyFunSuiteLike {
                         "test",
                         "test",
                         "test",
+                        Map.empty,
                         Some("test"),
                         Some("path"),
                         Some("url")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "url")
     callbackUrl = JobsConfig.createJob.callbackUrl(
-      SparkJobParameter("test", Some("test"), "test", "test", "test", "test", "test", Some("id")))
+      SparkJobParameter("test",
+                        Some("test"),
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        "test",
+                        Map.empty,
+                        Some("id")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/cohort/cohorts/id/")
     callbackUrl = JobsConfig.createJob.callbackUrl(
@@ -129,6 +138,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
+        ArgumentMatchersSugar.eqTo(None),
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,

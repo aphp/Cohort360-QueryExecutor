@@ -91,6 +91,7 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach {
                         "test",
                         "test",
                         "test",
+                        Map.empty,
                         Some("test"),
                         callbackUrl = Some(wireMockServer.baseUrl())),
       JobResult("test", JobBaseResult(JobExecutionStatus.FINISHED, Map("ok" -> "ok")).toString),

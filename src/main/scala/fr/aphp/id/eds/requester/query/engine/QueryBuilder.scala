@@ -7,11 +7,14 @@ import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
+import scala.collection.mutable
+
 trait QueryBuilder {
 
   def processRequest(implicit spark: SparkSession,
                      request: Request,
                      criterionTagsMap: Map[Short, CriterionTags],
+                     stageCounts: Option[mutable.Map[Short, Long]],
                      ownerEntityId: String,
                      cacheEnabled: Boolean,
                      withOrganizationDetails: Boolean,
@@ -29,6 +32,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
   override def processRequest(implicit spark: SparkSession,
                               request: Request,
                               criterionTagsMap: Map[Short, CriterionTags],
+                              stageCounts: Option[mutable.Map[Short, Long]],
                               ownerEntityId: String,
                               cacheEnabled: Boolean,
                               withOrganizationDetails: Boolean,
@@ -60,6 +64,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
       root,
       request.sourcePopulation,
       updatedCriteriontagsMap,
+      stageCounts,
       ownerEntityId = ownerEntityId,
       enableCurrentGroupCache = false,
       cacheEnabled

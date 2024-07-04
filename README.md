@@ -59,7 +59,11 @@ The job query format is as follows :
 {
     "input": {
         "cohortDefinitionSyntax": "<cohort definition syntax>",
-        "mode": "<mode>"
+        "mode": "<mode>",
+        "modeOptions": { // optional mode options
+           "details": "<details>" // list of criteria ids separated by commas or "all", this will activate a detailed count of the patients per criteria
+        },
+        "callbackUrl": "<callback url>" // optional callback url to retrieve the result
     }
 }
 ```
@@ -68,10 +72,23 @@ with `mode` being one of the following values:
 - `count` : Return the number of patients that match the criteria of the `cohortDefinitionSyntax`
 - `create`: Create a cohort of patients that match the criteria of the `cohortDefinitionSyntax`
 
-and `cohortDefinitionSyntax` being a JSON string that represents the criteria described in the following section.
-        
+and `cohortDefinitionSyntax` being a JSON string that represents the criteria described in the [query format section](#query-format).
 
-## Query Format
+### Job Response
+
+If a `callbackUrl` is provided (else the result will be printed in the logs), the response will be sent to the provided URL with the following format:
+```typescript
+type RESPONSE = {
+    _type: string; // the job mode (count or create)
+    message: string; // the message of the response (usually the job status)
+    groupId: string; // the cohort id in case of a cohort creation job
+    count: number; // the count of patients in case of a count job
+    extra: Map<string, string>; // extra information about the count job (like details count per organization or per criteria)
+    stack: string; // the stack trace in case of an error
+}
+```
+
+### Query Format
 
 The query format of the `cohortDefinitionSyntax` field is as follows (described in `typescript`):
 

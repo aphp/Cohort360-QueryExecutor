@@ -38,6 +38,14 @@ class JobController(implicit val swagger: Swagger)
       "10000",
       "10000",
       configData.getString("mode"),
+      if (configData.hasPath("modeOptions"))
+        configData
+          .getConfig("modeOptions")
+          .entrySet()
+          .toList
+          .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+          .toMap
+      else Map.empty,
       if (configData.hasPath("cohortUuid")) Option(configData.getString("cohortUuid"))
       else Option.empty,
       if (configData.hasPath("callbackPath")) Option(configData.getString("callbackPath"))
