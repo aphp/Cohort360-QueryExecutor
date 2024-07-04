@@ -82,7 +82,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
 
     def countPatientsWithResolver() = {
       ResourceResolver
-        .get(data.resolver)
+        .get(data.resolver, data.resolverOpts)
         .countPatients(request.sourcePopulation)
     }
 

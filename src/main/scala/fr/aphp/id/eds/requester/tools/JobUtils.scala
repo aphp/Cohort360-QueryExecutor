@@ -61,7 +61,7 @@ object JobUtils extends JobUtilsService {
   def getCohortCreationService(data: SparkJobParameter, spark: SparkSession): Option[CohortCreation] =
     CohortCreation.get(data.cohortCreationService)(spark)
 
-  def getResourceResolver(data: SparkJobParameter): ResourceResolver = ResourceResolver.get(data.resolver)
+  def getResourceResolver(data: SparkJobParameter): ResourceResolver = ResourceResolver.get(data.resolver, data.resolverOpts)
 
   def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = {
     val rnd = new scala.util.Random

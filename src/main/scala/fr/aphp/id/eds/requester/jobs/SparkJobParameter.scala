@@ -16,6 +16,7 @@ case class SparkJobParameter(
     callbackPath: Option[String] = Option.empty,
     callbackUrl: Option[String] = Option.empty,
     resolver: ResourceResolvers = AppConfig.get.defaultResolver,
+    resolverOpts: Map[String, String] = Map.empty,
     cohortCreationService: CohortCreationServices = AppConfig.get.defaultCohortCreationService
 )
 

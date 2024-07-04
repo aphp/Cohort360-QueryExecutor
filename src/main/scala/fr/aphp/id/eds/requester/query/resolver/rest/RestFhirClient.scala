@@ -16,12 +16,18 @@ trait RestFhirClient {
   def getClient: IGenericClient
 }
 
-class DefaultRestFhirClient(fhirConfig: FhirServerConfig, cohortServer: Boolean = false)
+class DefaultRestFhirClient(fhirConfig: FhirServerConfig,
+                            cohortServer: Boolean = false,
+                            options: Map[String, String] = Map.empty)
     extends RestFhirClient {
   private val ctx = FhirContext.forR4()
   private val client = ctx.newRestfulGenericClient(getServerUrl)
   private val authInterceptor =
-    fhirConfig.accessToken.flatMap(token => Some(new BearerTokenAuthInterceptor(token)))
+    if (options.contains("accessToken")) {
+      Some(new BearerTokenAuthInterceptor(options("accessToken")))
+    } else {
+      fhirConfig.accessToken.flatMap(token => Some(new BearerTokenAuthInterceptor(token)))
+    }
   authInterceptor.foreach(client.registerInterceptor)
 
   override def getFhirContext: FhirContext = ctx

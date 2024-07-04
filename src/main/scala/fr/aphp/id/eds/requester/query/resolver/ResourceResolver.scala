@@ -48,12 +48,12 @@ abstract class ResourceResolver {
 }
 
 object ResourceResolver {
-  def get(resolver: ResourceResolvers): ResourceResolver = {
+  def get(resolver: ResourceResolvers, options: Map[String, String] = Map.empty): ResourceResolver = {
     resolver match {
       case ResourceResolvers.solr => {
         new SolrQueryResolver(new DefaultSolrSparkReader(AppConfig.get.solr.get))
       }
-      case ResourceResolvers.fhir => new RestFhirResolver(new DefaultRestFhirClient(AppConfig.get.fhir.get))
+      case ResourceResolvers.fhir => new RestFhirResolver(new DefaultRestFhirClient(AppConfig.get.fhir.get, options = options))
       case _ => throw new IllegalArgumentException("Unknown resolver type")
     }
   }
