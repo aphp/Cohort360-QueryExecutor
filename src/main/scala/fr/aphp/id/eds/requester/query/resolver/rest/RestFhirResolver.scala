@@ -6,6 +6,7 @@ import fr.aphp.id.eds.requester.query.model.{BasicResource, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver}
 import fr.aphp.id.eds.requester.{AppConfig, FhirResource, QueryColumn}
+import org.apache.log4j.Logger
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -20,6 +21,7 @@ import scala.collection.JavaConverters._
   * @param fhirClient The RestFhirClient to use for fetching resources.
   */
 class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
+  private val logger = Logger.getLogger(this.getClass)
   private val ctx = fhirClient.getFhirContext
   private val batchSize = 1000
   private val qbConfigs = new RestFhirQueryElementsConfig
@@ -31,6 +33,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     // add the patient field (id) to the required field list
     val requiredFieldList = addPatientRequiredField(resource, criterionTags.requiredFieldList)
     // retrieve the first page of the resource
+    logger.info(s"Fetching ${resource.resourceType} resources with filter ${resource.filter} and required fields $requiredFieldList")
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
       addSourcePopulationConstraint(sourcePopulation, resource.filter),
@@ -67,6 +70,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     })
     // select only the requested columns with their generic alias query column name
     val selectedColumns = mapping.map(m => m.columnMapping.queryColName)
+    logger.info(s"Returning the DataFrame with the selected columns $selectedColumns")
     resultsDf.select(selectedColumns.map(col): _*)
   }
 
@@ -94,6 +98,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
 
   private def getAllPagesOfResource(results: Bundle, mapping: List[QueryColumnMapping])(
       implicit spark: SparkSession) = {
+    logger.debug("Fetching all pages of the resource...")
     var resultsDf = createDataFrameFromBundle(results, mapping)
     var nextResults = getNextBatch(results, batchSize)
     while (nextResults != null) {
@@ -139,6 +144,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     val resourceIdsChunks = resourceIds.filter(_ != null).grouped(1000).toList
     val dfToJoin = resourceIdsChunks
       .map(chunk => {
+        logger.info(s"Fetching join resource $resourceType")
         val results: Bundle =
           fhirClient.getBundle(
             resourceType,
@@ -148,6 +154,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
         getAllPagesOfResource(results, resourceQueryColumns)
       })
       .reduce((df1, df2) => df1.union(df2))
+    logger.info("Joining resources...")
     resultDf
       .alias("origin")
       .join(dfToJoin.alias("j"), col(s"origin.${joinColumn}") === col("j.id"), "left")
@@ -161,6 +168,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     val nextLink = bundle.getLink("next")
     if (nextLink != null) {
       if (!bundle.hasTotal || bundle.getTotal > offset + batchSize) {
+        logger.debug("Fetching next page of the resource: " + nextLink.getUrl)
         fhirClient.getNextPage(bundle)
       } else {
         null
