@@ -1,11 +1,14 @@
 package fr.aphp.id.eds.requester.server
 
 import com.typesafe.config.ConfigFactory
+import fr.aphp.id.eds.requester.AppConfig
 import fr.aphp.id.eds.requester.jobs._
 import org.json4s.{DefaultFormats, Formats}
 import org.scalatra.ScalatraServlet
 import org.scalatra.json.JacksonJsonSupport
 import org.scalatra.swagger.{Swagger, SwaggerSupport}
+
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 
 class JobController(implicit val swagger: Swagger)
     extends ScalatraServlet
@@ -40,7 +43,20 @@ class JobController(implicit val swagger: Swagger)
       if (configData.hasPath("callbackPath")) Option(configData.getString("callbackPath"))
       else Option.empty,
       if (configData.hasPath("callbackUrl")) Option(configData.getString("callbackUrl"))
-      else Option.empty
+      else Option.empty,
+      if (configData.hasPath("resolver")) configData.getString("resolver")
+      else AppConfig.get.defaultResolver,
+      if (configData.hasPath("resolverOpts"))
+        configData
+          .getConfig("resolverOpts")
+          .entrySet()
+          .toList
+          .map(entry => entry.getKey -> entry.getValue.unwrapped().toString)
+          .toMap
+      else Map.empty,
+      if (configData.hasPath("cohortCreationService"))
+        configData.getString("cohortCreationService")
+      else AppConfig.get.defaultCohortCreationService
     )
   }
 
