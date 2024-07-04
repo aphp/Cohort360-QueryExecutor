@@ -4,12 +4,19 @@ import fr.aphp.id.eds.requester.jobs._
 import fr.aphp.id.eds.requester.query.engine._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, GroupResource}
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
+import fr.aphp.id.eds.requester.tools.JobUtils.initStageCounts
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, explode}
 
 import java.security.SecureRandom
+import scala.collection.mutable
+
+object CountOptions extends Enumeration {
+  type CountOptions = String
+  val details = "details"
+}
 
 case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                       jobUtilsService: JobUtilsService = JobUtils)
@@ -36,6 +43,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     logger.info("[COUNT] New " + data.mode + " asked by " + data.ownerEntityId)
     val (request, criterionTagsMap, _, resourceResolver, cacheEnabled) =
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
+    val stageCounts = initStageCounts(data.modeOptions, request)
 
     def isGroupResourceAndHasCriteria =
       request.request.get.isInstanceOf[GroupResource] && request.request.get
@@ -56,6 +64,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           spark,
           request,
           criterionTagsMap,
+          stageCounts,
           data.ownerEntityId,
           cacheEnabled,
           withOrganizationsDetails,
@@ -122,7 +131,10 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
             "count" -> countResult.toString)
       )
     } else {
-      JobBaseResult(JobExecutionStatus.FINISHED, Map("count" -> countResult.toString))
+      JobBaseResult(
+        JobExecutionStatus.FINISHED,
+        Map("count" -> countResult.toString),
+        stageCounts.getOrElse(Map.empty).map(x => s"criteria_${x._1}" -> x._2.toString).toMap)
     }
   }
 

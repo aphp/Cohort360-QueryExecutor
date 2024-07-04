@@ -1,5 +1,6 @@
 package fr.aphp.id.eds.requester.query.engine
 
+import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
@@ -8,6 +9,7 @@ import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+import scala.collection.mutable
 import scala.language.postfixOps
 
 case class QueryExecutionOptions(resourceConfig: ResourceConfig, withOrganizations: Boolean = false)
@@ -36,10 +38,11 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
                         criterion: BaseQuery,
                         sourcePopulation: SourcePopulation,
                         criterionTagsMap: Map[Short, CriterionTags],
+                        stageCounts: Option[mutable.Map[Short, Long]],
                         ownerEntityId: String,
                         enableCurrentGroupCache: Boolean,
                         cacheNestedGroup: Boolean): DataFrame = {
-    criterion match {
+    val resultDf = criterion match {
       case res: BasicResource =>
         qbBasicResource.processFhirRessource(spark,
                                              sourcePopulation,
@@ -62,6 +65,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
               logger.debug("DF not found in cache")
               val groupDataFrame = processRequestGroup(spark,
                                                        criterionTagsMap,
+                                                       stageCounts,
                                                        sourcePopulation,
                                                        ownerEntityId,
                                                        cacheNestedGroup,
@@ -72,12 +76,20 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
         } else {
           processRequestGroup(spark,
                               criterionTagsMap,
+                              stageCounts,
                               sourcePopulation,
                               ownerEntityId,
                               cacheNestedGroup,
                               group)
         }
     }
+    stageCounts.map(m => {
+      // count the number of patients at each stage but only those preset in the stageCounts map
+      if (m.contains(criterion.i)) {
+        m.put(criterion.i, resultDf.select(QueryBuilderUtils.getSubjectColumn(criterion.i)).distinct().count())
+      }
+    })
+    resultDf
   }
 
   private def feedInclusionCriteriaIfEmpty(isInclusionCriteriaEmpty: Boolean,
@@ -136,6 +148,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
     * */
   def processRequestGroup(spark: SparkSession,
                           criterionTagsMap: Map[Short, CriterionTags],
+                          stageCounts: Option[mutable.Map[Short, Long]],
                           sourcePopulation: SourcePopulation,
                           ownerEntityId: String,
                           cacheNestedGroup: Boolean,
@@ -166,6 +179,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
       spark,
       criteria,
       completedCriterionTagsMap,
+      stageCounts,
       sourcePopulation,
       ownerEntityId,
       cacheNestedGroup
@@ -218,6 +232,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
   private def computeCriteria(implicit spark: SparkSession,
                               criteria: List[BaseQuery],
                               criterionTagsMap: Map[Short, CriterionTags],
+                              stageCounts: Option[mutable.Map[Short, Long]],
                               sourcePopulation: SourcePopulation,
                               ownerEntityId: String,
                               cacheNestedGroup: Boolean): Map[Short, DataFrame] = {
@@ -227,6 +242,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
                                                  criterion,
                                                  sourcePopulation,
                                                  criterionTagsMap,
+                                                 stageCounts,
                                                  ownerEntityId,
                                                  cacheNestedGroup,
                                                  cacheNestedGroup)

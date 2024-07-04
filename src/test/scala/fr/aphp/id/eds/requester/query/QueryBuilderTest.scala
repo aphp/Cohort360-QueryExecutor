@@ -1,16 +1,12 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
-import fr.aphp.id.eds.requester.query.engine.{
-  DefaultQueryBuilder,
-  QueryBuilderBasicResource,
-  QueryBuilderGroup,
-  QueryExecutionOptions
-}
+import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.query.resolver.solr.{SolrQueryResolver, SolrSparkReader}
+import fr.aphp.id.eds.requester.tools.JobUtils.initStageCounts
 import fr.aphp.id.eds.requester.tools.JobUtilsService
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.mockito.ArgumentMatchersSugar
@@ -28,6 +24,7 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
 
   def testCaseEvaluate(folderCase: String,
                        withOrganizationsDetail: Boolean = false,
+                       withStageDetails: Boolean = false,
                        checkOrder: Boolean = true): DataFrame = {
     val solrSparkReader: SolrSparkReader = mock[SolrSparkReader]
     val solrQueryResolver: ResourceResolver = new SolrQueryResolver(solrSparkReader)
@@ -37,6 +34,18 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
       .option("delimiter", ";")
       .option("header", "true")
       .load(expected.getPath)
+    val expectedStageCounts = if (withStageDetails) {
+      val expectedStageCounts = getClass.getResource(s"/testCases/$folderCase/stageCounts.csv")
+      Some(
+        sparkSession.read
+          .format("csv")
+          .option("delimiter", ";")
+          .option("header", "true")
+          .load(expectedStageCounts.getPath)
+      )
+    } else {
+      None
+    }
 
     // we don't care about closing the input stream since the jvm will close after testing
     val request = QueryParser.parse(
@@ -73,10 +82,12 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     val jobUtilsService = mock[JobUtilsService]
     when(jobUtilsService.getRandomIdNotInTabooList(ArgumentMatchersSugar.*)).thenReturn(-10, 99)
 
+    val stageCounts = if (withStageDetails) { initStageCounts(Map("details"-> "all"), request._1) } else { None }
     val result = new DefaultQueryBuilder(jobUtilsService).processRequest(
       sparkSession,
       request._1,
       request._2,
+      stageCounts,
       "",
       false,
       withOrganizationsDetail,
@@ -85,6 +96,11 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
                             jobUtilsService = jobUtilsService)
     )
     assertSmallDatasetEquality(result, expectedResult, orderedComparison = checkOrder)
+    if (withStageDetails && expectedStageCounts.isDefined) {
+      // transform stageCounts to a sequence of tuple key,value
+      val stageCountsSeq = stageCounts.get.map { case (k, v) => (k.toString, v.toString) }.toSeq
+      assertSmallDatasetEquality(sparkSession.createDataFrame(stageCountsSeq).toDF("stage", "count"), expectedStageCounts.get)
+    }
     result
   }
 
@@ -113,7 +129,7 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
   }
 
   test("temporalConstraints") {
-    testCaseEvaluate("temporalConstraintSameEncounterByPairs")
+    testCaseEvaluate("temporalConstraintSameEncounterByPairs", withStageDetails = true)
   }
 
   test("nAmongM") {
