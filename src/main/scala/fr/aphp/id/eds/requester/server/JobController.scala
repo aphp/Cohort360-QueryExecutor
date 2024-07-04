@@ -25,7 +25,7 @@ class JobController(implicit val swagger: Swagger)
     contentType = formats("json")
   }
 
-  private def parseInput(body: String): SparkJobParameter = {
+  def parseInput(body: String): SparkJobParameter = {
     val configData = ConfigFactory.parseString(body).getConfig("input")
     SparkJobParameter(
       if (configData.hasPath("cohortDefinitionName")) configData.getString("cohortDefinitionName")
