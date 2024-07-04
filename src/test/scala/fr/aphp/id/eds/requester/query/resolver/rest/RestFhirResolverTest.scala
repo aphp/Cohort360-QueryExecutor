@@ -80,7 +80,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
           restFhirClient,
           "/resolver/restfhir/testCases/simple/bundle.json",
           FhirResource.MEDICATION_REQUEST,
-          "medication=AA&_list=1,2,3,4,5,6,7,8,9,10",
+          "medication=AA&_list=1,2,3,4,5,6,7,8,9,10&_count=1000",
           List("id", "subject")
         )
       }
@@ -101,7 +101,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
         val bundle = parser.parseResource(resourceJson).asInstanceOf[Bundle]
         when(
           restFhirClient.getBundle(FhirResource.MEDICATION_REQUEST,
-                                   "medication=AA&_list=1,2,3,4,5,6,7,8,9,10",
+                                   "medication=AA&_list=1,2,3,4,5,6,7,8,9,10&_count=1000",
                                    List("id", "encounter", "subject"))).thenReturn(bundle)
 
         val resourceNext =
@@ -123,14 +123,14 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
           restFhirClient,
           "/resolver/restfhir/testCases/withPatientJoinResource/bundle.observation.json",
           FhirResource.OBSERVATION,
-          "code=AA&_list=1,2,3,4,5,6,7,8,9,10",
+          "code=AA&_list=1,2,3,4,5,6,7,8,9,10&_count=1000",
           List("id", "subject")
         )
         mockGetBundle(
           restFhirClient,
           "/resolver/restfhir/testCases/withPatientJoinResource/bundle.patient.json",
           FhirResource.PATIENT,
-          "_id=1566947,1900536&_list=1,2,3,4,5,6,7,8,9,10",
+          "_id=1566947,1900536&_count=1000&_list=1,2,3,4,5,6,7,8,9,10",
           List("birthDate", "id")
         )
       },
@@ -150,14 +150,14 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
           restFhirClient,
           "/resolver/restfhir/testCases/withEncounterJoinResource/bundle.imaging.json",
           FhirResource.IMAGING_STUDY,
-          "modality=AA&_list=1,2,3,4,5,6,7,8,9,10",
+          "modality=AA&_list=1,2,3,4,5,6,7,8,9,10&_count=1000",
           List("id", "encounter", "subject")
         )
         mockGetBundle(
           restFhirClient,
           "/resolver/restfhir/testCases/withEncounterJoinResource/bundle.encounter.json",
           FhirResource.ENCOUNTER,
-          "_id=6042,6131,6192,6253,6314,6396,6467,6528,6589,6650,6711,6772,6833,6894,6955,7016,7077,7138,7199,7260&_list=1,2,3,4,5,6,7,8,9,10",
+          "_id=6042,6131,6192,6253,6314,6396,6467,6528,6589,6650,6711,6772,6833,6894,6955,7016,7077,7138,7199,7260&_count=1000&_list=1,2,3,4,5,6,7,8,9,10",
           List("period", "id")
         )
       },

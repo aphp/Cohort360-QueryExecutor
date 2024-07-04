@@ -36,8 +36,9 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     logger.info(s"Fetching ${resource.resourceType} resources with filter ${resource.filter} and required fields $requiredFieldList")
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
-      addSourcePopulationConstraint(sourcePopulation, resource.filter),
-      getSubsetElementsFilter(requiredFieldList))
+      addSourcePopulationConstraint(sourcePopulation, resource.filter) + s"&_count=$batchSize",
+      getSubsetElementsFilter(requiredFieldList)
+    )
     // retrieve the query columns mapping of the resource (only those requested by the requiredFieldList)
     val mapping = qbConfigs
       .fhirPathMappings(resource.resourceType)
@@ -141,14 +142,14 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       resourceQueryColumns: List[QueryColumnMapping])(implicit spark: SparkSession): DataFrame = {
     val resourceIds =
       resultDf.select(joinColumn).dropDuplicates().collect().map(row => row.getString(0))
-    val resourceIdsChunks = resourceIds.filter(_ != null).grouped(1000).toList
+    val resourceIdsChunks = resourceIds.filter(_ != null).grouped(batchSize).toList
     val dfToJoin = resourceIdsChunks
       .map(chunk => {
         logger.info(s"Fetching join resource $resourceType")
         val results: Bundle =
           fhirClient.getBundle(
             resourceType,
-            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.sorted.mkString(",")}"),
+            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.sorted.mkString(",")}&_count=$batchSize"),
             getSubsetElementsFilter(resourceQueryColumns.map(c => c.fhirPath))
           )
         getAllPagesOfResource(results, resourceQueryColumns)
