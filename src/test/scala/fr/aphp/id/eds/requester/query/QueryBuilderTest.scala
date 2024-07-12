@@ -103,6 +103,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     }
     result
   }
+  test("custom") {
+    testCaseEvaluate("testCustom")
+  }
 
   test("simple") {
     testCaseEvaluate("simple")
