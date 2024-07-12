@@ -78,10 +78,11 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
                          ResultColumn.SUBJECT)
       .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(root.i),
                          ResultColumn.ORGANIZATIONS)
-    if (withOrganizationDetails) {
+    val finalDf = if (withOrganizationDetails) {
       renamedDf.select(F.col(ResultColumn.SUBJECT), F.col(ResultColumn.ORGANIZATIONS))
     } else {
       renamedDf.select(F.col(ResultColumn.SUBJECT))
     }
+    finalDf.dropDuplicates()
   }
 }
