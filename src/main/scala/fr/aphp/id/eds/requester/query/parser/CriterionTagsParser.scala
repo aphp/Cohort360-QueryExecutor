@@ -20,15 +20,15 @@ import org.apache.log4j.Logger
   * @param isEncounterAvailable tells if the criterion contains encounter information
   * @param resourceType         criterion resource name - 'default' for groups
   */
-class CriterionTags(val isDateTimeAvailable: Boolean,
-                    val isEncounterAvailable: Boolean,
-                    val isEpisodeOfCareAvailable: Boolean,
-                    val isInTemporalConstraint: Boolean,
-                    val temporalConstraintTypeList: List[String] = List[String](),
-                    val resourceType: String = FhirResource.UNKNOWN,
-                    val requiredFieldList: List[String] = List[String](),
-                    val isResourceFilter: Boolean = false,
-                    val withOrganizations: Boolean = false,
+case class CriterionTags(isDateTimeAvailable: Boolean,
+                         isEncounterAvailable: Boolean,
+                         isEpisodeOfCareAvailable: Boolean,
+                         isInTemporalConstraint: Boolean,
+                         temporalConstraintTypeList: List[String] = List[String](),
+                         resourceType: String = FhirResource.UNKNOWN,
+                         requiredFieldList: List[String] = List[String](),
+                         isResourceFilter: Boolean = false,
+                         withOrganizations: Boolean = false,
 )
 
 class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {

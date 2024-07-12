@@ -1,0 +1,54 @@
+{
+  "_type": "request",
+  "instance_id": "0b5a54fb-dedf-47a0-b54c-d302279a99ed",
+  "request": {
+    "_id": 0,
+    "_type": "andGroup",
+    "criteria": [
+      {
+        "_id": 1,
+        "_type": "basicResource",
+        "criteria": [],
+        "dateRangeList": [],
+        "filterFhir": "subject.active=true&start-age-visit=ge8395",
+        "filterSolr": "fq=extension.startAgeVisit:[8395 TO *]&fq=_ref.patient.active:(true)&fq=-meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\"",
+        "isInclusive": true,
+        "occurrence": {
+          "n": 1,
+          "operator": ">="
+        },
+        "resourceType": "Encounter",
+        "temporalConstraints": []
+      },
+      {
+        "_id": 2,
+        "_type": "basicResource",
+        "criteria": [],
+        "dateRangeList": [],
+        "filterFhir": "subject.active=true&start-age-visit=ge8395",
+        "filterSolr": "fq=extension.startAgeVisit:[8395 TO *]&fq=_ref.patient.active:(true)&fq=-meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\"",
+        "isInclusive": true,
+        "occurrence": {
+          "n": 1,
+          "operator": ">="
+        },
+        "resourceType": "Encounter",
+        "temporalConstraints": []
+      }
+    ],
+    "dateRangeList": [],
+    "isInclusive": true,
+    "temporalConstraints": [
+      {
+        "constraintType": "sameEncounter",
+        "idList": "all"
+      }
+    ]
+  },
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      117
+    ]
+  },
+  "temporalConstraints": []
+}

@@ -87,6 +87,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     assertSmallDatasetEquality(result, expectedResult, orderedComparison = checkOrder)
     result
   }
+  test("custom") {
+    testCaseEvaluate("testCustom")
+  }
 
   test("simple") {
     testCaseEvaluate("simple")

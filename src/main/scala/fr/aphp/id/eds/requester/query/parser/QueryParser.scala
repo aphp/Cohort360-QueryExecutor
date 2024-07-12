@@ -162,8 +162,9 @@ object QueryParser {
       request,
       options.withOrganizationDetails
     )
+    logger.info(s"Json parsed : request=${request}, criterionIdWithTcMap=${criterionTagsMap}")
     if (logger.isDebugEnabled)
-      logger.debug(s"Json parsed : request=${request}, criterionIdWithTcMap=${criterionTagsMap}")
+      logger.info(s"Json parsed : request=${request}, criterionIdWithTcMap=${criterionTagsMap}")
     (request, criterionTagsMap)
   }
 
