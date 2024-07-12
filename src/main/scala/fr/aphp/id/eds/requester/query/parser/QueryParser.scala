@@ -262,37 +262,30 @@ object QueryParser {
     }
 
     def loadGroupResource(genericQuery: GenericQuery): GroupResource = {
-      // build the temporal constraints objects and split them between id related or 'all'
-      val (tcForAll, tcWithIds): (Option[List[TemporalConstraint]],
-                                  Option[List[TemporalConstraint]]) =
-        if (genericQuery.temporalConstraints.isDefined) {
-          val tcByType = genericQuery.temporalConstraints.get
-            .map(x => convertToTemporalConstraint(x))
-            .groupBy(tc => tc.idList.isRight)
-          (tcByType.get(false), tcByType.get(true))
-        } else (None, None)
+      // merge parent tcs and own tcs
+      val allTcs = genericQuery.temporalConstraints
+        .getOrElse(List())
+        .map(x => convertToTemporalConstraint(x)) ++ parentTemporalConstraint.getOrElse(List())
 
-      // feed the construction of sub criteria with tc with ids (in case they are related to them)
+      // feed the construction of sub criteria with all temporal constraints
       val criterion = genericQuery.criteria
         .getOrElse(List[GenericQuery]())
         .filter(isNotEmptyGroup)
-        .map(x => specJson(x, options, tcWithIds).left.get)
+        .map(x => specJson(x, options, if (allTcs.isEmpty) { None } else { Some(allTcs) }).left.get)
       val criterionIds = criterion.map((c) => c.i)
 
-      // filter the tc with ids (from parent and own) to match those who match sub criteria ids
-      val groupTcWithIds: List[TemporalConstraint] =
-        if (parentTemporalConstraint.isDefined || tcWithIds.isDefined) {
-          (parentTemporalConstraint.getOrElse(List()) ++ tcWithIds.getOrElse(List())).filter(
-            tc =>
-              tc.idList.isRight && criterionIds.distinct
-                .intersect(tc.idList.right.get.distinct)
-                .size == tc.idList.right.get.distinct.size)
-        } else {
-          List()
-        }
+      def feedConstraintAllToAndGroups = (tc: TemporalConstraint) => {
+        !List(GroupResourceType.OR, GroupResourceType.N_AMONG_M)
+          .contains(genericQuery._type) && tc.idList.isLeft
+      }
 
-      // join with global tc
-      val temporalConstraints = tcForAll.getOrElse(List()) ++ groupTcWithIds
+      // filter the tc concerning "all" or with ids to match those who match sub criteria ids
+      val temporalConstraints: List[TemporalConstraint] =
+        allTcs.filter(
+          tc =>
+            feedConstraintAllToAndGroups(tc) || tc.idList.isRight && criterionIds.distinct
+              .intersect(tc.idList.right.get.distinct)
+              .size == tc.idList.right.get.distinct.size)
 
       GroupResource(
         groupType = genericQuery._type,

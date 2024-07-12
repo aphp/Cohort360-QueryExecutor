@@ -154,4 +154,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     )
   }
 
+  test("edgeCases") {
+    testCaseEvaluate("edgeCases/temporalConstraintAllSameEncounterWithMultipleGroupLevel")
+    //testCaseEvaluate("edgeCases/temporalConstraintAppliedToSingleCriteria")
+  }
+
 }

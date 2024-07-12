@@ -48,7 +48,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
          criteria = List(request.request.get)
        ),
        criterionTagsMap ++ Map(
-         criteriaId -> new CriterionTags(false,
+         criteriaId -> CriterionTags(false,
                                          false,
                                          false,
                                          false,

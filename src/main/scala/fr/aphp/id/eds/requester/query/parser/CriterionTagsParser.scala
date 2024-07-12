@@ -197,7 +197,7 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
               collection,
               criterion) ++ requiredSolrFieldList
 
-            val criterionTags = new CriterionTags(
+            val criterionTags = CriterionTags(
               isDateTimeAvailable,
               isEncounterAvailable,
               criterionTagsMapTmp(criterionId).isEpisodeOfCareAvailable,

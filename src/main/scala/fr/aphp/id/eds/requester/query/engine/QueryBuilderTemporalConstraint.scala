@@ -403,10 +403,6 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
                                          criteria: List[BaseQuery],
                                          criterionTagsMap: Map[Short, CriterionTags]): DataFrame = {
 
-    if (criterionTagsMap(groupId).isInTemporalConstraint)
-      throw new Exception(
-        "Not Implemented: a group with temporal constraints inside cannot be concerned by a temporal constraint itself")
-
     val withOrganizations = criterionTagsMap(groupId).withOrganizations
     // tagsPerId is updated for the criteria with id "group_id"
     // dict_df is filtered for the temporal criterion (to be used only locally so in_dict_df is returned)
