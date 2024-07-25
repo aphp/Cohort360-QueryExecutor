@@ -11,7 +11,7 @@ on:
       - '*'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout github repo
@@ -22,13 +22,7 @@ jobs:
           java-version: 11
       - name: Build with maven
         run: >
-          ./mvnw clean install
-      - name: Upload the artifact
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v2
-        with:
-          name: query-executor
-          path: target/cohort-requester*.jar
+          ./mvnw clean verify
 
   sonar:
     runs-on: ubuntu-20.04
@@ -56,7 +50,7 @@ jobs:
 
   publish:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-    needs: build
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
@@ -74,19 +68,6 @@ jobs:
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: query-executor
-          path: target
-
-      - name: Fetch pg dependency
-        run: |
-          POSTGRES_VERSION=$(mvn help:evaluate -Dexpression=postgres.version -q -DforceStdout)
-          mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get -Dartifact=org.postgresql:postgresql:$POSTGRES_VERSION
-          mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=org.postgresql:postgresql:$POSTGRES_VERSION -DoutputDirectory=./
-          mv postgresql-$POSTGRES_VERSION.jar postgresql.jar
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
