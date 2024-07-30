@@ -33,7 +33,8 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
     // add the patient field (id) to the required field list
     val requiredFieldList = addPatientRequiredField(resource, criterionTags.requiredFieldList)
     // retrieve the first page of the resource
-    logger.info(s"Fetching ${resource.resourceType} resources with filter ${resource.filter} and required fields $requiredFieldList")
+    logger.info(
+      s"Fetching ${resource.resourceType} resources with filter ${resource.filter} and required fields $requiredFieldList")
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
       addSourcePopulationConstraint(sourcePopulation, resource.filter) + s"&_count=$batchSize",
@@ -86,8 +87,12 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   override def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
     val securityNoList =
       java.net.URLEncoder.encode("http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST", "UTF-8")
-    addSourcePopulationConstraint(sourcePopulation,
-                                  s"active=true&_security:not=$securityNoList")
+    val filters = List("_security:not=" + securityNoList) ++ (if (AppConfig.get.business.queryConfig.useActiveFilter) {
+                                                                List("active=true")
+                                                              } else {
+                                                                List()
+                                                              })
+    addSourcePopulationConstraint(sourcePopulation, filters.mkString("&"))
   }
 
   private def addPatientRequiredField(resource: BasicResource,
@@ -149,7 +154,8 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
         val results: Bundle =
           fhirClient.getBundle(
             resourceType,
-            addSourcePopulationConstraint(sourcePopulation, f"_id=${chunk.sorted.mkString(",")}&_count=$batchSize"),
+            addSourcePopulationConstraint(sourcePopulation,
+                                          f"_id=${chunk.sorted.mkString(",")}&_count=$batchSize"),
             getSubsetElementsFilter(resourceQueryColumns.map(c => c.fhirPath))
           )
         getAllPagesOfResource(results, resourceQueryColumns)

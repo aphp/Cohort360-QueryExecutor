@@ -49,7 +49,9 @@ class FhirCohortCreation(restFhirClient: RestFhirClient) extends CohortCreation 
 
   private def createEntry(row: Row): ListResource.ListEntryComponent = {
     val patient = new Reference()
-    patient.setId(row.getAs(ResultColumn.SUBJECT))
+    val patientId = row.getAs[String](ResultColumn.SUBJECT)
+    patient.setReference("Patient/" + patientId)
+    patient.setId(patientId)
     val entry = new ListResource.ListEntryComponent()
     entry.setItem(patient)
   }

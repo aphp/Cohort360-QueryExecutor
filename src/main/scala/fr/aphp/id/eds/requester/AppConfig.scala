@@ -60,6 +60,7 @@ case class BackConfig(
 
 case class QueryConfig(
     useSourcePopulation: Boolean,
+    useActiveFilter: Boolean
 )
 
 class AppConfig(conf: Config) {
@@ -118,7 +119,7 @@ class AppConfig(conf: Config) {
     JobConfig(conf.getInt("app.jobs.threads")),
     conf.getInt("app.cohortCreationLimit"),
     conf.getBoolean("app.enableCache"),
-    QueryConfig(conf.getBoolean("app.query.useSourcePopulation"))
+    QueryConfig(conf.getBoolean("app.query.useSourcePopulation"), conf.getBoolean("app.query.useActiveFilter"))
   )
   val server: ServerConfig = ServerConfig(
     conf.getInt("app.server.port")
