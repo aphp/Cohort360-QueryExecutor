@@ -31,6 +31,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
                         "test",
                         Map.empty,
                         Some("test"),
+                        None,
                         Some("path"),
                         Some("url")))
     assert(callbackUrl.isDefined)

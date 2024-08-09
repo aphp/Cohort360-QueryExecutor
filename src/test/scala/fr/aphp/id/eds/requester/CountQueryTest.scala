@@ -30,6 +30,7 @@ class CountQueryTest extends AnyFunSuiteLike {
                         "test",
                         Map.empty,
                         Some("test"),
+                        None,
                         Some("/url")))
     assert(callbackUrl.isDefined)
     assert(callbackUrl.get == "http://django/url")

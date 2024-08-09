@@ -48,6 +48,8 @@ class JobController(implicit val swagger: Swagger)
       else Map.empty,
       if (configData.hasPath("cohortUuid")) Option(configData.getString("cohortUuid"))
       else Option.empty,
+      if (configData.hasPath("existingCohortId")) Option(configData.getLong("existingCohortId"))
+      else Option.empty,
       if (configData.hasPath("callbackPath")) Option(configData.getString("callbackPath"))
       else Option.empty,
       if (configData.hasPath("callbackUrl")) Option(configData.getString("callbackUrl"))

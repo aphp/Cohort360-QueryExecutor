@@ -14,6 +14,7 @@ case class SparkJobParameter(
     mode: String = JobType.count,
     modeOptions: Map[String, String] = Map.empty,
     cohortUuid: Option[String] = Option.empty,
+    existingCohortId: Option[Long] = Option.empty,
     callbackPath: Option[String] = Option.empty,
     callbackUrl: Option[String] = Option.empty,
     resolver: ResourceResolvers = AppConfig.get.defaultResolver,

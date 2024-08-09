@@ -72,19 +72,22 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
     count = cohort.count()
     val cohortSizeBiggerThanLimit = count > LIMIT
 
+    def createNewCohort(): Long = {
+      omopTools
+        .map(
+          t =>
+            t.createCohort(
+              data.cohortDefinitionName,
+              data.cohortDefinitionDescription,
+              data.cohortDefinitionSyntax,
+              data.ownerEntityId,
+              request.resourceType,
+              count
+            ))
+        .getOrElse(-1L)
+    }
     // get a new cohortId
-    cohortDefinitionId = omopTools
-      .map(
-        t =>
-          t.createCohort(
-            data.cohortDefinitionName,
-            data.cohortDefinitionDescription,
-            data.cohortDefinitionSyntax,
-            data.ownerEntityId,
-            request.resourceType,
-            count
-        ))
-      .getOrElse(-1L)
+    cohortDefinitionId = data.existingCohortId.getOrElse(createNewCohort())
 
     status =
       if (cohortSizeBiggerThanLimit && request.resourceType == ResourceType.patient)
