@@ -19,7 +19,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
-    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.filter)
+    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.resourceType, resource.filter)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
     val solrCollection = SolrCollections.mapping.getOrElse(
       resource.resourceType,
@@ -45,20 +45,22 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
   def countPatients(sourcePopulation: SourcePopulation): Long = {
     val solr = new SolrTools(AppConfig.get.solr.get).getSolrClient
     val query =
-      new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(sourcePopulation))
+      new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(sourcePopulation, FhirResource.PATIENT))
     val res = solr.query(SolrCollection.PATIENT_APHP, query)
     solr.close()
     res.getResults.getNumFound
   }
 
   def getDefaultFilterQueryPatient(sourcePopulation: SourcePopulation): String = {
-    getDefaultSolrFilterQuery(sourcePopulation) +
+    getDefaultSolrFilterQuery(sourcePopulation, FhirResource.PATIENT) +
       " AND active:true" +
       " AND -(meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\")"
   }
 
-  private def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation): String = {
-    if (!AppConfig.get.business.queryConfig.useSourcePopulation) {
+  private def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation,
+                                        resourceType: String): String = {
+    if (!AppConfig.get.business.queryConfig.useSourcePopulation &&
+      !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
       return ""
     }
     val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
@@ -90,12 +92,12 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
     requestedSolrFields.mkString(",")
   }
 
-  private def getSolrFilterQuery(sourcePopulation: SourcePopulation, filterSolr: String): String = {
+  private def getSolrFilterQuery(sourcePopulation: SourcePopulation, resourceType: String, filterSolr: String): String = {
     def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
       if (solrFilterQuery == null || solrFilterQuery.isEmpty) {
-        return s"fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
+        return s"fq=${getDefaultSolrFilterQuery(sourcePopulation, resourceType)}"
       }
-      s"$solrFilterQuery&fq=${getDefaultSolrFilterQuery(sourcePopulation)}"
+      s"$solrFilterQuery&fq=${getDefaultSolrFilterQuery(sourcePopulation, resourceType)}"
     }
 
     addDefaultCohortFqParameter(filterSolr)

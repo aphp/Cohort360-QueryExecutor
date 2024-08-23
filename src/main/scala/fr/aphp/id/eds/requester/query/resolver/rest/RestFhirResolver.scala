@@ -37,7 +37,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
       s"Fetching ${resource.resourceType} resources with filter ${resource.filter} and required fields $requiredFieldList")
     val results: Bundle = fhirClient.getBundle(
       resource.resourceType,
-      addSourcePopulationConstraint(sourcePopulation, resource.filter) + s"&_count=$batchSize",
+      addSourcePopulationConstraint(sourcePopulation, resource.resourceType, resource.filter) + s"&_count=$batchSize",
       getSubsetElementsFilter(requiredFieldList)
     )
     // retrieve the query columns mapping of the resource (only those requested by the requiredFieldList)
@@ -92,7 +92,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
                                                               } else {
                                                                 List()
                                                               })
-    addSourcePopulationConstraint(sourcePopulation, filters.mkString("&"))
+    addSourcePopulationConstraint(sourcePopulation, FhirResource.PATIENT, filters.mkString("&"))
   }
 
   private def addPatientRequiredField(resource: BasicResource,
@@ -115,8 +115,10 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
   }
 
   private def addSourcePopulationConstraint(sourcePopulation: SourcePopulation,
+                                            resourceType: String,
                                             filter: String): String = {
-    if (!AppConfig.get.business.queryConfig.useSourcePopulation) {
+    if (!AppConfig.get.business.queryConfig.useSourcePopulation &&
+        !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
       return filter
     }
     val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(",")
@@ -155,6 +157,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
           fhirClient.getBundle(
             resourceType,
             addSourcePopulationConstraint(sourcePopulation,
+                                          resourceType,
                                           f"_id=${chunk.sorted.mkString(",")}&_count=$batchSize"),
             getSubsetElementsFilter(resourceQueryColumns.map(c => c.fhirPath))
           )
