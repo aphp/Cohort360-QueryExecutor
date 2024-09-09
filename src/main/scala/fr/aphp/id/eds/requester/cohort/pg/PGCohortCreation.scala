@@ -17,6 +17,7 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
   private final val cohort_item_table_rw = AppConfig.get.pg.get.cohortConfig.cohortItemsTableName
   private final val cohort_table_rw = AppConfig.get.pg.get.cohortConfig.cohortTableName
   private final val cohort_provider_name = AppConfig.get.pg.get.cohortConfig.cohortProviderName
+  private final val note_text_column_name = AppConfig.get.pg.get.cohortConfig.noteTextColumnName
 
   override def createCohort(cohortDefinitionName: String,
                             cohortDefinitionDescription: Option[String],
@@ -27,7 +28,7 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
     val stmt =
       s"""
          |insert into ${cohort_table_rw}
-         |(hash, title, note__text, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
+         |(hash, title, ${note_text_column_name}, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
          |values (-1, ?, ?, ?, ?, '$cohort_provider_name', 'Practitioner', 'snapshot', '${CohortStatus.RUNNING}', ?, now(), ?)
          |returning id
          |""".stripMargin
