@@ -43,7 +43,8 @@ case class ServerConfig(
 case class CohortConfig(
     cohortTableName: String,
     cohortItemsTableName: String,
-    cohortProviderName: String
+    cohortProviderName: String,
+    noteTextColumnName: String
 )
 
 case class BusinessConfig(
@@ -110,7 +111,8 @@ class AppConfig(conf: Config) {
         CohortConfig(
           conf.getString("postgres.tables.cohortTableName"),
           conf.getString("postgres.tables.cohortTableItemsName"),
-          conf.getString("postgres.options.providerName")
+          conf.getString("postgres.options.providerName"),
+          conf.getString("postgres.options.noteTextColumnName")
         )
       ))
   } else { None }
