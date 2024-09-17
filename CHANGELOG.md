@@ -1,8 +1,41 @@
-#  (2024-06-28)
+# Changelog
 
+All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2024-07-12
 
-# [2.6.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/2.5.1...2.6.0) (2024-06-28)
+### 🚀 Features
+
+- *(resolver)* Add resolver options + auth token for fhirresolver
+- Add stage criteria sub counts (#5)
+- Enable constraint on all criteria to be applied to all sub groups
+
+### 🐛 Bug Fixes
+
+- *(fhirresolver)* Set correct security param name
+- *(jobmanager)* Update parser with new job model
+- *(fhirresolver)* Set _count to batch size
+- *(logging)* Criterion tags object logging
+- Filter final df to prevent temporal constraint result df to duplicate patiens results
+
+### 📚 Documentation
+
+- Add license
+
+### 🧪 Testing
+
+- Add input parsing test
+
+### ⚙️ Miscellaneous Tasks
+
+- Add github actions (#1)
+- Add docker publish (#2)
+- Add workflow for tags
+- Add branch info + limit build to main/tags and PR (#4)
+- Fix build for tags
+- Add some logs to rest fhir resolver
+
+# [2.6.0] (2024-06-28)
 
 
 ### Bug Fixes
@@ -59,7 +92,7 @@
 
 
 
-## [2.3.2](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/2.3.0...2.3.2) (2024-01-18)
+## [2.3.2] (2024-01-18)
 
 
 ### Bug Fixes
@@ -79,7 +112,7 @@
 
 
 
-# [2.3.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/2.2.0...2.3.0) (2023-10-13)
+# [2.3.0] (2023-10-13)
 
 
 ### Bug Fixes
@@ -99,7 +132,7 @@
 
 
 
-## [2.1.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/2.1.0...2.1.1) (2023-08-11)
+## [2.1.1] (2023-08-11)
 
 
 ### Bug Fixes
@@ -126,121 +159,4 @@
 * **parser:** relocate id based temporal constraints to proper sub group ([13cf615](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/13cf61522a612ebe056ecebc0217251ab637eab2))
 * set spark scheduling to FAIR ([6698247](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/669824758a9cf7033429f9d6a6e900d2f0a03aa7))
 * **spark:** add fair scheduled pool ([73acb61](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/73acb61595e62ecfb7dc73363999c687ad4557c0))
-
-
-
-## [1.14.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.14.0...1.14.1) (2023-03-03)
-
-
-### Features
-
-* Version 1.14.1 ([e6b9da3](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/e6b9da30b576f34d4b5446ed1c5a2c5b932d7b6c))
-
-
-### Reverts
-
-* Revert "Remove the django response" ([a9a8897](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/a9a88975a0ae39d17604d0df49b5b730338c3324))
-
-
-
-# [1.13.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.11.1...1.13.0) (2023-02-08)
-
-
-
-## [1.11.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.11.0...1.11.1) (2023-01-11)
-
-
-
-# [1.11.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.10.1...1.11.0) (2022-12-19)
-
-
-### Reverts
-
-* Revert "[1.11.0] #1761 - Fix date range list filter condition" ([047616a](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/047616a2e78897b4a855f0d2ca8cdced75e0a9e2))
-* Revert "test rows increase" ([c5a1a45](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/c5a1a45f50eff0956c1d5a2b8d908bade2d2cc72))
-
-
-
-## [1.10.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.10.0...1.10.1) (2022-12-14)
-
-
-
-# [1.10.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.9.0...1.10.0) (2022-12-14)
-
-
-
-# [1.9.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.8.0...1.9.0) (2022-11-17)
-
-
-
-# [1.8.0](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.7.2...1.8.0) (2022-11-17)
-
-
-
-## [1.7.2](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.7.1...1.7.2) (2022-09-22)
-
-
-
-## [1.7.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.7.0...1.7.1) (2022-09-15)
-
-
-
-## [1.6.5](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.6.4...1.6.5) (2022-08-23)
-
-
-
-## [1.6.4](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.6.3...1.6.4) (2022-08-22)
-
-
-
-## [1.6.3](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.6.2...1.6.3) (2022-08-11)
-
-
-
-## [1.6.2](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.6.1...1.6.2) (2022-08-11)
-
-
-
-## [1.6.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.6.0...1.6.1) (2022-08-11)
-
-
-
-## [1.5.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.5.0...1.5.1) (2022-07-08)
-
-
-
-## [1.4.3](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.4.2...1.4.3) (2022-06-29)
-
-
-
-## [1.4.2](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.4.1...1.4.2) (2022-06-29)
-
-
-
-## [1.4.1](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.4.0...1.4.1) (2022-06-29)
-
-
-
-## [1.3.4](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.3.3...1.3.4) (2022-06-16)
-
-
-
-## [1.3.3](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/compare/1.3.0...1.3.3) (2022-06-15)
-
-
-### Reverts
-
-* Revert "[934] sjs2 : init" ([f46730d](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/f46730d424473a0c60d35860e0fb24457e39983e))
-* Revert "[934] - add logger" ([cb94050](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/cb940507f0fc481f9c82eca55b18cffdba542a65))
-* Revert "[934] - add logger" ([6457a0b](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/6457a0b49788eeacc6143377c4c91eb162b4e5a0))
-* Revert "[934] - add logger ++" ([e2c937b](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/e2c937b09a9cb343f5d53e028fe5222d6c302c45))
-* Revert "[934] - add logger step 3" ([d65e6ef](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/d65e6ef25b3c85571f2f81ea762ac9d1d5c890af))
-* Revert "[934] - add logger step 5" ([05614ed](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/05614eddeb3b464e240a4d040efd79bbac1d2462))
-* Revert "[934] - add logger step 5 ++" ([e1b1e6f](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/e1b1e6fd765ea63e47f0e7f72ff3264030dba464))
-* Revert "[934] - add logger step 5 +++" ([da1147e](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/da1147e78f1c75a6a1000da44e4e8e79916daa40))
-* Revert "[934] - add logger step 5 +++" ([dea27f9](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/dea27f96c707b06e30bc18d49f0a9f555f57249c))
-* Revert "[934] - test fix" ([a1be0f2](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/a1be0f26a6d3fc5bfa52dac3163b5c8968cb8346))
-* Revert "[934] sjs2 : init" ([5cde283](https://gitlab.data.aphp.fr/ID/pfm/portails-et-apis/cohort360/spark-job-server/commit/5cde2832a8c487c3be7ac14c9c04b06c8f02c350))
-
-
 
