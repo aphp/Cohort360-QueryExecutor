@@ -250,31 +250,6 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
       }
     val collection = genericQuery.resourceType
 
-    def getEncounterDateRangeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
-      if (genericQuery.encounterDateRange.isDefined) {
-        val colsMapping = queryBuilderConfigs
-          .requestKeyPerCollectionMap(collection)
-        (dateTimeList ++ colsMapping
-          .getOrElse(QueryColumn.ENCOUNTER_START_DATE, List[String]()) ++ colsMapping
-          .getOrElse(QueryColumn.ENCOUNTER_END_DATE, List[String]())).distinct
-      } else dateTimeList
-    }
-
-    def getDateRangeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
-      var dateTimeListTmp = dateTimeList
-      if (genericQuery.dateRangeList.isDefined) {
-        genericQuery.dateRangeList.get.foreach(
-          dateRange =>
-            dateTimeListTmp =
-              if (dateRange.datePreference.isDefined)
-                dateTimeListTmp ++ dateRange.datePreference.get
-              else
-                dateTimeListTmp ++ QueryBuilderUtils.defaultDatePreferencePerCollection(collection)
-        )
-        dateTimeListTmp.distinct
-      } else dateTimeList
-    }
-
     def getPatientAgeDatetimePreferenceList(dateTimeList: List[String]): List[String] = {
       if (genericQuery.patientAge.isDefined) {
         if (genericQuery.patientAge.get.datePreference.isDefined)
@@ -325,8 +300,6 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
         .contains(QueryColumn.EPISODE_OF_CARE)
     }
 
-    requiredSolrFieldList = getEncounterDateRangeDatetimePreferenceList(requiredSolrFieldList)
-    requiredSolrFieldList = getDateRangeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getPatientAgeDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameDayOccurrenceDatetimePreferenceList(requiredSolrFieldList)
     requiredSolrFieldList = getSameEncounterOccurrenceFieldList(requiredSolrFieldList)

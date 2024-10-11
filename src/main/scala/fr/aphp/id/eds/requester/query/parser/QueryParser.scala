@@ -114,7 +114,6 @@ object QueryParser {
     * @param nAmongMOptions specific options for nAmongM groups
     * @param sourcePopulation specific object with origin caresite and provider cohorts on which the cohort is built
     * @param nullAvailableFieldList list of string that can be null in the request.
-    * @param dateRangeList required date min and/or max of occurrences for a basic ressource
     * */
   case class GenericQuery(_type: String,
                           _id: Option[Short],
@@ -130,9 +129,7 @@ object QueryParser {
                           version: Option[String],
                           sourcePopulation: Option[SourcePopulation],
                           request: Option[GenericQuery],
-                          nullAvailableFieldList: Option[List[String]],
-                          dateRangeList: Option[List[DateRange]],
-                          encounterDateRange: Option[DateRange])
+                          nullAvailableFieldList: Option[List[String]])
 
   /** Extracts the _id with at least one temporal constraint and their datePreference parameter
     * (required for naming the cache properly).
@@ -256,8 +253,6 @@ object QueryParser {
         occurrence = genericQuery.occurrence,
         patientAge = genericQuery.patientAge,
         nullAvailableFieldList = genericQuery.nullAvailableFieldList,
-        dateRangeList = genericQuery.dateRangeList,
-        encounterDateRange = genericQuery.encounterDateRange
       )
     }
 

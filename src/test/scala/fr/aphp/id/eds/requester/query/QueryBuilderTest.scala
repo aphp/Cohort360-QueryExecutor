@@ -113,7 +113,6 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
 
   test("exclusion") { testCaseEvaluate("exclusion") }
   test("occurences") { testCaseEvaluate("occurences") }
-  test("dateRanges") { testCaseEvaluate("dateRanges") }
   test("temporalConstraintSameEncounter") { testCaseEvaluate("temporalConstraintSameEncounter") }
   test("temporalConstraintDirectChronologicalOrder") {
     testCaseEvaluate("temporalConstraintDirectChronologicalOrder")

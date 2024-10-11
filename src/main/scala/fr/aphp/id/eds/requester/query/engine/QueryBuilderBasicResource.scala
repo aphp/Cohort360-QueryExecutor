@@ -1,7 +1,7 @@
 package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester._
-import fr.aphp.id.eds.requester.query.model.{BasicResource, DateRange, PatientAge, SourcePopulation}
+import fr.aphp.id.eds.requester.query.model.{BasicResource, PatientAge, SourcePopulation}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver}
 import org.apache.log4j.Logger
@@ -13,100 +13,6 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
   private val logger = Logger.getLogger(this.getClass)
   private val qbConfigs: ResourceConfig = querySolver.getConfig
   private val qbUtils: QueryBuilderUtils = new QueryBuilderUtils(qbConfigs)
-
-  /** Filter patient of input dataframe based on the date of the occurrence
-    *
-    * @param criterionDataFrame resulting dataframe of patient of a basicResource
-    * @param basicResource      basicResource object
-    * @param criterionId        id of the basicResource
-    * */
-  private def filterByDateRangeList(criterionDataFrame: DataFrame,
-                                    basicResource: BasicResource,
-                                    criterionId: Short): DataFrame = {
-    var dateRangeList = basicResource.dateRangeList
-
-    def addEncounterDateRangeToDateRangeList(): Option[List[DateRange]] = {
-      val encounterRangeList: ListBuffer[DateRange] = new ListBuffer[DateRange]()
-      if (basicResource.encounterDateRange.isDefined) {
-        val encounterDateRange = basicResource.encounterDateRange.get
-        if (encounterDateRange.minDate.isDefined) {
-          logger.info(s"****** Encounter date range min: ${encounterDateRange.minDate} ")
-          encounterRangeList += DateRange(
-            minDate = encounterDateRange.minDate,
-            datePreference = Some(List(QueryColumn.ENCOUNTER_START_DATE)),
-            dateIsNotNull = encounterDateRange.dateIsNotNull,
-            maxDate = None
-          )
-        }
-        if (encounterDateRange.maxDate.isDefined) {
-          logger.info(s"****** Encounter date range max: ${encounterDateRange.maxDate} ")
-          encounterRangeList += DateRange(
-            maxDate = encounterDateRange.maxDate,
-            datePreference = Some(List(QueryColumn.ENCOUNTER_END_DATE)),
-            dateIsNotNull = encounterDateRange.dateIsNotNull,
-            minDate = None
-          )
-        }
-      }
-      if (dateRangeList.isDefined) {
-        logger.info(s"****** dateRangeList is Defined")
-        logger.info(
-          s"****** Date range list is defined: ${dateRangeList.get ++ encounterRangeList.toList}")
-        Some(dateRangeList.get ++ encounterRangeList.toList)
-      } else if (encounterRangeList.nonEmpty) {
-        logger.info(s"****** encounterRangeList nonEmpty")
-        Some(encounterRangeList.toList)
-      } else {
-        None
-      }
-    }
-
-    def getDateRangeSparkFilter(dateRange: DateRange, dateIsNotNull: Boolean): Column = {
-      val sparkFilterList = new ListBuffer[Column]()
-      if (dateRange.maxDate.isDefined)
-        sparkFilterList += F.col(QueryBuilderUtils.getDateColumn(criterionId)) <= s"${dateRange.maxDate.get}"
-      if (dateRange.minDate.isDefined)
-        sparkFilterList += F.col(QueryBuilderUtils.getDateColumn(criterionId)) >= s"${dateRange.minDate.get}"
-      val unifiedSparkFilter: Column = sparkFilterList.toList.reduce(_ && _)
-      if (!dateIsNotNull) // F.col(qbConfigs.getDateColumn(criterionId)).isNull
-        unifiedSparkFilter || F.col(QueryBuilderUtils.getDateColumn(criterionId)).isNull
-      else unifiedSparkFilter
-    }
-
-    dateRangeList = addEncounterDateRangeToDateRangeList()
-
-    if (dateRangeList.isDefined) {
-      var filteredCriterionDataFrame: DataFrame = criterionDataFrame
-      for (dateRange <- dateRangeList.get) {
-        val datePreference =
-          dateRange.datePreference.getOrElse(
-            QueryBuilderUtils.defaultDatePreferencePerCollection(basicResource.resourceType))
-        val dateIsNotNull = dateRange.dateIsNotNull.getOrElse(true)
-        filteredCriterionDataFrame = qbUtils.buildLocalDateColumn(filteredCriterionDataFrame,
-                                                                  criterionId,
-                                                                  datePreference,
-                                                                  basicResource.resourceType)
-        val unifiedSparkFilter: Column =
-          getDateRangeSparkFilter(dateRange, dateIsNotNull)
-
-        if (logger.isDebugEnabled) {
-          logger.debug(s"Basic Resource with _id=$criterionId : filterByDateRangeList : " +
-            s"filteredCriterionDataFrame.columns=${filteredCriterionDataFrame.columns.toList} and " +
-            s"filteredCriterionDataFrame.schema=${filteredCriterionDataFrame.printSchema()} and " +
-            s"filteredCriterionDataFrame.count=${filteredCriterionDataFrame.count} and " +
-            s"filteredCriterionDataFrame.head=${filteredCriterionDataFrame.head(10).toList.slice(0, 10)} and " +
-            s"filter=${unifiedSparkFilter.toString}")
-        }
-        filteredCriterionDataFrame = filteredCriterionDataFrame.where(unifiedSparkFilter === true)
-        if (logger.isDebugEnabled) {
-          logger.debug(
-            s"Basic Resource with _id=$criterionId: " +
-              s"filterByDateRangeList: df_output.count=${filteredCriterionDataFrame.count}")
-        }
-      }
-      filteredCriterionDataFrame
-    } else criterionDataFrame
-  }
 
   /** Filter patient of input dataframe based on the age of patient at the date of the occurrence
     *
@@ -357,7 +263,6 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
     }
 
     // Apply advanced parameters
-    criterionDataFrame = filterByDateRangeList(criterionDataFrame, basicResource, criterionId)
     criterionDataFrame = filterByPatientAge(criterionDataFrame, basicResource, criterionId)
     criterionDataFrame = filterByOccurrenceNumber(criterionDataFrame,
                                                   basicResource,
