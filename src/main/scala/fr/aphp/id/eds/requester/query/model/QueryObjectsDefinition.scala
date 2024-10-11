@@ -33,7 +33,6 @@ case class BasicResource(_id: Short,
                          filter: String,
                          occurrence: Option[Occurrence] = None,
                          patientAge: Option[PatientAge] = None,
-                         dateRangeList: Option[List[DateRange]] = None,
                          encounterDateRange: Option[DateRange] = None,
                          nullAvailableFieldList: Option[List[String]] = None)
     extends BaseQuery("basic_resource", _id, isInclusive) {

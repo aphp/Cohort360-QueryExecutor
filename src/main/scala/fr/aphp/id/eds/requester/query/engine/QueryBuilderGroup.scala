@@ -108,8 +108,6 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
                       defaultSolrFilterQuery,
                       None,
                       None,
-                      None,
-                      None,
                       None))
     } else inclusionCriteria
   }
