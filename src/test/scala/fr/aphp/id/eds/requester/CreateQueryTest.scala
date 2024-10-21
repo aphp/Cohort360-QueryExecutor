@@ -63,7 +63,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
     val omopTools = mock[CohortCreation]
     val resourceResolver = ResourceResolver.get(ResourceResolvers.solr)
     class JobUtilsMock extends JobUtilsService {
-      override def getRandomIdNotInTabooList(allTabooId: List[Short]): Short = 99
+      override def getRandomIdNotInTabooList(allTabooId: List[Short], negative: Boolean): Short = 99
 
       override def getCohortCreationService(data: SparkJobParameter,
                                             spark: SparkSession): Option[CohortCreation] =

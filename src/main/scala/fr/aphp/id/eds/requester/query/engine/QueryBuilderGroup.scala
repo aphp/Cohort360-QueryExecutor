@@ -100,7 +100,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
       val defaultSolrFilterQuery: String =
         qbBasicResource.querySolver.getDefaultFilterQueryPatient(sourcePopulation)
       val allTabooId: List[Short] = inclusionCriteria.map(x => x.i) ++ exclusionCriteriaId
-      val newCriterionIdList: Short = jobUtilsService.getRandomIdNotInTabooList(allTabooId)
+      val newCriterionIdList: Short = jobUtilsService.getRandomIdNotInTabooList(allTabooId, negative = false)
       List(
         BasicResource(newCriterionIdList,
                       isInclusive = true,
