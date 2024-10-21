@@ -11,7 +11,9 @@ import org.apache.solr.client.solrj.SolrQuery
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /** Class for questioning solr. */
-class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolver {
+class SolrQueryResolver(solrSparkReader: SolrSparkReader,
+                        solrTools: SolrTools = new SolrTools(AppConfig.get.solr.get))
+    extends ResourceResolver {
   private val logger = Logger.getLogger(this.getClass)
   private val qbConfigs = new SolrQueryElementsConfig
 
@@ -19,7 +21,8 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
       resource: BasicResource,
       criterionTags: CriterionTags,
       sourcePopulation: SourcePopulation)(implicit spark: SparkSession): DataFrame = {
-    val solrFilterQuery = getSolrFilterQuery(sourcePopulation, resource.resourceType, resource.filter)
+    val solrFilterQuery =
+      getSolrFilterQuery(sourcePopulation, resource.resourceType, resource.filter)
     val solrFilterList = getSolrFilterList(criterionTags, resource.patientAge.isDefined)
     val solrCollection = SolrCollections.mapping.getOrElse(
       resource.resourceType,
@@ -43,9 +46,10 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
   }
 
   def countPatients(sourcePopulation: SourcePopulation): Long = {
-    val solr = new SolrTools(AppConfig.get.solr.get).getSolrClient
+    val solr = solrTools.getSolrClient
     val query =
-      new SolrQuery("*:*").addFilterQuery(getDefaultSolrFilterQuery(sourcePopulation, FhirResource.PATIENT))
+      new SolrQuery("*:*")
+        .addFilterQuery(getDefaultSolrFilterQuery(sourcePopulation, FhirResource.PATIENT))
     val res = solr.query(SolrCollection.PATIENT_APHP, query)
     solr.close()
     res.getResults.getNumFound
@@ -60,7 +64,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
   private def getDefaultSolrFilterQuery(sourcePopulation: SourcePopulation,
                                         resourceType: String): String = {
     if (!AppConfig.get.business.queryConfig.useSourcePopulation &&
-      !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
+        !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
       return ""
     }
     val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
@@ -92,7 +96,9 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader) extends ResourceResolv
     requestedSolrFields.mkString(",")
   }
 
-  private def getSolrFilterQuery(sourcePopulation: SourcePopulation, resourceType: String, filterSolr: String): String = {
+  private def getSolrFilterQuery(sourcePopulation: SourcePopulation,
+                                 resourceType: String,
+                                 filterSolr: String): String = {
     def addDefaultCohortFqParameter(solrFilterQuery: String): String = {
       if (solrFilterQuery == null || solrFilterQuery.isEmpty) {
         return s"fq=${getDefaultSolrFilterQuery(sourcePopulation, resourceType)}"

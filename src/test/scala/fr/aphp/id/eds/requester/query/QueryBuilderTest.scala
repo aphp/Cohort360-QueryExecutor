@@ -1,13 +1,18 @@
 package fr.aphp.id.eds.requester.query
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
+import fr.aphp.id.eds.requester.SolrCollection
 import fr.aphp.id.eds.requester.query.engine.{DefaultQueryBuilder, QueryBuilderBasicResource, QueryBuilderGroup, QueryExecutionOptions}
 import fr.aphp.id.eds.requester.query.model.QueryParsingOptions
 import fr.aphp.id.eds.requester.query.parser.QueryParser
 import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.query.resolver.solr.{SolrQueryResolver, SolrSparkReader}
 import fr.aphp.id.eds.requester.tools.JobUtils.initStageCounts
-import fr.aphp.id.eds.requester.tools.JobUtilsService
+import fr.aphp.id.eds.requester.tools.{JobUtilsService, SolrTools}
+import org.apache.solr.client.solrj.SolrClient
+import org.apache.solr.client.solrj.impl.CloudSolrClient
+import org.apache.solr.client.solrj.response.QueryResponse
+import org.apache.solr.common.SolrDocumentList
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.MockitoSugar.{mock, when}
@@ -27,7 +32,16 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
                        withStageDetails: Boolean = false,
                        checkOrder: Boolean = true): DataFrame = {
     val solrSparkReader: SolrSparkReader = mock[SolrSparkReader]
-    val solrQueryResolver: ResourceResolver = new SolrQueryResolver(solrSparkReader)
+    val solrTools: SolrTools = mock[SolrTools]
+    val solrClient: CloudSolrClient = mock[CloudSolrClient]
+    val solrQueryResp = mock[QueryResponse]
+    val solrResult = mock[SolrDocumentList]
+    when(solrQueryResp.getResults).thenReturn(solrResult)
+    when(solrResult.getNumFound).thenReturn(100)
+    when(solrClient.query(ArgumentMatchersSugar.eqTo(SolrCollection.PATIENT_APHP), ArgumentMatchersSugar.*)).thenReturn(solrQueryResp)
+    when(solrTools.getSolrClient).thenReturn(solrClient)
+    val solrQueryResolver: ResourceResolver = new SolrQueryResolver(solrSparkReader, solrTools)
+
     val expected = getClass.getResource(s"/testCases/$folderCase/expected.csv")
     val expectedResult = sparkSession.read
       .format("csv")
