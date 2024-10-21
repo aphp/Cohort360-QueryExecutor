@@ -221,7 +221,7 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
     map2.foreach(i => {
       mergedMap =
         if (mergedMap.contains(i._1))
-          mergedMap + (i._1 -> new CriterionTags(
+          mergedMap + (i._1 -> CriterionTags(
             mergedMap(i._1).isDateTimeAvailable || i._2.isDateTimeAvailable,
             mergedMap(i._1).isEncounterAvailable || i._2.isEncounterAvailable,
             mergedMap(i._1).isEpisodeOfCareAvailable || i._2.isEpisodeOfCareAvailable,
@@ -309,11 +309,11 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
     val isEpisodeOfCareAvailable: Boolean = getIsEpisodeOfCareAvailable
-    new CriterionTags(
+    CriterionTags(
       isDateTimeAvailable,
       isEncounterAvailable,
       isEpisodeOfCareAvailable,
-      false,
+      isInTemporalConstraint = false,
       List[String](),
       collection,
       requiredSolrFieldList,
@@ -352,10 +352,10 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
 
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
-    new CriterionTags(isDateTimeAvailable,
+    CriterionTags(isDateTimeAvailable,
                       isEncounterAvailable,
                       getIsEpisodeOfCareAvailable,
-                      false,
+                      isInTemporalConstraint = false,
                       withOrganizations = requestOrganization)
   }
 

@@ -1,7 +1,14 @@
 package fr.aphp.id.eds.requester.query.engine
 
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.model.{GroupResource, GroupResourceType, Request}
+import fr.aphp.id.eds.requester.query.model.{
+  BaseQuery,
+  BasicResource,
+  GroupResource,
+  GroupResourceType,
+  Request,
+  SourcePopulation
+}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
@@ -37,27 +44,7 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
                               cacheEnabled: Boolean,
                               withOrganizationDetails: Boolean,
                               recursiveQueryBuilder: QueryBuilderGroup): DataFrame = {
-
-    // wrap the first group in a higher group is it is not inclusive
-    val (root, updatedCriteriontagsMap) = if (!request.request.get.IsInclusive) {
-      val criteriaId = jobUtilsService.getRandomIdNotInTabooList(List(request.request.get.i))
-      (GroupResource(
-         groupType = GroupResourceType.AND,
-         _id = criteriaId,
-         isInclusive = true,
-         criteria = List(request.request.get)
-       ),
-       criterionTagsMap ++ Map(
-         criteriaId -> CriterionTags(false,
-                                         false,
-                                         false,
-                                         false,
-                                         List[String](),
-                                         FhirResource.PATIENT,
-                                         List[String]())))
-    } else {
-      (request.request.get, criterionTagsMap)
-    }
+    val (root, updatedCriteriontagsMap) = jobUtilsService.prepareRequest(request, criterionTagsMap)
 
     val cohortDataFrame = recursiveQueryBuilder.processSubrequest(
       spark,
@@ -85,4 +72,5 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
     }
     finalDf.dropDuplicates()
   }
+
 }

@@ -80,7 +80,9 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
         )
       })
     val jobUtilsService = mock[JobUtilsService]
-    when(jobUtilsService.getRandomIdNotInTabooList(ArgumentMatchersSugar.*)).thenReturn(-10, 99)
+    when(jobUtilsService.getRandomIdNotInTabooList(ArgumentMatchersSugar.*, ArgumentMatchersSugar.eqTo(false))).thenReturn(99)
+    when(jobUtilsService.getRandomIdNotInTabooList(ArgumentMatchersSugar.*, ArgumentMatchersSugar.eqTo(true))).thenReturn(-10)
+    when(jobUtilsService.prepareRequest(ArgumentMatchersSugar.*, ArgumentMatchersSugar.*)).thenCallRealMethod()
 
     val stageCounts = if (withStageDetails) { initStageCounts(Map("details"-> "all"), request._1) } else { None }
     val result = new DefaultQueryBuilder(jobUtilsService).processRequest(
