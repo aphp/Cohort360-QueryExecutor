@@ -48,6 +48,20 @@
               "sameEncounter": false,
               "sameDay": false
             }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 5,
+            "isInclusive": false,
+            "resourceType": "conditionAphp",
+            "filterSolr": "((codeList:G60 OR codeList:G61 OR codeList:G630 OR codeList:G631 OR codeList:G632 OR codeList:G635 OR codeList:G636)) AND active:true",
+            "filterFhir": "codeList=G60,G61,G630,G631,G632,G635,G636",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
           }
         ],
         "temporalConstraints": [

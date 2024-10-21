@@ -1,6 +1,5 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
@@ -9,7 +8,6 @@ import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
-import scala.collection.mutable
 import scala.language.postfixOps
 
 case class QueryExecutionOptions(resourceConfig: ResourceConfig, withOrganizations: Boolean = false)
@@ -24,36 +22,24 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
   /** The recursive function that can process nested basicResource or group criteria.
     *
     * @param criterion                         the criterion
-    * @param criterionWithTcList               list of criterion id concerned by a tc
-    * @param sourcePopulation                  caresite and provider source population
-    * @param tagsPerId                         map linking id to 3 info:
-    *                                           - 'isDt' (tells if the criterion contains datetime information).
-    *                                           - 'isEncounter' (tells if the criterion contains encounter information).
-    *                                           - 'resourceType' (criterion resource name - 'default' for groups).
-    * @param ownerEntityId                     the id of the user to name the cache
-    * @param enableCurrentGroupCache           whether to cache the current group or not
-    * @param cacheNestedGroup                  whether to cache nested groups or not
+    * @param criterionTagsMap                  list of criterion tags info
+    * @param context                           the context of the query
     * */
-  def processSubrequest(spark: SparkSession,
-                        criterion: BaseQuery,
-                        sourcePopulation: SourcePopulation,
+  def processSubrequest(criterion: BaseQuery,
                         criterionTagsMap: Map[Short, CriterionTags],
-                        stageCounts: Option[mutable.Map[Short, Long]],
-                        ownerEntityId: String,
-                        enableCurrentGroupCache: Boolean,
-                        cacheNestedGroup: Boolean): DataFrame = {
+                        context: QueryContext): DataFrame = {
     val resultDf = criterion match {
       case res: BasicResource =>
-        qbBasicResource.processFhirRessource(spark,
-                                             sourcePopulation,
+        qbBasicResource.processFhirRessource(context.sparkSession,
+                                             context.sourcePopulation,
                                              criterionTagsMap(res._id),
                                              res)
 
       case group: GroupResource =>
-        if (enableCurrentGroupCache) { // @todo: this is unused code for now
+        if (context.cacheConfig.enableCurrentGroupCache) { // @todo: this is unused code for now
           logger.debug("cache is enabled for nested groups")
           val hashDf = JobUtils.getCohortHash(criterion.toString)
-          SparkTools.getCached(spark, hashDf, ownerEntityId) match {
+          SparkTools.getCached(context.sparkSession, hashDf, context.cacheConfig.ownerEntityId) match {
             case Some(groupDataFrame) =>
               if (logger.isDebugEnabled)
                 logger.debug(
@@ -63,30 +49,24 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
               groupDataFrame
             case _ =>
               logger.debug("DF not found in cache")
-              val groupDataFrame = processRequestGroup(spark,
-                                                       criterionTagsMap,
-                                                       stageCounts,
-                                                       sourcePopulation,
-                                                       ownerEntityId,
-                                                       cacheNestedGroup,
-                                                       group)
-              SparkTools.putCached(hashDf, ownerEntityId, groupDataFrame)
+              val groupDataFrame = processRequestGroup(group, criterionTagsMap, context)
+              SparkTools.putCached(hashDf, context.cacheConfig.ownerEntityId, groupDataFrame)
               groupDataFrame
           }
         } else {
-          processRequestGroup(spark,
-                              criterionTagsMap,
-                              stageCounts,
-                              sourcePopulation,
-                              ownerEntityId,
-                              cacheNestedGroup,
-                              group)
+          processRequestGroup(group, criterionTagsMap, context)
         }
     }
-    stageCounts.map(m => {
+    context.stageCounts.map(m => {
       // count the number of patients at each stage but only those preset in the stageCounts map
       if (m.contains(criterion.i)) {
-        m.put(criterion.i, resultDf.select(QueryBuilderUtils.getSubjectColumn(criterion.i)).distinct().count())
+        val criterionSelfCount = resultDf.select(QueryBuilderUtils.getSubjectColumn(criterion.i)).distinct().count()
+        val criterionCount = if (criterion.IsInclusive) {
+          criterionSelfCount
+        } else {
+          context.sourcePopulationCount - criterionSelfCount
+        }
+        m.put(criterion.i, criterionCount)
       }
     })
     resultDf
@@ -100,7 +80,8 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
       val defaultSolrFilterQuery: String =
         qbBasicResource.querySolver.getDefaultFilterQueryPatient(sourcePopulation)
       val allTabooId: List[Short] = inclusionCriteria.map(x => x.i) ++ exclusionCriteriaId
-      val newCriterionIdList: Short = jobUtilsService.getRandomIdNotInTabooList(allTabooId, negative = false)
+      val newCriterionIdList: Short =
+        jobUtilsService.getRandomIdNotInTabooList(allTabooId, negative = false)
       List(
         BasicResource(newCriterionIdList,
                       isInclusive = true,
@@ -112,7 +93,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
     } else inclusionCriteria
   }
 
-  def feedCriterionTagsMapIfInclusionCriteriaIsEmpty(
+  private def feedCriterionTagsMapIfInclusionCriteriaIsEmpty(
       isInclusionCriteriaEmpty: Boolean,
       addedCriterion: BaseQuery,
       criterionTagsMap: Map[Short, CriterionTags]): Map[Short, CriterionTags] = {
@@ -138,19 +119,12 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
   /** Compute the resulting df of a criteria which is a group of criteria
     *
     * @param groupResource                             the group object
-    * @param criterionWithTcList     list of criterion id concerned by a tc
-    * @param sourcePopulation                 caresite and provider source population
-    * @param tagsPerId                  map linking id to their tags info.
-    * @param ownerEntityId                     the id of the user to name the cache
-    * @param cacheNestedGroup                  whether it is the top level request or not.
+    * @param criterionTagsMap     list of criterion tags info
+    * @param context                                  the context of the query
     * */
-  def processRequestGroup(spark: SparkSession,
+  private def processRequestGroup(groupResource: GroupResource,
                           criterionTagsMap: Map[Short, CriterionTags],
-                          stageCounts: Option[mutable.Map[Short, Long]],
-                          sourcePopulation: SourcePopulation,
-                          ownerEntityId: String,
-                          cacheNestedGroup: Boolean,
-                          groupResource: GroupResource): DataFrame = {
+                          context: QueryContext): DataFrame = {
     // extract and normalize parameters of the group
     val groupId = groupResource._id
     var inclusionCriteria = groupResource.criteria.filter(x => x.IsInclusive)
@@ -161,7 +135,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
     val isInclusionCriteriaEmpty = inclusionCriteria.isEmpty
     inclusionCriteria = feedInclusionCriteriaIfEmpty(isInclusionCriteriaEmpty,
                                                      inclusionCriteria,
-                                                     sourcePopulation,
+                                                     context.sourcePopulation,
                                                      exclusionCriteriaId)
     val completedCriterionTagsMap: Map[Short, CriterionTags] =
       feedCriterionTagsMapIfInclusionCriteriaIsEmpty(isInclusionCriteriaEmpty,
@@ -174,13 +148,9 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
 
     // step 1: get df associated to each criteria
     val dataFramePerIdMap = computeCriteria(
-      spark,
       criteria,
       completedCriterionTagsMap,
-      stageCounts,
-      sourcePopulation,
-      ownerEntityId,
-      cacheNestedGroup
+      context
     )
 
     val groupIdColumnName = QueryBuilderUtils.getSubjectColumn(groupId)
@@ -196,7 +166,7 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
                    groupResource._type)) {
         throw new Exception("Cannot use temporal constraints within orGroup and nAmongM groups")
       } else { // andGroup + temporal constraint
-        qbTc.joinAndGroupWithTemporalConstraint(spark,
+        qbTc.joinAndGroupWithTemporalConstraint(context.sparkSession,
                                                 groupIdColumnName,
                                                 groupId,
                                                 groupResource,
@@ -223,27 +193,18 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
     *
     * @param criteria                          list of criteria of the group
     * @param criterionTagsMap               map linking id to their tags info.
-    * @param dataFramePerIdMap                        map linking id to their corresponding df
-    * @param datePreferencePerIdList list of criterion id concerned by a tc
-    * @param sourcePopulation                 caresite and provider source population
+    * @param context                          the context of the query
     * */
-  private def computeCriteria(implicit spark: SparkSession,
-                              criteria: List[BaseQuery],
+  private def computeCriteria(criteria: List[BaseQuery],
                               criterionTagsMap: Map[Short, CriterionTags],
-                              stageCounts: Option[mutable.Map[Short, Long]],
-                              sourcePopulation: SourcePopulation,
-                              ownerEntityId: String,
-                              cacheNestedGroup: Boolean): Map[Short, DataFrame] = {
+                              context: QueryContext): Map[Short, DataFrame] = {
     var dataFramePerIdMapTmp = Map[Short, DataFrame]()
     for (criterion <- criteria) {
-      val criterionDataframe = processSubrequest(spark,
-                                                 criterion,
-                                                 sourcePopulation,
-                                                 criterionTagsMap,
-                                                 stageCounts,
-                                                 ownerEntityId,
-                                                 cacheNestedGroup,
-                                                 cacheNestedGroup)
+      val criterionDataframe = processSubrequest(
+        criterion,
+        criterionTagsMap,
+        context
+      )
       dataFramePerIdMapTmp = dataFramePerIdMapTmp + (criterion.i -> criterionDataframe)
     }
     if (logger.isDebugEnabled)

@@ -1,17 +1,10 @@
 package fr.aphp.id.eds.requester.query.engine
 
+import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.model.{
-  BaseQuery,
-  BasicResource,
-  GroupResource,
-  GroupResourceType,
-  Request,
-  SourcePopulation
-}
+import fr.aphp.id.eds.requester.query.model.{CacheConfig, QueryContext, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
-import fr.aphp.id.eds.requester.{FhirResource, ResultColumn}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
 
 import scala.collection.mutable
@@ -47,14 +40,15 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
     val (root, updatedCriteriontagsMap) = jobUtilsService.prepareRequest(request, criterionTagsMap)
 
     val cohortDataFrame = recursiveQueryBuilder.processSubrequest(
-      spark,
       root,
-      request.sourcePopulation,
       updatedCriteriontagsMap,
-      stageCounts,
-      ownerEntityId = ownerEntityId,
-      enableCurrentGroupCache = false,
-      cacheEnabled
+      QueryContext(
+        spark,
+        request.sourcePopulation,
+        recursiveQueryBuilder.qbBasicResource.querySolver.countPatients(request.sourcePopulation),
+        stageCounts,
+        CacheConfig(ownerEntityId, enableCurrentGroupCache = false, cacheNestedGroup = cacheEnabled)
+      )
     )
 
     // need to rename final column to uniformize any results being processed after (count and/or upload in databases).
