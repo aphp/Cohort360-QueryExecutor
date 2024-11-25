@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.0] - 2024-11-21
+
+### 🚀 Features
+
+- *(fhir)* Optional active filter + new cohort list reference
+- Add configurable job thread count
+- *(cohortcreation)* Add existing cohort update
+- Allow partial source population support
+- [**breaking**] Remove encounterdaterange and daterange support
+
+### 🐛 Bug Fixes
+
+- *(querybuilder)* Wrap exluded criteria in and groups when in or group (#6)
+- *(stagecount)* Reverse value for excluded criteria (#7)
+
+### 🚜 Refactor
+
+- Add configurable List note text column name
+
+### 📚 Documentation
+
+- Update changelog
+
+### ⚙️ Miscellaneous Tasks
+
+- Add latest tag for main docker build
+- Move the build steps in the multistage dockerfile
+
 ## [2.7.0] - 2024-07-12
 
 ### 🚀 Features
