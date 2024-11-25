@@ -9,6 +9,11 @@ import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, StageDetails}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
+object CreateOptions extends Enumeration {
+  type CreateOptions = String
+  val sampling = "sampling"
+}
+
 case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
                        jobUtilsService: JobUtilsService = JobUtils)
     extends JobBase {
@@ -68,6 +73,12 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           .map(c => F.col(c)): _*)
       .dropDuplicates()
 
+    if (data.modeOptions.contains(CreateOptions.sampling)) {
+      val sampling = data.modeOptions(CreateOptions.sampling).toDouble
+      // https://stackoverflow.com/questions/37416825/dataframe-sample-in-apache-spark-scala#comment62349780_37418684
+      // to be sure to have the right number of rows
+      cohort = cohort.sample(sampling+0.1).limit((sampling * cohort.count()).round.toInt)
+    }
     cohort.cache()
     count = cohort.count()
     val cohortSizeBiggerThanLimit = count > LIMIT

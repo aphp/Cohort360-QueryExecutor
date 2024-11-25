@@ -12,6 +12,7 @@ case class SparkJobParameter(
     solrRows: String = "10000",
     commitWithin: String = "10000",
     mode: String = JobType.count,
+    // see fr.aphp.id.eds.requester.{CountQuery, CreateQuery} for the usage of modeOptions
     modeOptions: Map[String, String] = Map.empty,
     cohortUuid: Option[String] = Option.empty,
     existingCohortId: Option[Long] = Option.empty,

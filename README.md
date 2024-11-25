@@ -61,9 +61,11 @@ The job query format is as follows :
         "cohortDefinitionSyntax": "<cohort definition syntax>",
         "mode": "<mode>",
         "modeOptions": { // optional mode options
-          // list of criteria ids separated by commas or "all", this will activate a detailed count of the patients per criteria
-          // "ratio", this will activate a detailed count of final matched patients per criteria
-           "details": "<details>" 
+          // optional list of criteria ids separated by commas or "all", this will activate a detailed count of the patients per criteria
+          // or "ratio", this will activate a detailed count of final matched patients per criteria
+           "details": "<details>",
+          // optional sampling ratio value between 0.0 and 1.0 to limit the number of patients of the cohort to create (it can be used to sample an existing cohort)
+           "sampling": "<sampling>" 
         },
         "callbackUrl": "<callback url>" // optional callback url to retrieve the result
     }
