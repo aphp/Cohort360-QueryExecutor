@@ -89,8 +89,8 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
 
   private def uploadRelationship(cohortDefinitionId: Long,
                                  sourcePopulation: SourcePopulation): Unit = {
-    if (sourcePopulation.caresiteCohortList.isDefined) {
-      for (sc_id <- sourcePopulation.caresiteCohortList.get) {
+    if (sourcePopulation.cohortList.isDefined) {
+      for (sc_id <- sourcePopulation.cohortList.get) {
         val (list_list_id, list_relationship_concept_id) =
           (List(List(cohortDefinitionId, sc_id), List(sc_id, cohortDefinitionId)),
            List(44818821, 44818823))

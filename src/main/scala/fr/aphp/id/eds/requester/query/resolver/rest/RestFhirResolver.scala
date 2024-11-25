@@ -121,7 +121,7 @@ class RestFhirResolver(fhirClient: RestFhirClient) extends ResourceResolver {
         !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
       return filter
     }
-    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(",")
+    val list = sourcePopulation.cohortList.get.map(x => x.toString).mkString(",")
     val constraint = s"_list=$list"
     if (filter.trim.isEmpty) {
       constraint

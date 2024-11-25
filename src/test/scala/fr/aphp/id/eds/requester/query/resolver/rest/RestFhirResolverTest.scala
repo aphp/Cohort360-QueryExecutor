@@ -61,8 +61,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
                                           resourceType = basicResource.resourceType,
                                           requiredFieldList = requiredFieldList)
     val sourcePopulation = SourcePopulation(
-      caresiteCohortList = Some(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-      providerCohortList = None
+      cohortList = Some(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
     )
     val resourceDataFrame =
       restFhirResolver.getResourceDataFrame(basicResource, criterionTags, sourcePopulation)
@@ -187,8 +186,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
       )).thenReturn(bundle)
 
     val sourcePopulation = SourcePopulation(
-      caresiteCohortList = Some(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)),
-      providerCohortList = None
+      cohortList = Some(List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
     )
     val count = restFhirResolver.countPatients(sourcePopulation)
     assert(count == 1996)

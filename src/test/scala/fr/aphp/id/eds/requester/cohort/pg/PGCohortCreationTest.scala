@@ -46,7 +46,7 @@ class PGCohortCreationTest extends AnyFunSuiteLike with DatasetComparer {
 
     pgCohortCreation.updateCohort(12345,
                                   cohort,
-                                  SourcePopulation(Some(List(888)), None),
+                                  SourcePopulation(Some(List(888))),
                                   3,
                                   delayCohortCreation = true,
                                   "Patient")

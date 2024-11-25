@@ -98,6 +98,10 @@ object QueryParser {
                                        filteredCriteriaIdList: Option[DataValue],
                                        dateIsNotNullList: Option[BoolValueDate])
 
+  // TODO rename this field to cohortList as it could be a list of cohort ids and not only caresite cohort ids
+  // this would be a breaking change in the API, so we need to do that with legacy support
+  case class SourcePopulationDTO(caresiteCohortList: Option[List[Int]])
+
   /** Object that can handle all accepted json input.
     *
     * @param _type type of the json object (top level or group or basic ressource)
@@ -127,7 +131,7 @@ object QueryParser {
                           criteria: Option[List[GenericQuery]],
                           nAmongMOptions: Option[Occurrence],
                           version: Option[String],
-                          sourcePopulation: Option[SourcePopulation],
+                          sourcePopulation: Option[SourcePopulationDTO],
                           request: Option[GenericQuery],
                           nullAvailableFieldList: Option[List[String]])
 
@@ -147,7 +151,7 @@ object QueryParser {
       Json.reads[TemporalConstraintDuration]
     implicit lazy val temporalConstraintReads =
       Json.reads[GenericTemporalConstraint]
-    implicit lazy val sourcePopulationReads = Json.reads[SourcePopulation]
+    implicit lazy val sourcePopulationReads = Json.reads[SourcePopulationDTO]
     implicit lazy val dateRange = Json.reads[DateRange]
     implicit lazy val queryRead = Json.reads[GenericQuery]
     logger.info(s"Trying to parse query ${cohortDefinitionSyntaxJsonString}")
@@ -298,7 +302,7 @@ object QueryParser {
         val resourceType = genericQuery.resourceType.getOrElse("Patient")
         if (requestOption.isEmpty) {
           Right(
-            Request(sourcePopulation = genericQuery.sourcePopulation.get,
+            Request(sourcePopulation = genericQuery.sourcePopulation.map(sp => SourcePopulation(sp.caresiteCohortList)).get,
                     request = None,
                     resourceType = resourceType))
         } else {
@@ -309,7 +313,7 @@ object QueryParser {
               Some(loadGroupResource(requestOption.get))
           }
           Right(
-            Request(sourcePopulation = genericQuery.sourcePopulation.get,
+            Request(sourcePopulation = genericQuery.sourcePopulation.map(sp => SourcePopulation(sp.caresiteCohortList)).get,
                     request = request,
                     resourceType = resourceType))
         }

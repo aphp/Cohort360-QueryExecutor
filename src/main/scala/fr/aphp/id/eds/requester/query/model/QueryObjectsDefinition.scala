@@ -80,8 +80,7 @@ case class TemporalConstraintDuration(
     seconds: Option[Int]
 )
 
-case class SourcePopulation(caresiteCohortList: Option[List[Int]],
-                            providerCohortList: Option[List[Int]])
+case class SourcePopulation(cohortList: Option[List[Int]])
 
 case class Request(_type: String = "request",
                    sourcePopulation: SourcePopulation,

@@ -67,7 +67,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader,
         !(resourceType == FhirResource.PATIENT && AppConfig.get.business.queryConfig.useSourcePopulationOnPatient)) {
       return ""
     }
-    val list = sourcePopulation.caresiteCohortList.get.map(x => x.toString).mkString(" ")
+    val list = sourcePopulation.cohortList.get.map(x => x.toString).mkString(" ")
     s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
   }
 

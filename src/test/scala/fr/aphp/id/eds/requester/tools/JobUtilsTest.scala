@@ -1,18 +1,8 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.query.engine.{QueryBuilderBasicResource, QueryBuilderGroup}
-import fr.aphp.id.eds.requester.query.model.{
-  BasicResource,
-  GroupResource,
-  GroupResourceType,
-  Request,
-  SourcePopulation
-}
+import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.tools.JobUtils.{initStageCounts, prepareRequest}
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.MockitoSugar.{mock, when}
 import org.scalatest.funsuite.AnyFunSuiteLike
 
 class JobUtilsTest extends AnyFunSuiteLike {
@@ -20,7 +10,7 @@ class JobUtilsTest extends AnyFunSuiteLike {
   test("testInitStageCountsEmpty") {
     val modeOptions = Map[String, String]()
     val request = Request(
-      sourcePopulation = SourcePopulation(None, None),
+      sourcePopulation = SourcePopulation(None),
       request = None
     )
     assert(initStageCounts(modeOptions, request).isEmpty)
@@ -29,7 +19,7 @@ class JobUtilsTest extends AnyFunSuiteLike {
   test("testInitStageAll") {
     val modeOptions = Map[String, String]("details" -> "all")
     val request = Request(
-      sourcePopulation = SourcePopulation(None, None),
+      sourcePopulation = SourcePopulation(None),
       request = Some(
         GroupResource(
           groupType = "test",
@@ -67,7 +57,7 @@ class JobUtilsTest extends AnyFunSuiteLike {
 
   test("prepareRequest") {
     val request = Request(
-      sourcePopulation = SourcePopulation(None, None),
+      sourcePopulation = SourcePopulation(None),
       request = Some(
         GroupResource(
           groupType = GroupResourceType.AND,

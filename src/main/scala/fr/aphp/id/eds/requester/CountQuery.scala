@@ -100,7 +100,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       else countPatientsWithResolver()
     }
 
-    if (request.sourcePopulation.caresiteCohortList.isEmpty)
+    if (request.sourcePopulation.cohortList.isEmpty)
       throw new Exception(
         "INPUT JSON cannot be processed (missing input 'sourcePopulation' and/or 'request')")
 
