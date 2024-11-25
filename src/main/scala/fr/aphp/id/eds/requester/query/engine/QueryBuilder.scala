@@ -1,20 +1,18 @@
 package fr.aphp.id.eds.requester.query.engine
 
-import fr.aphp.id.eds.requester.ResultColumn
 import fr.aphp.id.eds.requester.jobs.ResourceType
-import fr.aphp.id.eds.requester.query.model.{CacheConfig, QueryContext, Request}
+import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, StageDetails}
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn, ResultColumn}
 import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
-
-import scala.collection.mutable
 
 trait QueryBuilder {
 
   def processRequest(implicit spark: SparkSession,
                      request: Request,
                      criterionTagsMap: Map[Short, CriterionTags],
-                     stageCounts: Option[mutable.Map[Short, Long]],
+                     stageDetails: StageDetails,
                      ownerEntityId: String,
                      cacheEnabled: Boolean,
                      withOrganizationDetails: Boolean,
@@ -32,21 +30,56 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
   override def processRequest(implicit spark: SparkSession,
                               request: Request,
                               criterionTagsMap: Map[Short, CriterionTags],
-                              stageCounts: Option[mutable.Map[Short, Long]],
+                              stageDetails: StageDetails,
                               ownerEntityId: String,
                               cacheEnabled: Boolean,
                               withOrganizationDetails: Boolean,
                               recursiveQueryBuilder: QueryBuilderGroup): DataFrame = {
     val (root, updatedCriteriontagsMap) = jobUtilsService.prepareRequest(request, criterionTagsMap)
 
+    val sourcePopulationCount = if (stageDetails.stageCounts.isDefined) {
+      Some(
+        recursiveQueryBuilder.qbBasicResource.querySolver.countPatients(request.sourcePopulation))
+    } else {
+      None
+    }
+    val sourcePopulationDf = if (stageDetails.stageDfs.isDefined) {
+      val sourcePopulationDfId = (Short.MaxValue - 10).toShort
+      Some(
+        recursiveQueryBuilder.qbBasicResource.querySolver
+          .getResourceDataFrame(
+            BasicResource(
+              _id = sourcePopulationDfId,
+              isInclusive = true,
+              resourceType = FhirResource.PATIENT,
+              filter = recursiveQueryBuilder.qbBasicResource.querySolver
+                .getDefaultFilterQueryPatient(request.sourcePopulation),
+              occurrence = None,
+              patientAge = None,
+              encounterDateRange = None,
+              nullAvailableFieldList = None
+            ),
+            CriterionTags(isDateTimeAvailable = false,
+                          isEncounterAvailable = false,
+                          isEpisodeOfCareAvailable = false,
+                          isInTemporalConstraint = false),
+            request.sourcePopulation
+          )
+          .withColumnRenamed(QueryColumn.PATIENT,
+                             ResultColumn.SUBJECT)
+      )
+    } else {
+      None
+    }
     val cohortDataFrame = recursiveQueryBuilder.processSubrequest(
       root,
       updatedCriteriontagsMap,
       QueryContext(
         spark,
-        request.sourcePopulation,
-        recursiveQueryBuilder.qbBasicResource.querySolver.countPatients(request.sourcePopulation),
-        stageCounts,
+        SourcePopulation(request.sourcePopulation.cohortList,
+                         sourcePopulationCount,
+                         sourcePopulationDf),
+        stageDetails,
         CacheConfig(ownerEntityId, enableCurrentGroupCache = false, cacheNestedGroup = cacheEnabled)
       )
     )

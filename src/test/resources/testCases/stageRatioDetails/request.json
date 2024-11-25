@@ -1,0 +1,210 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 11,
+        "isInclusive": true,
+        "resourceType": "Patient",
+        "filterSolr": "some filter",
+        "occurrence": {
+          "n": 2,
+          "operator": "<",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 12,
+        "isInclusive": true,
+        "resourceType": "Patient",
+        "filterSolr": "some filter",
+        "occurrence": {
+          "n": 2,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "Patient",
+        "filterSolr": "some filter",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "basicResource",
+        "_id": 2,
+        "isInclusive": false,
+        "resourceType": "Patient",
+        "filterSolr": "some filter",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        }
+      },
+      {
+        "_type": "orGroup",
+        "_id": -1,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 3,
+            "isInclusive": false,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 4,
+            "isInclusive": true,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "temporalConstraints": [
+        ]
+      },
+      {
+        "_type": "nAmongM",
+        "_id": -2,
+        "isInclusive": true,
+        "criteria": [
+          {
+            "_type": "basicResource",
+            "_id": 5,
+            "isInclusive": true,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 6,
+            "isInclusive": true,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          },
+          {
+            "_type": "basicResource",
+            "_id": 7,
+            "isInclusive": true,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "nAmongMOptions": {
+          "n": 2,
+          "operator": ">="
+        },
+        "temporalConstraints": [
+        ]
+      },
+      {
+        "_type": "andGroup",
+        "_id": -3,
+        "isInclusive": false,
+        "criteria": [
+          {
+            "_type": "orGroup",
+            "_id": -4,
+            "isInclusive": false,
+            "criteria": [
+              {
+                "_type": "basicResource",
+                "_id": 8,
+                "isInclusive": false,
+                "resourceType": "Patient",
+                "filterSolr": "some filter",
+                "occurrence": {
+                  "n": 1,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                }
+              },
+              {
+                "_type": "basicResource",
+                "_id": 9,
+                "isInclusive": true,
+                "resourceType": "Patient",
+                "filterSolr": "some filter",
+                "occurrence": {
+                  "n": 1,
+                  "operator": ">=",
+                  "sameEncounter": false,
+                  "sameDay": false
+                }
+              }
+            ],
+            "temporalConstraints": []
+          },
+          {
+            "_type": "basicResource",
+            "_id": 10,
+            "isInclusive": true,
+            "resourceType": "Patient",
+            "filterSolr": "some filter",
+            "occurrence": {
+              "n": 1,
+              "operator": ">=",
+              "sameEncounter": false,
+              "sameDay": false
+            }
+          }
+        ],
+        "temporalConstraints": []
+      }
+    ],
+    "temporalConstraints": []
+  }
+}

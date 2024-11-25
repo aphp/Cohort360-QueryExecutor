@@ -1,16 +1,18 @@
 package fr.aphp.id.eds.requester.tools
 
-import fr.aphp.id.eds.requester.{CountOptions, FhirResource}
 import fr.aphp.id.eds.requester.cohort.CohortCreation
 import fr.aphp.id.eds.requester.jobs.{JobEnv, JobType, SparkJobParameter}
-import fr.aphp.id.eds.requester.query.engine.QueryBuilderGroup
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.{CriterionTags, QueryParser}
 import fr.aphp.id.eds.requester.query.resolver.{ResourceResolver, ResourceResolvers}
+import fr.aphp.id.eds.requester.{CountOptions, CountOptionsDetails}
 import org.apache.log4j.Logger
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
+
+case class StageDetails(stageCounts: Option[mutable.Map[Short, Long]],
+                        stageDfs: Option[mutable.Map[Short, DataFrame]])
 
 trait JobUtilsService {
   def initSparkJobRequest(logger: Logger,
@@ -60,13 +62,13 @@ trait JobUtilsService {
   }
 
   /**
-   * Prepare the request by wrapping the first group in an AND group if it is not inclusive and
-   * fill in virtual groups in the query for non inclusive criteria within OR and N_AMONG_M groups.
-   * This is because of the current implementation of the query engine that does not handle exclusion criteria within OR groups.
-   * @param request the request to process
-   * @param criterionTagsMap the map of criterion tags
-   * @return the updated query and criterion tags map
-   */
+    * Prepare the request by wrapping the first group in an AND group if it is not inclusive and
+    * fill in virtual groups in the query for non inclusive criteria within OR and N_AMONG_M groups.
+    * This is because of the current implementation of the query engine that does not handle exclusion criteria within OR groups.
+    * @param request the request to process
+    * @param criterionTagsMap the map of criterion tags
+    * @return the updated query and criterion tags map
+    */
   def prepareRequest(
       request: Request,
       criterionTagsMap: Map[Short, CriterionTags]
@@ -81,15 +83,20 @@ trait JobUtilsService {
     (updatedRoot, Map(updatedCriterionTagsMap.toSeq: _*))
   }
 
-  private def wrapCriteriaInAndGroup(criteria: BaseQuery, criteriaTagsMap: mutable.Map[Short, CriterionTags], replaceOriginalId: Boolean = false) = {
-    val newCriteriaId = getRandomIdNotInTabooList(criteriaTagsMap.keySet.toList, negative = !replaceOriginalId || criteria.i < 0)
+  private def wrapCriteriaInAndGroup(criteria: BaseQuery,
+                                     criteriaTagsMap: mutable.Map[Short, CriterionTags],
+                                     replaceOriginalId: Boolean = false) = {
+    val newCriteriaId = getRandomIdNotInTabooList(criteriaTagsMap.keySet.toList,
+                                                  negative = !replaceOriginalId || criteria.i < 0)
     // create a copy of criteria with the new id
-    val updatedCriteria = if (replaceOriginalId) { criteria match {
-      case group: GroupResource =>
-        group.copy(_id = newCriteriaId)
-      case basic: BasicResource =>
-        basic.copy(_id = newCriteriaId)
-    }} else {
+    val updatedCriteria = if (replaceOriginalId) {
+      criteria match {
+        case group: GroupResource =>
+          group.copy(_id = newCriteriaId)
+        case basic: BasicResource =>
+          basic.copy(_id = newCriteriaId)
+      }
+    } else {
       criteria
     }
     val criteriaTagId = if (replaceOriginalId) criteria.i else newCriteriaId
@@ -106,7 +113,7 @@ trait JobUtilsService {
        )
      ),
      criteriaTagsMap ++ Map(
-        criteriaTagId -> CriterionTags(
+       criteriaTagId -> CriterionTags(
          criteriaTagsMap(oldCriteriaId).isDateTimeAvailable,
          criteriaTagsMap(oldCriteriaId).isEncounterAvailable,
          criteriaTagsMap(oldCriteriaId).isEpisodeOfCareAvailable,
@@ -125,18 +132,21 @@ trait JobUtilsService {
     * @param criterionTagsMap the map of criterion tags
     * @return the updated query and criterion tags map
     */
-  private def fillInVirtualGroups(
-      query: BaseQuery,
-      criterionTagsMap: mutable.Map[Short, CriterionTags]): (BaseQuery, mutable.Map[Short, CriterionTags]) = {
+  private def fillInVirtualGroups(query: BaseQuery,
+                                  criterionTagsMap: mutable.Map[Short, CriterionTags])
+    : (BaseQuery, mutable.Map[Short, CriterionTags]) = {
     query match {
       case group: GroupResource =>
         // we only need to process OR and N_AMONG_M groups
         val res = group.criteria.foldLeft((List[BaseQuery](), criterionTagsMap)) {
           // for each criteria, we fill in virtual groups if the criteria is not inclusive
           case ((updatedCriteriaList, updatedCriteriaTags), c) =>
-            val (updatedCriteria, _updatedCriteriaTags) = fillInVirtualGroups(c, updatedCriteriaTags)
+            val (updatedCriteria, _updatedCriteriaTags) =
+              fillInVirtualGroups(c, updatedCriteriaTags)
             if ((group.groupType == GroupResourceType.N_AMONG_M || group.groupType == GroupResourceType.OR) && !c.IsInclusive) {
-              val wrappedCriteria = wrapCriteriaInAndGroup(updatedCriteria, _updatedCriteriaTags, replaceOriginalId = true)
+              val wrappedCriteria = wrapCriteriaInAndGroup(updatedCriteria,
+                                                           _updatedCriteriaTags,
+                                                           replaceOriginalId = true)
               (updatedCriteriaList :+ wrappedCriteria._1, wrappedCriteria._2)
             } else {
               (updatedCriteriaList :+ updatedCriteria, _updatedCriteriaTags)
@@ -161,7 +171,7 @@ object JobUtils extends JobUtilsService {
     val rnd = new scala.util.Random
     var id: Option[Short] = None
     while (id.isEmpty) {
-      val rndShort = rnd.nextInt(Short.MaxValue).toShort
+      val rndShort = rnd.nextInt(Short.MaxValue - 100).toShort
       val rndId: Int = if (negative) -rndShort else rndShort
       if (!allTabooId.contains(rndId)) id = Some(rndId.toShort)
     }
@@ -175,18 +185,22 @@ object JobUtils extends JobUtilsService {
                   criteria = List())
   }
 
-  def initStageCounts(modeOptions: Map[String, String],
-                      request: Request): Option[mutable.Map[Short, Long]] = {
+  def initStageDetails(modeOptions: Map[String, String], request: Request): StageDetails = {
     if (modeOptions.contains(CountOptions.details)) {
-      if (modeOptions(CountOptions.details).contains("all")) {
-        Some(mutable.Map(JobUtils.getAllCriteriaIds(request).map(x => x -> -1L): _*))
+      if (modeOptions(CountOptions.details).contains(CountOptionsDetails.all)) {
+        StageDetails(Some(mutable.Map(JobUtils.getAllCriteriaIds(request).map(x => x -> -1L): _*)),
+                     None)
+      } else if (modeOptions(CountOptions.details).contains(CountOptionsDetails.ratio)) {
+        StageDetails(None, Some(mutable.Map[Short, DataFrame]()))
       } else {
-        Some(
-          mutable.Map(
-            modeOptions(CountOptions.details).strip().split(",").map(x => x.toShort -> -1L): _*))
+        StageDetails(
+          Some(
+            mutable.Map(
+              modeOptions(CountOptions.details).strip().split(",").map(x => x.toShort -> -1L): _*)),
+          None)
       }
     } else {
-      None
+      StageDetails(None, None)
     }
   }
 

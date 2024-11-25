@@ -5,7 +5,7 @@ import fr.aphp.id.eds.requester.query.engine._
 import fr.aphp.id.eds.requester.query.model.{BasicResource, Request}
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
-import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
+import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, StageDetails}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
 
@@ -51,7 +51,7 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       spark,
       completeRequest,
       completedCriterionTagsMap,
-      None,
+      StageDetails(None, None),
       data.ownerEntityId,
       cacheEnabled,
       withOrganizationDetails = false,
