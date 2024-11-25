@@ -139,7 +139,7 @@ class CreateQueryTest extends AnyFunSuiteLike {
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
-        ArgumentMatchersSugar.eqTo(None),
+        ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,
         ArgumentMatchersSugar.*,

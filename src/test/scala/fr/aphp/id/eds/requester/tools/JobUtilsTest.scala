@@ -2,7 +2,7 @@ package fr.aphp.id.eds.requester.tools
 
 import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
-import fr.aphp.id.eds.requester.tools.JobUtils.{initStageCounts, prepareRequest}
+import fr.aphp.id.eds.requester.tools.JobUtils.{initStageDetails, prepareRequest}
 import org.scalatest.funsuite.AnyFunSuiteLike
 
 class JobUtilsTest extends AnyFunSuiteLike {
@@ -13,7 +13,8 @@ class JobUtilsTest extends AnyFunSuiteLike {
       sourcePopulation = SourcePopulation(None),
       request = None
     )
-    assert(initStageCounts(modeOptions, request).isEmpty)
+    assert(initStageDetails(modeOptions, request).stageDfs.isEmpty)
+    assert(initStageDetails(modeOptions, request).stageCounts.isEmpty)
   }
 
   test("testInitStageAll") {
@@ -41,18 +42,25 @@ class JobUtilsTest extends AnyFunSuiteLike {
           )
         ))
     )
-    val stageCounts = initStageCounts(modeOptions, request)
-    assert(stageCounts.isDefined)
-    assert(stageCounts.get.size == 3)
-    assert(stageCounts.get(1) == -1)
-    assert(stageCounts.get(2) == -1)
-    assert(stageCounts.get(3) == -1)
+    val stageCounts = initStageDetails(modeOptions, request)
+    assert(stageCounts.stageCounts.isDefined)
+    assert(stageCounts.stageDfs.isEmpty)
+    assert(stageCounts.stageCounts.get.size == 3)
+    assert(stageCounts.stageCounts.get(1) == -1)
+    assert(stageCounts.stageCounts.get(2) == -1)
+    assert(stageCounts.stageCounts.get(3) == -1)
 
-    val partialStageCounts = initStageCounts(Map("details" -> "2,3"), request)
-    assert(partialStageCounts.isDefined)
-    assert(partialStageCounts.get.size == 2)
-    assert(partialStageCounts.get(2) == -1)
-    assert(partialStageCounts.get(3) == -1)
+    val stageRatios = initStageDetails(Map("details" -> "ratio"), request)
+    assert(stageRatios.stageDfs.isDefined)
+    assert(stageRatios.stageCounts.isEmpty)
+    assert(stageRatios.stageDfs.get.isEmpty)
+
+    val partialStageCounts = initStageDetails(Map("details" -> "2,3"), request)
+    assert(partialStageCounts.stageCounts.isDefined)
+    assert(stageCounts.stageDfs.isEmpty)
+    assert(partialStageCounts.stageCounts.get.size == 2)
+    assert(partialStageCounts.stageCounts.get(2) == -1)
+    assert(partialStageCounts.stageCounts.get(3) == -1)
   }
 
   test("prepareRequest") {

@@ -4,9 +4,9 @@ import fr.aphp.id.eds.requester.query.model._
 import fr.aphp.id.eds.requester.query.parser.CriterionTags
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, SparkTools}
-import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
+import fr.aphp.id.eds.requester.{FhirResource, QueryColumn, ResultColumn}
 import org.apache.log4j.Logger
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.DataFrame
 
 import scala.language.postfixOps
 
@@ -57,19 +57,37 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
           processRequestGroup(group, criterionTagsMap, context)
         }
     }
-    context.stageCounts.map(m => {
+    updateContext(criterion, context, resultDf)
+    resultDf
+  }
+
+  private def updateContext(criterion: BaseQuery, context: QueryContext, resultDf: DataFrame): Unit = {
+    context.stageDetails.stageCounts.map(m => {
       // count the number of patients at each stage but only those preset in the stageCounts map
       if (m.contains(criterion.i)) {
-        val criterionSelfCount = resultDf.select(QueryBuilderUtils.getSubjectColumn(criterion.i)).distinct().count()
+        val criterionSelfCount =
+          resultDf.select(QueryBuilderUtils.getSubjectColumn(criterion.i)).distinct().count()
         val criterionCount = if (criterion.IsInclusive) {
           criterionSelfCount
         } else {
-          context.sourcePopulationCount - criterionSelfCount
+          context.sourcePopulation.count.get - criterionSelfCount
         }
         m.put(criterion.i, criterionCount)
       }
     })
-    resultDf
+    context.stageDetails.stageDfs.map(m => {
+      val criterionPatients =
+        resultDf
+          .select(QueryBuilderUtils.getSubjectColumn(criterion.i))
+          .distinct()
+          .withColumnRenamed(QueryBuilderUtils.getSubjectColumn(criterion.i), ResultColumn.SUBJECT)
+
+      m.put(criterion.i, if (criterion.IsInclusive) {
+        criterionPatients
+      } else {
+        context.sourcePopulation.df.get.except(criterionPatients)
+      })
+    })
   }
 
   private def feedInclusionCriteriaIfEmpty(isInclusionCriteriaEmpty: Boolean,
@@ -123,8 +141,8 @@ class QueryBuilderGroup(val qbBasicResource: QueryBuilderBasicResource,
     * @param context                                  the context of the query
     * */
   private def processRequestGroup(groupResource: GroupResource,
-                          criterionTagsMap: Map[Short, CriterionTags],
-                          context: QueryContext): DataFrame = {
+                                  criterionTagsMap: Map[Short, CriterionTags],
+                                  context: QueryContext): DataFrame = {
     // extract and normalize parameters of the group
     val groupId = groupResource._id
     var inclusionCriteria = groupResource.criteria.filter(x => x.IsInclusive)

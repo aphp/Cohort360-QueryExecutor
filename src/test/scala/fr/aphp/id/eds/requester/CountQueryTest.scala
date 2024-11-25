@@ -144,9 +144,9 @@ class CountQueryTest extends AnyFunSuiteLike {
     )
     assert(res.status == "FINISHED")
     assert(res.data("count") == "2")
-    assert(res.extra.keySet == Set("criteria_1", "criteria_0"))
-    assert(res.extra("criteria_1") == "-1")
-    assert(res.extra("criteria_0") == "-1")
+    assert(res.extra.keySet == Set("criteria_count_1", "criteria_count_0"))
+    assert(res.extra("criteria_count_1") == "-1")
+    assert(res.extra("criteria_count_0") == "-1")
   }
 
   test("testRunCountWithDetails") {

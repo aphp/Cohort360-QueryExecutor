@@ -2,6 +2,7 @@ package fr.aphp.id.eds.requester.query.model
 
 import fr.aphp.id.eds.requester.jobs.ResourceType
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
+import org.apache.spark.sql.DataFrame
 
 abstract class BaseQuery(val _type: String, _id: Short, isInclusive: Boolean) {
   val i: Short = _id
@@ -80,7 +81,9 @@ case class TemporalConstraintDuration(
     seconds: Option[Int]
 )
 
-case class SourcePopulation(cohortList: Option[List[Int]])
+case class SourcePopulation(cohortList: Option[List[Int]],
+                            count: Option[Long] = None,
+                            df: Option[DataFrame] = None)
 
 case class Request(_type: String = "request",
                    sourcePopulation: SourcePopulation,
