@@ -114,6 +114,7 @@ class PGCohortCreationTest extends AnyFunSuiteLike with DatasetComparer {
       ArgumentMatchers.eq("list__entry_cohort360"),
       df.capture(),
       ArgumentMatchers.eq(Some(4)),
+      ArgumentMatchersSugar.*,
       ArgumentMatchersSugar.*
     )
     assertSmallDatasetEquality(df.getValue.asInstanceOf[DataFrame], expectedDf)

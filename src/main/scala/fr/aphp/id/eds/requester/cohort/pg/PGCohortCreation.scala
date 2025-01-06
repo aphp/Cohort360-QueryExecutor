@@ -50,8 +50,8 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
   }
 
   /**
-   * This loads both a cohort and its definition into postgres and solr
-   */
+    * This loads both a cohort and its definition into postgres and solr
+    */
   override def updateCohort(cohortId: Long,
                             cohort: DataFrame,
                             sourcePopulation: SourcePopulation,
@@ -68,9 +68,9 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
         .withColumnRenamed(ResultColumn.SUBJECT, "_itemreferenceid")
         .withColumn("item__reference", concat(lit(s"${resourceType}/"), col("_itemreferenceid")))
         .select(F.col("_itemreferenceid"),
-          F.col("item__reference"),
-          F.col("_provider"),
-          F.col("_listid"))
+                F.col("item__reference"),
+                F.col("_provider"),
+                F.col("_listid"))
 
       uploadCohortTableToPG(dataframe)
 
@@ -172,7 +172,10 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
       ).toSet == df.columns.toSet,
       "cohort dataframe shall have _listid, _provider, _provider and item__reference"
     )
-    pg.outputBulk(cohort_item_table_rw, dfAddHash(df), Some(4))
+    pg.outputBulk(cohort_item_table_rw,
+                  dfAddHash(df),
+                  Some(4),
+                  primaryKeys = Seq("_listid", "_itemreferenceid", "_provider"))
   }
 
   /**
