@@ -14,6 +14,7 @@ import java.io._
 import java.sql._
 import java.util.Properties
 import java.util.UUID.randomUUID
+import scala.util.{Failure, Success, Try}
 
 sealed trait BulkLoadMode
 
@@ -35,8 +36,8 @@ class PGTool(
 
   private var password: String = ""
 
-  def setPassword(pwd: String = ""): PGTool = {
-    password = PGTool.passwordFromConn(url, pwd)
+  def setPassword(pwd: String): PGTool = {
+    password = pwd
     this
   }
 
@@ -73,7 +74,8 @@ class PGTool(
       table: String,
       df: Dataset[Row],
       numPartitions: Option[Int] = None,
-      reindex: Boolean = false
+      reindex: Boolean = false,
+      primaryKeys: Seq[String] = Seq.empty
   ): PGTool = {
     PGTool.outputBulk(
       spark,
@@ -84,7 +86,8 @@ class PGTool(
       numPartitions.getOrElse(8),
       password,
       reindex,
-      bulkLoadBufferSize
+      bulkLoadBufferSize,
+      primaryKeys = primaryKeys
     )
     this
   }
@@ -106,7 +109,8 @@ object PGTool extends java.io.Serializable with LazyLogging {
       url: String,
       tmpPath: String,
       bulkLoadMode: BulkLoadMode = defaultBulkLoadStrategy,
-      bulkLoadBufferSize: Int = defaultBulkLoadBufferSize
+      bulkLoadBufferSize: Int = defaultBulkLoadBufferSize,
+      pgPassFile: Path = new Path(scala.sys.env("HOME"), ".pgpass")
   ): PGTool = {
     new PGTool(
       spark,
@@ -114,37 +118,35 @@ object PGTool extends java.io.Serializable with LazyLogging {
       tmpPath + "/spark-postgres-" + randomUUID.toString,
       bulkLoadMode,
       bulkLoadBufferSize
-    ).setPassword()
+    ).setPassword(passwordFromConn(url, pgPassFile))
   }
 
-  def connOpen(url: String, password: String = ""): Connection = {
+  def connOpen(url: String, password: String): Connection = {
     val prop = new Properties()
     prop.put("driver", "org.postgresql.Driver")
-    prop.put("password", passwordFromConn(url, password))
+    prop.put("password", password)
     DriverManager.getConnection(url, prop)
   }
 
-  def passwordFromConn(url: String, password: String): String = {
-    if (password.nonEmpty) {
-      return password
-    }
+  def passwordFromConn(url: String, pgPassFile: Path): String = {
     val pattern = "jdbc:postgresql://(.*):(\\d+)/(\\w+)[?]user=(\\w+).*".r
     val pattern(host, port, database, username) = url
-    dbPassword(host, port, database, username)
+    dbPassword(host, port, database, username, pgPassFile)
   }
 
   private def dbPassword(
       hostname: String,
       port: String,
       database: String,
-      username: String
+      username: String,
+      pgPassFile: Path
   ): String = {
     // Usage: val thatPassWord = dbPassword(hostname,port,database,username)
     // .pgpass file format, hostname:port:database:username:password
 
     val fs = FileSystem.get(new java.net.URI("file:///"), new Configuration)
     val reader = new BufferedReader(
-      new InputStreamReader(fs.open(new Path(scala.sys.env("HOME"), ".pgpass")))
+      new InputStreamReader(fs.open(pgPassFile))
     )
     val content = Iterator
       .continually(reader.readLine())
@@ -185,7 +187,9 @@ object PGTool extends java.io.Serializable with LazyLogging {
       numPartitions: Int = 8,
       password: String = "",
       reindex: Boolean = false,
-      bulkLoadBufferSize: Int = defaultBulkLoadBufferSize
+      bulkLoadBufferSize: Int = defaultBulkLoadBufferSize,
+      withRetry: Boolean = true,
+      primaryKeys: Seq[String] = Seq.empty
   ): Unit = {
     logger.debug("using CSV strategy")
     try {
@@ -208,7 +212,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
         .mode(org.apache.spark.sql.SaveMode.Overwrite)
         .save(path)
 
-      outputBulkCsvLow(
+      val success = outputBulkCsvLow(
         spark,
         url,
         table,
@@ -220,6 +224,45 @@ object PGTool extends java.io.Serializable with LazyLogging {
         password,
         bulkLoadBufferSize
       )
+      if (!success) {
+        if (!withRetry) {
+          throw new Exception("Bulk load failed")
+        } else {
+          logger.warn(
+            "Bulk load failed, retrying with filtering existing items"
+          )
+          // try again with filtering the original dataframe with existing items
+          val selectedColumns = if (primaryKeys.isEmpty) "*" else primaryKeys.map(sanP).mkString(",")
+          val existingItems = sqlExecWithResult(
+            spark,
+            url,
+            s"SELECT $selectedColumns FROM $table",
+            password
+          )
+          val existingItemsSet = existingItems.collect().map(_.mkString(",")).toSet
+          val dfWithSelectedColumns = if (primaryKeys.isEmpty) df else df.select(primaryKeys.map(col): _*)
+          val dfFiltered = dfWithSelectedColumns
+            .filter(
+              row =>
+                !existingItemsSet.contains(
+                  row.mkString(",")
+                )
+            )
+          outputBulk(
+            spark,
+            url,
+            table,
+            dfFiltered,
+            path,
+            numPartitions,
+            password,
+            reindex,
+            bulkLoadBufferSize,
+            withRetry = false
+          )
+        }
+      }
+
     } finally {
       if (reindex)
         indexReactivate(url, table, password)
@@ -235,7 +278,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
       numPartitions: Int = 8,
       password: String = "",
       bulkLoadBufferSize: Int = defaultBulkLoadBufferSize
-  ): Unit = {
+  ): Boolean = {
 
     // load the csv files from hdfs in parallel
     val fs = FileSystem.get(new Configuration())
@@ -251,22 +294,31 @@ object PGTool extends java.io.Serializable with LazyLogging {
       .rdd
       .partitionBy(new ExactPartitioner(numPartitions))
 
-    rdd.foreachPartition(x => {
+    val statusRdd = rdd.mapPartitions(x => {
       val conn = connOpen(url, password)
-      x.foreach { s =>
-        {
-          val stream: InputStream = FileSystem
-            .get(new Configuration())
-            .open(new Path(s._2))
-            .getWrappedStream
-          val copyManager: CopyManager =
-            new CopyManager(conn.asInstanceOf[BaseConnection])
-          copyManager.copyIn(sqlCopy, stream, bulkLoadBufferSize)
-        }
+      val res = Try {
+        x.map { s =>
+          {
+            val stream: InputStream = FileSystem
+              .get(new Configuration())
+              .open(new Path(s._2))
+              .getWrappedStream
+            val copyManager: CopyManager =
+              new CopyManager(conn.asInstanceOf[BaseConnection])
+            copyManager.copyIn(sqlCopy, stream, bulkLoadBufferSize)
+          }
+        }.toList
       }
       conn.close()
-      x.toIterator
+      res match {
+        case Success(_) => Iterator(true)  // Partition succeeded
+        case Failure(error) => {
+          logger.error("Partition output loading failed", error)
+          Iterator(false) // Partition failed
+        }
+      }
     })
+    !statusRdd.collect().contains(false)
   }
 
   def outputBulkCsvLow(
@@ -280,7 +332,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
       extensionPattern: String = ".*.csv",
       password: String = "",
       bulkLoadBufferSize: Int = defaultBulkLoadBufferSize
-  ): Unit = {
+  ): Boolean = {
     val csvSqlCopy =
       s"""COPY "$table" ($columns) FROM STDIN WITH CSV DELIMITER '$delimiter'  NULL '' ESCAPE '"' QUOTE '"' """
     outputBulkFileLow(
@@ -301,7 +353,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
     schema
   }
 
-  def indexDeactivate(url: String, table: String, password: String = ""): Unit = {
+  def indexDeactivate(url: String, table: String, password: String): Unit = {
     val schema = getSchema(url)
     val query =
       s"""
@@ -316,7 +368,7 @@ object PGTool extends java.io.Serializable with LazyLogging {
     logger.debug(s"Deactivating indexes from $schema.$table")
   }
 
-  def indexReactivate(url: String, table: String, password: String = ""): Unit = {
+  def indexReactivate(url: String, table: String, password: String): Unit = {
 
     val schema = getSchema(url)
     val query =

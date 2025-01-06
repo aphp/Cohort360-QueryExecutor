@@ -31,6 +31,7 @@
     <hadoop.version>2.6.5</hadoop.version>
     <spark-solr.version>4.0.4</spark-solr.version>
     <wiremock.version>3.3.1</wiremock.version>
+    <postgrestest.version>1.20.4</postgrestest.version>
     <!--  Sonar  -->
     <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
 
@@ -296,6 +297,12 @@
       <version>${wiremock.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>${postgrestest.version}</version>
+      <scope>test</scope>
+    </dependency>
 
 
 
@@ -446,7 +453,9 @@
           </execution>
         </executions>
         <configuration>
-          <argLine>--add-exports java.base/sun.nio.ch=ALL-UNNAMED --add-exports java.base/sun.util.calendar=ALL-UNNAMED</argLine>
+          <argLine>
+            --add-exports java.base/sun.nio.ch=ALL-UNNAMED --add-exports java.base/sun.util.calendar=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED
+          </argLine>
         </configuration>
       </plugin>
 
