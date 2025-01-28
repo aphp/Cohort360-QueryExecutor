@@ -146,6 +146,11 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     }
     result
   }
+
+  test("liveTest") {
+    testCaseEvaluate("liveTestTmp")
+  }
+
   test("custom") {
     testCaseEvaluate("testCustom")
   }

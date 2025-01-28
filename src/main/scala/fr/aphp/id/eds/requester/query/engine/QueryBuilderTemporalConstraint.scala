@@ -113,6 +113,7 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
       temporalConstraintDataFrame: DataFrame,
       firstCriterionId: Short,
       groupId: Short,
+      isInTemporalConstraint: Boolean,
       withOrganizations: Boolean): Option[DataFrame] = {
     // @todo: when we will enable groups to be constrained by, we will need to koin on and keep more columns (encounter_id and dates)
     // @todo: not a left semi if not "andGroup"
@@ -121,12 +122,23 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
     val organizationColumnName = QueryBuilderUtils.getOrganizationsColumn(firstCriterionId)
     val selectedColumns = List(criterionIdColumnName) ++ (if (withOrganizations)
                                                             List(organizationColumnName)
-                                                          else List())
+                                                          else
+                                                            List()) ++ (if (isInTemporalConstraint)
+                                                                          List(
+                                                                            QueryBuilderUtils
+                                                                              .getEncounterColumn(
+                                                                                firstCriterionId))
+                                                                        else List())
     var patientListDataFrame =
       temporalConstraintDataFrame
         .select(selectedColumns.map(F.col): _*)
         .withColumnRenamed(criterionIdColumnName, groupIdColumName)
-        .dropDuplicates(groupIdColumName)
+        .dropDuplicates()
+    if (isInTemporalConstraint) {
+      patientListDataFrame = patientListDataFrame
+        .withColumnRenamed(QueryBuilderUtils.getEncounterColumn(firstCriterionId),
+                           QueryBuilderUtils.getEncounterColumn(groupId))
+    }
     if (withOrganizations) {
       patientListDataFrame = patientListDataFrame
         .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(firstCriterionId),
@@ -404,6 +416,7 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
                                          criterionTagsMap: Map[Short, CriterionTags]): DataFrame = {
 
     val withOrganizations = criterionTagsMap(groupId).withOrganizations
+    val isInTemporalConstraint = criterionTagsMap(groupId).isInTemporalConstraint
     // tagsPerId is updated for the criteria with id "group_id"
     // dict_df is filtered for the temporal criterion (to be used only locally so in_dict_df is returned)
     var criterionConcernedByATemporalConstraintIdList: List[Short] = List()
@@ -443,11 +456,14 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
             )
           } else
             throw new Exception("required temporal constraints are not implemented")
-        applyTemporalConstraintOnGroupDataFrame(criterionConcernedByATemporalConstraintDataFrame,
-                                                patientListOfTemporalConstraintDataFrame,
-                                                idList.head,
-                                                groupId,
-                                                withOrganizations)
+        applyTemporalConstraintOnGroupDataFrame(
+          criterionConcernedByATemporalConstraintDataFrame,
+          patientListOfTemporalConstraintDataFrame,
+          idList.head,
+          groupId,
+          isInTemporalConstraint,
+          withOrganizations
+        )
       } else criterionConcernedByATemporalConstraintDataFrame
     })
 
@@ -460,7 +476,11 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
                                                         List(
                                                           QueryBuilderUtils.getOrganizationsColumn(
                                                             groupId))
-                                                      else List())
+                                                      else List()) ++ (if (isInTemporalConstraint)
+                                                                        List(
+                                                                          QueryBuilderUtils
+                                                                            .getEncounterColumn(groupId))
+                                                                      else List())
 
     joinAllCriteriaConcernedOrNotByATemporalConstraint(
       criterionConcernedByATemporalConstraintDataFrame: Option[DataFrame],
