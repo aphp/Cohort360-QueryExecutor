@@ -130,6 +130,7 @@ object QueryParser {
                           temporalConstraints: Option[List[GenericTemporalConstraint]],
                           criteria: Option[List[GenericQuery]],
                           nAmongMOptions: Option[Occurrence],
+                          uniqueFields: Option[List[UniqueFieldConstraint]],
                           version: Option[String],
                           sourcePopulation: Option[SourcePopulationDTO],
                           request: Option[GenericQuery],
@@ -153,6 +154,7 @@ object QueryParser {
       Json.reads[GenericTemporalConstraint]
     implicit lazy val sourcePopulationReads = Json.reads[SourcePopulationDTO]
     implicit lazy val dateRange = Json.reads[DateRange]
+    implicit lazy val uniqueFieldConstraintReads = Json.reads[UniqueFieldConstraint]
     implicit lazy val queryRead = Json.reads[GenericQuery]
     logger.info(s"Trying to parse query ${cohortDefinitionSyntaxJsonString}")
     val cohortRequestOption =
@@ -256,6 +258,7 @@ object QueryParser {
           else genericQuery.filterFhir.get,
         occurrence = genericQuery.occurrence,
         patientAge = genericQuery.patientAge,
+        uniqueFields = genericQuery.uniqueFields,
         nullAvailableFieldList = genericQuery.nullAvailableFieldList,
       )
     }

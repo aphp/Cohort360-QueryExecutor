@@ -3,7 +3,7 @@ package fr.aphp.id.eds.requester.query.resolver.rest
 import fr.aphp.id.eds.requester.query.resolver.ResourceConfig
 import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 import org.hl7.fhir.instance.model.api.IBase
-import org.hl7.fhir.r4.model.{DateTimeType, DateType, IdType, Reference}
+import org.hl7.fhir.r4.model._
 
 case class QueryColumnMapping(queryColName: String,
                               fhirPath: String,
@@ -38,21 +38,21 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
           QueryColumnMapping(QueryColumn.ENCOUNTER_END_DATE, "period.end", classOf[DateTimeType])),
       )),
     FhirResource.OBSERVATION -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectiveDateTime"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectiveDateTime"), codeColumn = Some("code.coding.code"))),
     FhirResource.CONDITION -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("recordedDate"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("recordedDate"), codeColumn = Some("code.coding.code"))),
     FhirResource.MEDICATION_REQUEST -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"),
                              Some("encounter"),
-                             Some("dispenseRequest.validityPeriod.start"))),
+                             Some("dispenseRequest.validityPeriod.start"), codeColumn = Some("medicationCodeableConcept.coding.code"))),
     FhirResource.MEDICATION_ADMINISTRATION -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectivePeriod.start"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectivePeriod.start"), codeColumn = Some("medicationCodeableConcept.coding.code"))),
     FhirResource.DOCUMENT_REFERENCE -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
     FhirResource.CLAIM -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("created"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("created"), codeColumn = Some("diagnosis.diagnosisCodeableConcept.coding.code"))),
     FhirResource.PROCEDURE -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
+      defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"), codeColumn = Some("code.coding.code"))),
     FhirResource.IMAGING_STUDY -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("started"))),
     FhirResource.QUESTIONNAIRE_RESPONSE -> addJoinedResourceColumns(
@@ -120,7 +120,9 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
 
   private def defaultResourceMapping(patientColumn: Option[String] = Some("patient"),
                                      encounterColumn: Option[String] = Some("encounter"),
-                                     eventColumn: Option[String] = None): List[ResourceMapping] = {
+                                     eventColumn: Option[String] = None,
+                                     codeColumn: Option[String] = None
+                                    ): List[ResourceMapping] = {
     var resourceMappingList = List(
       ResourceMapping(QueryColumnMapping(QueryColumn.ID, "id", classOf[IdType]))
     )
@@ -135,6 +137,10 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
     if (eventColumn.isDefined) {
       resourceMappingList = resourceMappingList :+ ResourceMapping(
         QueryColumnMapping(QueryColumn.EVENT_DATE, eventColumn.get, classOf[DateTimeType]))
+    }
+    if (codeColumn.isDefined) {
+      resourceMappingList = resourceMappingList :+ ResourceMapping(
+        QueryColumnMapping(QueryColumn.CODE, codeColumn.get, classOf[CodeableConcept]))
     }
     resourceMappingList
   }

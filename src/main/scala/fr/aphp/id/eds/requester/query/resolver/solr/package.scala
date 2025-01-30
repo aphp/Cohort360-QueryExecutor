@@ -24,27 +24,35 @@ package object solr {
 
     object MedicationAdministration {
       final val PERIOD_START = "effectivePeriod.start"
+      final val CODE_ATC = "_sort.atc"
+      final val CODE_UCD = "_sort.ucd"
     }
 
     object MedicationRequest {
       final val PERIOD_START = "dispenseRequest.validityPeriod.start"
       final val PERIOD_END = "dispenseRequest.validityPeriod.end"
+      final val CODE_ATC = "_sort.atc"
+      final val CODE_UCD = "_sort.ucd"
     }
 
     object Observation {
       final val EFFECTIVE_DATETIME = "effectiveDateTime"
+      final val CODE = "code.coding.display.anabio"
     }
 
     object Claim {
       final val CREATED = "created"
+      final val CODE = "diagnosis.diagnosisCodeableConcept.coding.display"
     }
 
     object Condition {
       final val RECORDED_DATE = "recordedDate"
+      final val CODE = "code.coding.display"
     }
 
     object Procedure {
       final val DATE = "performedDateTime"
+      final val CODE = "code.coding.display"
     }
 
     object Document {

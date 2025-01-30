@@ -1,0 +1,37 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "medicationRequestAphp",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "filterFhir": "codeList=R26",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        },
+        "uniqueFields": [
+          {
+            "n": 3,
+            "operator": ">="
+          }
+        ]
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 3
+}

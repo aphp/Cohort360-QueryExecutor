@@ -11,7 +11,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import scala.io.Source
 
 class QueryParserTest extends AnyFunSuiteLike {
-
+  System.setProperty("config.resource", "application.test.conf")
   test("testParse") {
     val resource = QueryParser.parse(
       Source

@@ -43,6 +43,7 @@ package object requester {
     final val ENCOUNTER_START_DATE = "encounter_start_date"
     final val ENCOUNTER_END_DATE = "encounter_end_date"
     final val PATIENT_BIRTHDATE = "patient_birthdate"
+    final val CODE = "code"
     final val EVENT_DATE = "event_date"
     final val LOCAL_DATE = "localDate"
     final val AGE = "age"
