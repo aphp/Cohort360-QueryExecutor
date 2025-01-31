@@ -86,7 +86,7 @@ class JobManager() {
                            result: Either[Throwable, JobBaseResult]): Unit = {
     val callbackResult = result match {
       case Left(wrapped) =>
-        Map("request_job_status" -> JobExecutionStatus.ERROR,
+        Map("request_job_status" -> jobs(jobId).status,
             "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
       case Right(value) => {
         Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
@@ -120,7 +120,13 @@ class JobManager() {
     val formattedResult = buildResult(result, jobMode, jobExecutor)
     val (status, execution) =
       result match {
-        case Left(wrappedError) => (JobExecutionStatus.ERROR, Future.failed(wrappedError.getCause))
+        case Left(wrappedError) => {
+          if (wrappedError.getMessage.contains("cancelled part of cancelled job group")) {
+            (JobExecutionStatus.KILLED, Future.failed(wrappedError.getCause))
+          } else {
+            (JobExecutionStatus.ERROR, Future.failed(wrappedError.getCause))
+          }
+        }
         case Right(value)       => (JobExecutionStatus.FINISHED, Future.successful(value))
       }
     jobs(jobId) = JobInfo(status,
