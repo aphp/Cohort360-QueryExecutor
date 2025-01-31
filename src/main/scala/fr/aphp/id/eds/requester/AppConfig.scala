@@ -33,7 +33,8 @@ case class PGConfig(
 )
 
 case class JobConfig(
-    threads: Int
+    threads: Int,
+    autoRetry: Int = 0
 )
 
 case class ServerConfig(
@@ -119,7 +120,7 @@ class AppConfig(conf: Config) {
       ))
   } else { None }
   val business: BusinessConfig = BusinessConfig(
-    JobConfig(conf.getInt("app.jobs.threads")),
+    JobConfig(conf.getInt("app.jobs.threads"), conf.getInt("app.jobs.autoRetry")),
     conf.getInt("app.cohortCreationLimit"),
     conf.getBoolean("app.enableCache"),
     QueryConfig(

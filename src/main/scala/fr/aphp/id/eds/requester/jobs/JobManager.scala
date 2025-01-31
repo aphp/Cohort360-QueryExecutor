@@ -34,9 +34,10 @@ class JobManager() {
     sparkSession.sparkContext.addFile(AppConfig.get.solr.get.authFile)
   }
 
-  def execJob(jobExecutor: JobBase, jobData: SparkJobParameter): JobStatus = {
+  def execJob(jobExecutor: JobBase, jobData: SparkJobParameter, retry: Int = 0): JobStatus = {
     val jobId = UUID.randomUUID().toString
     logger.info(s"Starting new job ${jobId}")
+    val autoRetry = AppConfig.get.business.jobs.autoRetry
     val jobExec = Future {
       logger.info(s"Job ${jobId} started")
       sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
@@ -60,7 +61,12 @@ class JobManager() {
         finalizeJob(jobId, Right(result), jobExecutor, jobData.mode, jobData)
       case Failure(wrapped: Throwable) =>
         logger.error(s"Job ${jobId} failed", wrapped)
-        finalizeJob(jobId, Left(wrapped), jobExecutor, jobData.mode, jobData)
+        if (retry < autoRetry) {
+          logger.info(s"Retrying job ${jobId}")
+          execJob(jobExecutor, jobData, retry + 1)
+        } else {
+          finalizeJob(jobId, Left(wrapped), jobExecutor, jobData.mode, jobData)
+        }
     }
     JobStatus(job.status,
               job.jobId,
