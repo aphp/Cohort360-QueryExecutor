@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.0] - 2025-03-02
+
+### 🚀 Features
+
+- Add count stage details ratio (#8)
+- Add sampled cohort creation (#9)
+- *(pgbulk)* Add retry with filtered df for pg output write (#10)
+- *(job)* Set KILLED status to cancelled jobserrored
+- *(jobs)* Add configurable autoretry
+- *(basicResource)* Add unique codes nAmongM filter (#11)
+
+### 🐛 Bug Fixes
+
+- *(temporalconstraint)* Allow multistage temporal constraints
+
+### 🚜 Refactor
+
+- *(sourcePopulation)* Rename to cohortList
+
+### 📚 Documentation
+
+- Add authors
+
+
 ## [2.8.0] - 2024-11-21
 
 ### 🚀 Features
