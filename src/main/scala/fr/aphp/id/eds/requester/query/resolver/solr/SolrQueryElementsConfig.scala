@@ -7,7 +7,7 @@ import fr.aphp.id.eds.requester.{FhirResource, QueryColumn}
 class SolrQueryElementsConfig extends ResourceConfig {
 
   def buildMap(patientCol: List[String],
-               dateColListTarget: List[String]): Map[String, List[String]] = {
+               dateColListTarget: List[String], codeCol: Option[List[String]] = None): Map[String, List[String]] = {
     Map(
       QueryColumn.PATIENT -> patientCol,
       QueryColumn.EVENT_DATE -> dateColListTarget,
@@ -15,12 +15,12 @@ class SolrQueryElementsConfig extends ResourceConfig {
       QueryColumn.ENCOUNTER_START_DATE -> List(SolrColumn.ENCOUNTER_START_DATE),
       QueryColumn.ENCOUNTER_END_DATE -> List(SolrColumn.ENCOUNTER_END_DATE),
       QueryColumn.ID -> List(SolrColumn.ID),
-      QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS)
-    )
+      QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS),
+    ) ++ codeCol.map(QueryColumn.CODE -> _).toMap
   }
 
-  def buildMap(dateColListTarget: List[String]): Map[String, List[String]] = {
-    buildMap(List(SolrColumn.PATIENT), dateColListTarget)
+  def buildDefaultMap(dateColListTarget: List[String], codeCol: Option[List[String]] = None): Map[String, List[String]] = {
+    buildMap(List(SolrColumn.PATIENT), dateColListTarget, codeCol)
   }
 
   override def requestKeyPerCollectionMap: Map[String, Map[String, List[String]]] = Map(
@@ -32,26 +32,38 @@ class SolrQueryElementsConfig extends ResourceConfig {
       QueryColumn.ID -> List(SolrColumn.ID),
       QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS)
     ),
-    FhirResource.MEDICATION_REQUEST -> buildMap(
-      List(SolrColumn.MedicationRequest.PERIOD_START, SolrColumn.MedicationRequest.PERIOD_END)),
-    FhirResource.MEDICATION_ADMINISTRATION -> buildMap(
-      List(SolrColumn.MedicationAdministration.PERIOD_START)),
-    FhirResource.OBSERVATION -> buildMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME)),
-    FhirResource.CONDITION -> buildMap(List(SolrColumn.Condition.RECORDED_DATE)),
+    FhirResource.MEDICATION_REQUEST -> buildDefaultMap(
+      List(SolrColumn.MedicationRequest.PERIOD_START, SolrColumn.MedicationRequest.PERIOD_END),
+      codeCol = Some(List(SolrColumn.MedicationRequest.CODE_ATC, SolrColumn.MedicationRequest.CODE_UCD))
+    ),
+    FhirResource.MEDICATION_ADMINISTRATION -> buildDefaultMap(
+      List(SolrColumn.MedicationAdministration.PERIOD_START),
+      codeCol = Some(List(SolrColumn.MedicationAdministration.CODE_ATC, SolrColumn.MedicationAdministration.CODE_UCD))
+    ),
+    FhirResource.OBSERVATION -> buildDefaultMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME),
+      codeCol = Some(List(SolrColumn.Observation.CODE))
+    ),
+    FhirResource.CONDITION -> buildDefaultMap(List(SolrColumn.Condition.RECORDED_DATE),
+      codeCol = Some(List(SolrColumn.Condition.CODE))
+    ),
     FhirResource.PATIENT -> Map(QueryColumn.PATIENT -> List(SolrColumn.PATIENT),
                                 QueryColumn.ID -> List(SolrColumn.ID),
                                 QueryColumn.ORGANIZATIONS -> List(SolrColumn.ORGANIZATIONS)),
-    FhirResource.DOCUMENT_REFERENCE -> buildMap(List(SolrColumn.Document.DATE)),
-    FhirResource.COMPOSITION -> buildMap(List(SolrColumn.Document.DATE)),
+    FhirResource.DOCUMENT_REFERENCE -> buildDefaultMap(List(SolrColumn.Document.DATE)),
+    FhirResource.COMPOSITION -> buildDefaultMap(List(SolrColumn.Document.DATE)),
     FhirResource.GROUP -> Map(QueryColumn.PATIENT -> List(SolrColumn.Group.RESOURCE_ID),
                               QueryColumn.ID -> List(SolrColumn.ID)),
-    FhirResource.CLAIM -> buildMap(List(SolrColumn.Claim.CREATED)),
-    FhirResource.PROCEDURE -> buildMap(List(SolrColumn.Procedure.DATE)),
+    FhirResource.CLAIM -> buildDefaultMap(List(SolrColumn.Claim.CREATED),
+      codeCol = Some(List(SolrColumn.Claim.CODE))
+    ),
+    FhirResource.PROCEDURE -> buildDefaultMap(List(SolrColumn.Procedure.DATE),
+      codeCol = Some(List(SolrColumn.Procedure.CODE))
+    ),
     FhirResource.IMAGING_STUDY -> (buildMap(List(SolrColumn.PATIENT),
                                             List(SolrColumn.ImagingStudy.STARTED,
                                                  SolrColumn.ImagingStudy.SERIES_STARTED)) ++ Map(
       QueryColumn.GROUP_BY -> List(SolrColumn.ImagingStudy.STUDY_ID))),
-    FhirResource.QUESTIONNAIRE_RESPONSE -> (buildMap(
+    FhirResource.QUESTIONNAIRE_RESPONSE -> (buildDefaultMap(
       List(SolrColumn.QuestionnaireResponse.AUTHORED)) ++ Map(
       QueryColumn.EPISODE_OF_CARE -> List(SolrColumn.EPISODE_OF_CARE))),
     FhirResource.UNKNOWN -> Map()

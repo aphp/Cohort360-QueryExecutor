@@ -8,6 +8,7 @@ import fr.aphp.id.eds.requester.query.resolver.{ResourceConfig, ResourceResolver
 import fr.aphp.id.eds.requester.tools.SolrTools
 import org.apache.log4j.Logger
 import org.apache.solr.client.solrj.SolrQuery
+import org.apache.spark.sql.functions.{array, array_join, col, explode}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /** Class for questioning solr. */
@@ -42,6 +43,16 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader,
     }
     val convFunc = (columnName: String) =>
       qbConfigs.reverseColumnMapping(resource.resourceType, columnName)
+
+    if (resource.uniqueFields.isDefined) {
+      val codeColumns = qbConfigs.requestKeyPerCollectionMap(resource.resourceType).getOrElse(QueryColumn.CODE, List())
+      if (codeColumns.nonEmpty) {
+        criterionDataFrame = criterionDataFrame.withColumn(
+          QueryColumn.CODE,
+          array_join(array(codeColumns.map((c) => col(s"`${c}`")): _*), ",")
+        )
+      }
+    }
     criterionDataFrame.toDF(criterionDataFrame.columns.map(c => convFunc(c)).toSeq: _*)
   }
 

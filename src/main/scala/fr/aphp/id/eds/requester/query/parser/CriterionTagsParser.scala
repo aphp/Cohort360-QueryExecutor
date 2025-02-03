@@ -280,6 +280,15 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
       } else solrFieldList
     }
 
+    def getCodeFieldList(solrFieldList: List[String]): List[String] = {
+      if (genericQuery.uniqueFields.isDefined && queryBuilderConfigs
+            .requestKeyPerCollectionMap(collection)
+            .contains(QueryColumn.CODE)) {
+        (solrFieldList ++ queryBuilderConfigs.requestKeyPerCollectionMap(collection)(
+          QueryColumn.CODE)).distinct
+      } else solrFieldList
+    }
+
     def getIsDateTimeAvailable: Boolean = {
       val colsMapping = queryBuilderConfigs
         .requestKeyPerCollectionMap(collection)
@@ -306,6 +315,7 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
     requiredSolrFieldList = getResourceGroupByFieldList(requiredSolrFieldList)
     requiredSolrFieldList =
       convertDatePreferenceToDateTimeSolrField(requiredSolrFieldList, collection)
+    requiredSolrFieldList = getCodeFieldList(requiredSolrFieldList)
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
     val isEpisodeOfCareAvailable: Boolean = getIsEpisodeOfCareAvailable
@@ -353,10 +363,10 @@ class CriterionTagsParser(val queryBuilderConfigs: ResourceConfig) {
     val isDateTimeAvailable: Boolean = getIsDateTimeAvailable
     val isEncounterAvailable: Boolean = getIsEncounterAvailable
     CriterionTags(isDateTimeAvailable,
-                      isEncounterAvailable,
-                      getIsEpisodeOfCareAvailable,
-                      isInTemporalConstraint = false,
-                      withOrganizations = requestOrganization)
+                  isEncounterAvailable,
+                  getIsEpisodeOfCareAvailable,
+                  isInTemporalConstraint = false,
+                  withOrganizations = requestOrganization)
   }
 
   private def convertDatePreferenceToDateTimeSolrField(datePreferenceList: List[String],

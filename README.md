@@ -128,6 +128,7 @@ type BASIC_RESOURCE = CRITERIA & {
     patientAge?: PATIENT_AGE, // The age constraint of the patient
     dateRangeList?: Array<DATE_RANGE>, // The date range constraint of the resource
     encounterDateRange?: DATE_RANGE // The date range constraint of the related encounter
+    uniqueFields?: Array<UNIQUE_FIELD> // The unique fields of the resource to count the patients
 }
 
 type PATIENT_AGE = {
@@ -142,6 +143,12 @@ type DATE_RANGE = {
     maxDate?: string, // with the standard format {year}-{month}-{day}, eg. for 2024-01-25
     datePreference?: string[], // resource reference field of the date to filter
     dateIsNotNull?: boolean
+}
+
+type UNIQUE_FIELD = {
+    name?: string, // The fhir resource field to verify, for now only codes are supported and it is not need to fill this field which is ignored
+    operator: string, // The operator to use for the verification
+    n: number // The number of unique values
 }
 
 type TEMPORAL_CONSTRAINT = {

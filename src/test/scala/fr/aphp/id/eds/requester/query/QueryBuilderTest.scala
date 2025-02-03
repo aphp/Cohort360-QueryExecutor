@@ -211,4 +211,8 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     testCaseEvaluate("edgeCases/temporalConstraintAppliedToSingleCriteria")
   }
 
+  test("nAmongMUniqueFields") {
+    testCaseEvaluate("nAmongMUniqueFields")
+  }
+
 }

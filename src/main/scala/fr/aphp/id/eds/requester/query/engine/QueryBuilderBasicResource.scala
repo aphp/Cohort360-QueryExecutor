@@ -116,6 +116,42 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
     } else criterionDataFrame
   }
 
+  private def filterByUniqueCodes(criterionDataFrame: DataFrame,
+                                  basicResource: BasicResource,
+                                  criterionId: Short): DataFrame = {
+    if (basicResource.uniqueFields.isDefined) {
+      val codes = basicResource.uniqueFields.get
+      val codeColumn = QueryColumn.CODE
+      val subjectColumn = QueryBuilderUtils.getSubjectColumn(criterionId)
+      var filterDataframe: Option[DataFrame] = None
+      for (code <- codes) {
+        val n = code.n
+        var operator = code.operator
+        if (operator != ">=" || n != 1) {
+          operator = if (operator == "=") "==" else operator
+          val groupByColumns = ListBuffer[String](QueryBuilderUtils.getSubjectColumn(criterionId), QueryBuilderUtils.buildColName(criterionId, codeColumn))
+          val filterPatientDataFrame: DataFrame = criterionDataFrame
+            .groupBy(groupByColumns.head, groupByColumns.tail.toList: _*)
+            .count()
+            .filter(s"count $operator $n")
+            .drop("count")
+          if (filterDataframe.isEmpty) {
+            filterDataframe = Some(filterPatientDataFrame)
+          } else {
+            filterDataframe = Some(filterDataframe.get.join(filterPatientDataFrame))
+          }
+        }
+      }
+      if (filterDataframe.isDefined) {
+        val filterPatientDataFrame = filterDataframe.get
+        return criterionDataFrame.join(filterPatientDataFrame,
+          criterionDataFrame(subjectColumn) <=> filterPatientDataFrame(subjectColumn),
+          "left_semi")
+      }
+    }
+    criterionDataFrame
+  }
+
   /** Filter patient of input dataframe which does not have the required amount of occurrence.
     *
     * @param criterionDataFrame resulting dataframe of patient of a basicResource
@@ -268,10 +304,11 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
                                                   basicResource,
                                                   criterionId,
                                                   isInTemporalConstraint)
+    criterionDataFrame = filterByUniqueCodes(criterionDataFrame, basicResource, criterionId)
     criterionDataFrame = qbUtils.cleanDataFrame(criterionDataFrame,
-                                                isInTemporalConstraint,
-                                                selectedColumns,
-                                                subjectColumn)
+                                                                     isInTemporalConstraint,
+                                                                     selectedColumns,
+                                                                     subjectColumn)
 
     if (logger.isDebugEnabled) {
       logger.debug(

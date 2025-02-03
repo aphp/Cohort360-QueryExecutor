@@ -9,6 +9,12 @@ abstract class BaseQuery(val _type: String, _id: Short, isInclusive: Boolean) {
   val IsInclusive: Boolean = isInclusive
 }
 
+case class UniqueFieldConstraint(
+    name: Option[String],
+    operator: String,
+    n: Int
+)
+
 case class Occurrence(n: Int,
                       operator: String,
                       sameEncounter: Option[Boolean],
@@ -35,6 +41,7 @@ case class BasicResource(_id: Short,
                          occurrence: Option[Occurrence] = None,
                          patientAge: Option[PatientAge] = None,
                          encounterDateRange: Option[DateRange] = None,
+                         uniqueFields: Option[List[UniqueFieldConstraint]] = None,
                          nullAvailableFieldList: Option[List[String]] = None)
     extends BaseQuery("basic_resource", _id, isInclusive) {
   override def toString: String = getClass.getName + "@" + Integer.toHexString(hashCode)
