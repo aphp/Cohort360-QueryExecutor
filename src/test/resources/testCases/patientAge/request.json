@@ -1,0 +1,36 @@
+{
+  "sourcePopulation": {
+    "caresiteCohortList": [
+      57664
+    ]
+  },
+  "_type": "request",
+  "request": {
+    "_type": "andGroup",
+    "_id": 0,
+    "isInclusive": true,
+    "criteria": [
+      {
+        "_type": "basicResource",
+        "_id": 1,
+        "isInclusive": true,
+        "resourceType": "medicationRequestAphp",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "filterFhir": "codeList=R26",
+        "occurrence": {
+          "n": 1,
+          "operator": ">=",
+          "sameEncounter": false,
+          "sameDay": false
+        },
+        "patientAge": {
+          "minAge": "18-2-4",
+          "maxAge": "20-0-0",
+          "datePreference": ["encounter_start_date"]
+        }
+      }
+    ],
+    "temporalConstraints": []
+  },
+  "id": 3
+}

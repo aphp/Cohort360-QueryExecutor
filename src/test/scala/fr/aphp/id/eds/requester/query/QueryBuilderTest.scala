@@ -215,4 +215,8 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
     testCaseEvaluate("nAmongMUniqueFields")
   }
 
+  test("patientAge") {
+    testCaseEvaluate("patientAge")
+  }
+
 }

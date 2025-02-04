@@ -40,42 +40,21 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
       (year_min, month_min, day_min, year_max, month_max, day_max)
     }
 
-    def addAgeColumn(dataFrame: DataFrame, patientAge: PatientAge): DataFrame = {
-      val (year_min, _, _, year_max, _, _) = getDecomposedAgeMinAndMax(patientAge)
-      if (year_max == 0 & year_min == 0) {
-        dataFrame.withColumn(
-          QueryColumn.AGE,
-          F.datediff(F.col(s"${QueryBuilderUtils.getDateColumn(criterionId)}"),
-                     F.col(QueryBuilderUtils.getPatientBirthColumn(criterionId))))
-      } else {
-        dataFrame.withColumn(
-          colName = QueryColumn.AGE,
-          F.datediff(F.col(s"${QueryBuilderUtils.getDateColumn(criterionId)}"),
-                     F.col(QueryBuilderUtils.getPatientBirthColumn(criterionId))) / 365.25
-        )
-      }
+    def addAgeColumn(dataFrame: DataFrame): DataFrame = {
+      dataFrame.withColumn(QueryColumn.AGE,
+                           F.datediff(F.col(s"${QueryBuilderUtils.getDateColumn(criterionId)}"),
+                                      F.col(QueryBuilderUtils.getPatientBirthColumn(criterionId))))
     }
 
     def getAgeFilter(patientAge: PatientAge, dateIsNotNull: Boolean): Column = {
       val (year_min, month_min, day_min, year_max, month_max, day_max) =
         getDecomposedAgeMinAndMax(patientAge)
-      var sparkFilterList = new ListBuffer[Column]()
-      sparkFilterList = if (year_max == 0 & year_min == 0) {
-        if (patientAge.maxAge.isDefined) {
-          sparkFilterList += F.col(QueryColumn.AGE) <= month_max * 30 + day_max
-        }
-        if (patientAge.minAge.isDefined) {
-          sparkFilterList += F.col(QueryColumn.AGE) >= month_min * 30 + day_min
-        }
-        sparkFilterList
-      } else {
-        if (patientAge.maxAge.isDefined) {
-          sparkFilterList += F.col(QueryColumn.AGE) <= year_max
-        }
-        if (patientAge.minAge.isDefined) {
-          sparkFilterList += F.col(QueryColumn.AGE) >= year_min
-        }
-        sparkFilterList
+      val sparkFilterList = new ListBuffer[Column]()
+      if (patientAge.maxAge.isDefined) {
+        sparkFilterList += F.col(QueryColumn.AGE) <= month_max * 30 + day_max + year_max * 365.25
+      }
+      if (patientAge.minAge.isDefined) {
+        sparkFilterList += F.col(QueryColumn.AGE) >= month_min * 30 + day_min + year_min * 365.25
       }
       val unifiedSparkFilter = sparkFilterList.toList.reduce(_ && _)
       if (!dateIsNotNull)
@@ -97,16 +76,14 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
                                      criterionId,
                                      datePreference,
                                      basicResource.resourceType)
-      val criterionDataFrameWithAgeColumn: DataFrame =
-        addAgeColumn(criterionDataFrameWithDateColumn, patientAge)
+      val criterionDataFrameWithAgeColumn: DataFrame = addAgeColumn(criterionDataFrameWithDateColumn)
 
       val ageBasedSparkFilter: Column = getAgeFilter(patientAge, dateIsNotNull)
 
       if (logger.isDebugEnabled)
         logger.debug(
           s"Basic Resource : filterByPatientAge : filter=$ageBasedSparkFilter, df.head=${criterionDataFrameWithDateColumn.head(10).toList.slice(0, 10)}")
-      var filteredCriterionDataFrame =
-        criterionDataFrameWithAgeColumn.filter(ageBasedSparkFilter === true)
+      var filteredCriterionDataFrame = criterionDataFrameWithAgeColumn.filter(ageBasedSparkFilter === true)
       filteredCriterionDataFrame = dropTemporaryAgeColumns(filteredCriterionDataFrame)
       if (logger.isDebugEnabled)
         logger.debug(
@@ -129,7 +106,9 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
         var operator = code.operator
         if (operator != ">=" || n != 1) {
           operator = if (operator == "=") "==" else operator
-          val groupByColumns = ListBuffer[String](QueryBuilderUtils.getSubjectColumn(criterionId), QueryBuilderUtils.buildColName(criterionId, codeColumn))
+          val groupByColumns = ListBuffer[String](
+            QueryBuilderUtils.getSubjectColumn(criterionId),
+            QueryBuilderUtils.buildColName(criterionId, codeColumn))
           val filterPatientDataFrame: DataFrame = criterionDataFrame
             .groupBy(groupByColumns.head, groupByColumns.tail.toList: _*)
             .count()
@@ -144,7 +123,8 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
       }
       if (filterDataframe.isDefined) {
         val filterPatientDataFrame = filterDataframe.get
-        return criterionDataFrame.join(filterPatientDataFrame,
+        return criterionDataFrame.join(
+          filterPatientDataFrame,
           criterionDataFrame(subjectColumn) <=> filterPatientDataFrame(subjectColumn),
           "left_semi")
       }
@@ -306,9 +286,9 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
                                                   isInTemporalConstraint)
     criterionDataFrame = filterByUniqueCodes(criterionDataFrame, basicResource, criterionId)
     criterionDataFrame = qbUtils.cleanDataFrame(criterionDataFrame,
-                                                                     isInTemporalConstraint,
-                                                                     selectedColumns,
-                                                                     subjectColumn)
+                                                isInTemporalConstraint,
+                                                selectedColumns,
+                                                subjectColumn)
 
     if (logger.isDebugEnabled) {
       logger.debug(
