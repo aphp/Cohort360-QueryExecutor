@@ -8,7 +8,8 @@ import fr.aphp.id.eds.requester.query.model.SourcePopulation
 import fr.aphp.id.eds.requester.tools.SolrTools
 import fr.aphp.id.eds.requester.{AppConfig, ResultColumn}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, functions => F}
+import org.apache.spark.sql.{DataFrame, SparkSession, functions => F}
+import org.hl7.fhir.r4.model.ListResource.ListMode
 
 /**
   * @param pg           pgTool obj
@@ -24,12 +25,19 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
                             cohortDefinitionSyntax: String,
                             ownerEntityId: String,
                             resourceType: String,
+                            baseCohortId: Option[Long],
+                            mode: ListMode,
                             size: Long): Long = {
+    val (indentifier_col, identifier_val) = if (baseCohortId.isDefined) {
+      (" identifier,", s" ${baseCohortId.get.toString},")
+    } else {
+      ("", "")
+    }
     val stmt =
       s"""
          |insert into ${cohort_table_rw}
-         |(hash, title, ${note_text_column_name}, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
-         |values (-1, ?, ?, ?, ?, '$cohort_provider_name', 'Practitioner', 'snapshot', '${CohortStatus.RUNNING}', ?, now(), ?)
+         |(hash, title, ${note_text_column_name},${indentifier_col} _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
+         |values (-1, ?, ?,${identifier_val} ?, ?, '$cohort_provider_name', 'Practitioner', '${mode.toCode}', '${CohortStatus.RUNNING}', ?, now(), ?)
          |returning id
          |""".stripMargin
     val result = pg
@@ -62,17 +70,22 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
       uploadCount(cohortId, count)
       uploadRelationship(cohortId, sourcePopulation)
 
+      val withDeleteField = cohort.columns.contains("deleted")
+      val selectedColumns = List(
+        "_itemreferenceid",
+        "item__reference",
+        "_provider",
+        "_listid"
+      ) ++ (if (withDeleteField) List("deleted") else List())
+
       val dataframe = cohort
         .withColumn("_listid", lit(cohortId))
         .withColumn("_provider", lit(cohort_provider_name))
         .withColumnRenamed(ResultColumn.SUBJECT, "_itemreferenceid")
         .withColumn("item__reference", concat(lit(s"${resourceType}/"), col("_itemreferenceid")))
-        .select(F.col("_itemreferenceid"),
-                F.col("item__reference"),
-                F.col("_provider"),
-                F.col("_listid"))
+        .select(selectedColumns.map(F.col): _*)
 
-      uploadCohortTableToPG(dataframe)
+      uploadCohortTableToPG(dataframe, withDeleteField)
 
       if (!delayCohortCreation && resourceType == ResourceType.patient)
         uploadCohortTableToSolr(cohortId, dataframe, count)
@@ -85,6 +98,40 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
       pg.purgeTmp()
       cohort.unpersist
     }
+  }
+
+  override def readCohortEntries(cohortId: Long)(implicit spark: SparkSession): DataFrame = {
+    val stmt =
+      s"""
+         |select _itemreferenceid
+         |from ${cohort_item_table_rw}
+         |where _listid = $cohortId
+         |""".stripMargin
+    val baseCohort = pg.sqlExecWithResult(stmt)
+    val diffs = readCohortDiffEntries(cohortId)
+    val addedDiffs = diffs.filter(col("deleted").isNull || col("deleted") === false)
+    val deletedDiffs = diffs.filter(col("deleted") === true)
+
+    val result = baseCohort
+      .union(addedDiffs.select("_itemreferenceid"))
+      .except(deletedDiffs.select("_itemreferenceid"))
+
+    result
+  }
+
+  private def readCohortDiffEntries(cohortId: Long): DataFrame = {
+    val stmt =
+      s"""
+             |select date,_itemreferenceid,deleted
+             |from ${cohort_item_table_rw}
+             |join ${cohort_table_rw} on ${cohort_table_rw}.id = ${cohort_item_table_rw}._listid
+             |where ${cohort_table_rw}.identifier___official__value = '$cohortId'
+             |""".stripMargin
+    pg.sqlExecWithResult(stmt)
+      .select(col("date"), col("_itemreferenceid"), col("deleted"))
+      .orderBy(col("date").asc)
+      .groupBy(col("_itemreferenceid"))
+      .agg(last(col("deleted")).as("deleted"))
   }
 
   private def uploadRelationship(cohortDefinitionId: Long,
@@ -162,14 +209,14 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
     pg.sqlExec(stmt)
   }
 
-  private def uploadCohortTableToPG(df: DataFrame): Unit = {
+  private def uploadCohortTableToPG(df: DataFrame, withDeleteField: Boolean = false): Unit = {
     require(
-      List(
+      (List(
         "_listid",
         "item__reference",
         "_provider",
         "_itemreferenceid"
-      ).toSet == df.columns.toSet,
+      ) ++ (if (withDeleteField) List("deleted") else List())).toSet == df.columns.toSet,
       "cohort dataframe shall have _listid, _provider, _provider and item__reference"
     )
     pg.outputBulk(cohort_item_table_rw,

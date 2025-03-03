@@ -78,6 +78,7 @@ class JobController(implicit val swagger: Swagger)
       case JobType.countAll         => jobManager.execJob(JobsConfig.countJob, jobData)
       case JobType.countWithDetails => jobManager.execJob(JobsConfig.countJob, jobData)
       case JobType.create           => jobManager.execJob(JobsConfig.createJob, jobData)
+      case JobType.createDiff       => jobManager.execJob(JobsConfig.createJob, jobData)
     }
   }
 

@@ -7,6 +7,8 @@ import fr.aphp.id.eds.requester.query.model.SourcePopulation
 import fr.aphp.id.eds.requester.query.resolver.rest.DefaultRestFhirClient
 import fr.aphp.id.eds.requester.{AppConfig, FhirServerConfig, PGConfig}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.hl7.fhir.r4.model.ListResource.ListMode
+
 
 trait CohortCreation {
 
@@ -24,6 +26,8 @@ trait CohortCreation {
                    cohortDefinitionSyntax: String,
                    ownerEntityId: String,
                    resourceType: String,
+                   baseCohortId: Option[Long],
+                   mode: ListMode,
                    size: Long): Long
 
   def updateCohort(cohortId: Long,
@@ -32,6 +36,8 @@ trait CohortCreation {
                    count: Long,
                    delayCohortCreation: Boolean,
                    resourceType: String): Unit
+
+  def readCohortEntries(cohortId: Long)(implicit spark: SparkSession): DataFrame
 
 }
 
