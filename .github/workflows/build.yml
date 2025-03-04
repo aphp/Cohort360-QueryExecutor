@@ -12,7 +12,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
           ./mvnw clean verify
 
   sonar:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
