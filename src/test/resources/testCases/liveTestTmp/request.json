@@ -1,6 +1,5 @@
 {
   "_type": "request",
-  "instance_id": "b4cd6a68-94e0-4539-87aa-f4f80323c645",
   "request": {
     "_id": 0,
     "_type": "andGroup",
@@ -8,59 +7,50 @@
       {
         "_id": 1,
         "_type": "basicResource",
-        "criteria": [],
-        "dateRangeList": [],
-        "filterFhir": "subject.active=true&class=urg&start-age-visit=le6570",
-        "filterSolr": "fq=class:*\\\\|urg\\\\|*&fq=extension.startAgeVisit:[* TO 6570]&fq=_ref.patient.active:(true)&fq=-meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\"",
+        "filterFhir": "subject.active=true&start-age-visit=ge6570",
+        "filterSolr": "(codeList:R26) AND active:true",
         "isInclusive": true,
+        "name": "Critère de prise en charge",
         "occurrence": {
           "n": 1,
           "operator": ">="
         },
-        "resourceType": "Encounter",
-        "temporalConstraints": []
+        "resourceType": "Encounter"
       },
       {
-        "_id": -1,
+        "_id": 2,
+        "_type": "basicResource",
+        "filterFhir": "subject.active=true&encounter-care-site=8312013804",
+        "filterSolr": "(codeList:R26) AND active:true",
+        "isInclusive": true,
+        "name": "Critère de prise en charge",
+        "occurrence": {
+          "n": 1,
+          "operator": ">="
+        },
+        "resourceType": "Encounter"
+      },
+      {
+        "_id": -2,
         "_type": "andGroup",
         "criteria": [
           {
-            "_id": 2,
-            "_type": "basicResource",
-            "criteria": [],
-            "dateRangeList": [],
-            "filterFhir": "subject.active=true&code=V,X60-X84&_source=ORBIS",
-            "filterSolr": "fq=code:*\\\\|V\\\\|* OR code:*\\\\|X60\\\\-X84\\\\|*&fq=meta.source:(ORBIS)&fq=-meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\"",
-            "isInclusive": true,
-            "occurrence": {
-              "n": 1,
-              "operator": ">="
-            },
-            "resourceType": "Condition",
-            "temporalConstraints": []
-          },
-          {
             "_id": 3,
             "_type": "basicResource",
-            "criteria": [],
-            "dateRangeList": [],
-            "filterFhir": "subject.active=true&start-age-visit=le6570",
-            "filterSolr": "fq=extension.startAgeVisit:[* TO 6570]&fq=_ref.patient.active:(true)&fq=-meta.security:\"http://terminology.hl7.org/CodeSystem/v3-ActCode|NOLIST\"",
+            "filterFhir": "subject.active=true&_source=AREM&code=https://smt.esante.gouv.fr/terminologie-cim-10/|K625",
+            "filterSolr": "(codeList:R26) AND active:true",
             "isInclusive": true,
+            "name": "Critère de diagnostic",
             "occurrence": {
               "n": 1,
               "operator": ">="
             },
-            "resourceType": "Encounter",
-            "temporalConstraints": []
+            "resourceType": "Condition"
           }
         ],
-        "dateRangeList": [],
-        "isInclusive": true,
-        "temporalConstraints": []
+        "isInclusive": true
       }
     ],
-    "dateRangeList": [],
     "isInclusive": true,
     "temporalConstraints": [
       {
@@ -71,9 +61,8 @@
   },
   "sourcePopulation": {
     "caresiteCohortList": [
-      44121,
-      87992
+      61264
     ]
   },
-  "temporalConstraints": []
+  "version": "v1.5.1"
 }
