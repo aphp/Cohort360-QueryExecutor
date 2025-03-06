@@ -208,6 +208,13 @@ class JobManager() {
   def cancelJob(jobId: String): Unit = {
     logger.info(s"Canceling job ${jobId}")
     sparkSession.sparkContext.cancelJobGroup(jobId)
+    JobStatus(JobExecutionStatus.KILLED,
+      jobId,
+      "",
+      "",
+      "",
+      null,
+      "")
   }
 
 }
