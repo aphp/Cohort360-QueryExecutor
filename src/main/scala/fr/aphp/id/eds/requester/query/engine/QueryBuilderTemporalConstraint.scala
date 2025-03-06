@@ -357,6 +357,8 @@ class QueryBuilderTemporalConstraint(val options: QueryExecutionOptions) {
       .withColumnRenamed(initialDataFrameIdColumnName, groupIdColumnName)
       .withColumnRenamed(QueryBuilderUtils.getOrganizationsColumn(initialDataFrameId),
                          QueryBuilderUtils.getOrganizationsColumn(groupId))
+      .withColumnRenamed(QueryBuilderUtils.getEncounterColumn(initialDataFrameId),
+                         QueryBuilderUtils.getEncounterColumn(groupId))
       .dropDuplicates()
     criteriaToAddIsList
       .filter(x => x != initialDataFrameId)
