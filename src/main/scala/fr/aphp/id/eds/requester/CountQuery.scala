@@ -131,18 +131,19 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
         val total = result.count()
         (Map("count" -> total.toString), counts)
       } else {
+        val resultCount = result.count()
         val extraDetails = stageDetails.stageDfs
           .map(
             dfs =>
               dfs.map(x =>
                 (s"criteria_ratio_${x._1}",
-                 x._2.join(result, ResultColumn.SUBJECT).count().toString)))
+                 (x._2.join(result, ResultColumn.SUBJECT).count() / resultCount).toString)))
           .getOrElse(
             stageDetails.stageCounts
               .getOrElse(Map.empty)
               .map(x => s"criteria_count_${x._1}" -> x._2.toString)
               .toMap)
-        (Map("count" -> result.count().toString), extraDetails)
+        (Map("count" -> resultCount.toString), extraDetails)
       }
     }
     val t1 = System.nanoTime()
