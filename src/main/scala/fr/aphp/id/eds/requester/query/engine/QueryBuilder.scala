@@ -62,11 +62,11 @@ class DefaultQueryBuilder(val jobUtilsService: JobUtilsService = JobUtils) exten
             CriterionTags(isDateTimeAvailable = false,
                           isEncounterAvailable = false,
                           isEpisodeOfCareAvailable = false,
-                          isInTemporalConstraint = false),
+                          isInTemporalConstraint = false,
+                          resourceType = FhirResource.PATIENT),
             request.sourcePopulation
           )
-          .withColumnRenamed(QueryColumn.PATIENT,
-                             ResultColumn.SUBJECT)
+          .withColumnRenamed(QueryColumn.PATIENT, ResultColumn.SUBJECT)
       )
     } else {
       None
