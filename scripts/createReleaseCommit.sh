@@ -34,7 +34,7 @@ echo "git add package.json package-lock.json CHANGELOG.md && git commit -m \"bui
 read -p "Would you like to automatically execute these commands? (y/N) " answer
 if [ "$answer" = "y" ]; then
   # Add files and create commit
-    git add package.json package-lock.json CHANGELOG.md
+    git add pom.xml CHANGELOG.md
     git commit -m "build: set release version $VERSION"
     git tag $VERSION
     git push origin $VERSION
