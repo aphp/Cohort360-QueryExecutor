@@ -29,6 +29,7 @@ object JobType extends Enumeration {
   val countAll = "count_all"
   val countWithDetails = "count_with_details"
   val create = "create"
+  val createDiff = "create_diff"
   val purgeCache = "purge_cache"
 }
 
