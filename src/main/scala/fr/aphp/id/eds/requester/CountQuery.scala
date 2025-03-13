@@ -136,8 +136,10 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           .map(
             dfs =>
               dfs.map(x =>
-                (s"criteria_ratio_${x._1}",
-                 (x._2.join(result, ResultColumn.SUBJECT).count() / resultCount).toString)))
+                s"criteria_ratio_${x._1}" ->
+                 (x._2.join(result, ResultColumn.SUBJECT).count() / resultCount).toString)
+              .toMap
+          )
           .getOrElse(
             stageDetails.stageCounts
               .getOrElse(Map.empty)
