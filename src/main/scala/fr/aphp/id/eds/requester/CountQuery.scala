@@ -7,7 +7,7 @@ import fr.aphp.id.eds.requester.query.resolver.ResourceResolver
 import fr.aphp.id.eds.requester.tools.JobUtils.initStageDetails
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService}
 import org.apache.log4j.Logger
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, explode}
 
 import java.security.SecureRandom
@@ -102,6 +102,12 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       else countPatientsWithResolver()
     }
 
+    def computeRatio(criteriaDataframe: DataFrame, resultDataframe: DataFrame, resultCount: Long) = {
+      val count = criteriaDataframe.join(resultDataframe, ResultColumn.SUBJECT).count()
+      val ratio = count.toDouble / resultCount
+      ratio.toString
+    }
+
     if (request.sourcePopulation.cohortList.isEmpty)
       throw new Exception(
         "INPUT JSON cannot be processed (missing input 'sourcePopulation' and/or 'request')")
@@ -136,8 +142,7 @@ case class CountQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           .map(
             dfs =>
               dfs.map(x =>
-                s"criteria_ratio_${x._1}" ->
-                 (x._2.join(result, ResultColumn.SUBJECT).count() / resultCount).toString)
+                s"criteria_ratio_${x._1}" -> computeRatio(x._2, result, resultCount))
               .toMap
           )
           .getOrElse(
