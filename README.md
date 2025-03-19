@@ -65,7 +65,9 @@ The job query format is as follows :
           // or "ratio", this will activate a detailed count of final matched patients per criteria
            "details": "<details>",
           // optional sampling ratio value between 0.0 and 1.0 to limit the number of patients of the cohort to create (it can be used to sample an existing cohort)
-           "sampling": "<sampling>" 
+           "sampling": "<sampling>",
+          // optional cohort id to use as a base for the "createDiff" mode
+           "baseCohortId": "<base cohort id>"
         },
         "callbackUrl": "<callback url>" // optional callback url to retrieve the result
     }
@@ -75,6 +77,7 @@ The job query format is as follows :
 with `mode` being one of the following values:
 - `count` : Return the number of patients that match the criteria of the `cohortDefinitionSyntax`
 - `create`: Create a cohort of patients that match the criteria of the `cohortDefinitionSyntax`
+- `create_diff`: Create a change list from a base cohort of patients (defined in `modeOptions`) and the new/deleted ones that match the criteria of the `cohortDefinitionSyntax`
 
 and `cohortDefinitionSyntax` being a JSON string that represents the criteria described in the [query format section](#query-format).
 
