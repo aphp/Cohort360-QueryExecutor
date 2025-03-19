@@ -205,9 +205,18 @@ class JobManager() {
               job.classPath)
   }
 
-  def cancelJob(jobId: String): Unit = {
+  def cancelJob(jobId: String): JobStatus = {
     logger.info(s"Canceling job ${jobId}")
     sparkSession.sparkContext.cancelJobGroup(jobId)
+    val existingJob = jobs(jobId)
+    jobs(jobId) = JobInfo(JobExecutionStatus.KILLED,
+      jobId,
+      "",
+      existingJob.startTime,
+      s"${OffsetDateTime.now(ZoneId.of("UTC")).toInstant.toEpochMilli - existingJob.startTime.toInstant.toEpochMilli} ms",
+      None,
+      existingJob.classPath,
+      existingJob.execution)
     JobStatus(JobExecutionStatus.KILLED,
       jobId,
       "",
