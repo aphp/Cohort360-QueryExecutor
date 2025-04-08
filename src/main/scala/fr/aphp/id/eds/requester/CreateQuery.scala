@@ -8,10 +8,16 @@ import fr.aphp.id.eds.requester.tools.JobUtils.addEmptyGroup
 import fr.aphp.id.eds.requester.tools.{JobUtils, JobUtilsService, StageDetails}
 import org.apache.log4j.Logger
 import org.apache.spark.sql.{SparkSession, functions => F}
+import org.hl7.fhir.r4.model.ListResource.ListMode
 
 object CreateOptions extends Enumeration {
   type CreateOptions = String
   val sampling = "sampling"
+}
+
+object CreateDiffOptions extends Enumeration {
+  type CreateDiffOptions = String
+  val baseCohortId = "baseCohortId"
 }
 
 case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
@@ -36,10 +42,13 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
       runtime: JobEnv,
       data: SparkJobParameter
   ): JobBaseResult = {
-    implicit val (request, criterionTagsMap, omopTools, resourceResolver, cacheEnabled) =
+    implicit val (request, criterionTagsMap, omopTools, resourceResolver, cacheEnabled) = {
       jobUtilsService.initSparkJobRequest(logger, spark, runtime, data)
+    }
+    implicit val sparkSession: SparkSession = spark
 
     validateRequestOrThrow(request)
+    validateModeOptionsOrThrow(data)
 
     // Init values here because we are in an object (i.e a singleton) and not a class
     var status: String = ""
@@ -72,12 +81,13 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           .filter(c => cohort.columns.contains(c))
           .map(c => F.col(c)): _*)
       .dropDuplicates()
+      .withColumn("deleted", F.lit(false))
 
     if (data.modeOptions.contains(CreateOptions.sampling)) {
       val sampling = data.modeOptions(CreateOptions.sampling).toDouble
       // https://stackoverflow.com/questions/37416825/dataframe-sample-in-apache-spark-scala#comment62349780_37418684
       // to be sure to have the right number of rows
-      cohort = cohort.sample(sampling+0.1).limit((sampling * cohort.count()).round.toInt)
+      cohort = cohort.sample(sampling + 0.1).limit((sampling * cohort.count()).round.toInt)
     }
     cohort.cache()
     count = cohort.count()
@@ -93,8 +103,17 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
               data.cohortDefinitionSyntax,
               data.ownerEntityId,
               request.resourceType,
+              if (data.mode == JobType.createDiff && data.modeOptions.contains(
+                    CreateDiffOptions.baseCohortId))
+                Some(data.modeOptions(CreateDiffOptions.baseCohortId).toLong)
+              else None,
+              if (data.mode == JobType.createDiff) {
+                ListMode.CHANGES
+              } else {
+                ListMode.SNAPSHOT
+              },
               count
-            ))
+          ))
         .getOrElse(-1L)
     }
     // get a new cohortId
@@ -107,17 +126,57 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
 
     //  upload into pg and solr
     if (omopTools.isDefined) {
+      val cohortToUpload =
+        if (data.mode == JobType.createDiff && data.modeOptions.contains(
+              CreateDiffOptions.baseCohortId)) {
+          val baseCohortItems =
+            omopTools.get.readCohortEntries(data.modeOptions(CreateDiffOptions.baseCohortId).toLong)
+          baseCohortItems
+            .join(cohort,
+                  baseCohortItems("_itemreferenceid") === cohort(ResultColumn.SUBJECT),
+                  "full_outer")
+            .filter(
+              baseCohortItems("_itemreferenceid").isNull || F
+                .col(ResultColumn.SUBJECT)
+                .isNull)
+            .select(
+              F.coalesce(baseCohortItems("_itemreferenceid"), cohort(ResultColumn.SUBJECT))
+                .as(ResultColumn.SUBJECT),
+              F.when(cohort(ResultColumn.SUBJECT).isNull, true).otherwise(false).as("deleted")
+            )
+        } else {
+          cohort
+        }
+
       omopTools.get.updateCohort(
         cohortDefinitionId,
-        cohort,
+        cohortToUpload,
         completeRequest.sourcePopulation,
         count,
-        cohortSizeBiggerThanLimit,
+        cohortSizeBiggerThanLimit || data.mode == JobType.createDiff,
         request.resourceType
       )
     }
 
     getCreationResult(cohortDefinitionId, count, status)
+  }
+
+  private def validateModeOptionsOrThrow(data: SparkJobParameter): Unit = {
+    val modeOptions = data.modeOptions
+    if (data.mode == JobType.createDiff) {
+      if (modeOptions.contains(CreateOptions.sampling)) {
+        throw new RuntimeException("Can't use sampling with createDiff mode")
+      }
+      if (!modeOptions.contains(CreateDiffOptions.baseCohortId)) {
+        throw new RuntimeException("baseCohortId is required for createDiff mode")
+      }
+    }
+    if (modeOptions.contains(CreateOptions.sampling)) {
+      val sampling = modeOptions(CreateOptions.sampling).toDouble
+      if (sampling <= 0 || sampling > 1) {
+        throw new RuntimeException("Sampling value should be between 0 and 1")
+      }
+    }
   }
 
   private def getCreationResult(cohortDefinitionId: Long,
