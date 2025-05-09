@@ -61,7 +61,7 @@ class JobManager() {
         finalizeJob(jobId, Right(result), jobExecutor, jobData.mode, jobData)
       case Failure(wrapped: Throwable) =>
         logger.error(s"Job ${jobId} failed", wrapped)
-        if (retry < autoRetry) {
+        if (retry < autoRetry && !isACancellationError(wrapped)) {
           logger.info(s"Retrying job ${jobId}")
           execJob(jobExecutor, jobData, retry + 1)
         } else {
@@ -127,7 +127,7 @@ class JobManager() {
     val (status, execution) =
       result match {
         case Left(wrappedError) => {
-          if (wrappedError.getMessage.contains("cancelled part of cancelled job group")) {
+          if (isACancellationError(wrappedError)) {
             (JobExecutionStatus.KILLED, Future.failed(wrappedError.getCause))
           } else {
             (JobExecutionStatus.ERROR, Future.failed(wrappedError.getCause))
@@ -143,6 +143,10 @@ class JobManager() {
                           Some(List(formattedResult)),
                           jobExecutor.getClass.getCanonicalName,
                           execution)
+  }
+
+  private def isACancellationError(wrappedError: Throwable): Boolean = {
+    wrappedError.getMessage.contains("cancelled part of cancelled job group")
   }
 
   private def buildResult(result: Either[Throwable, JobBaseResult],
