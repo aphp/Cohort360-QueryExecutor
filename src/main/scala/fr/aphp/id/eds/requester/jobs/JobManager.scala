@@ -23,8 +23,7 @@ case class JobInfo(status: String,
                    classPath: String,
                    execution: Future[AnyRef])
 
-class JobManager() {
-  val sparkSession: SparkSession = SparkConfig.sparkSession
+class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(AppConfig.get.business.jobs.threads))
   val jobs: mutable.Map[String, JobInfo] = TrieMap()
@@ -63,6 +62,7 @@ class JobManager() {
         logger.error(s"Job ${jobId} failed", wrapped)
         if (retry < autoRetry && !isACancellationError(wrapped)) {
           logger.info(s"Retrying job ${jobId}")
+          updateJob(jobId, Left(wrapped), jobExecutor, jobData.mode)
           execJob(jobExecutor, jobData, retry + 1)
         } else {
           finalizeJob(jobId, Left(wrapped), jobExecutor, jobData.mode, jobData)

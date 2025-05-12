@@ -10,15 +10,28 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.hl7.fhir.r4.model.Bundle
 import org.mockito.Mockito.when
 import org.mockito.MockitoSugar.mock
+import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuiteLike
 
-class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer {
+class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer with BeforeAndAfter {
   System.setProperty("config.resource", "application.test.conf")
-  implicit val sparkSession: SparkSession = SparkSession
-    .builder()
-    .master("local[*]")
-    .config("spark.sql.session.timeZone", "Europe/Paris")
-    .getOrCreate()
+
+  implicit var sparkSession: SparkSession = _
+
+  before {
+    // Create SparkSession
+    sparkSession = SparkSession.builder()
+      .appName("Spark Unit Testing")
+      .master("local[*]")
+      .config("spark.sql.session.timeZone", "Europe/Paris")
+      .getOrCreate()
+  }
+
+  after {
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
+  }
 
   def mockGetBundle(restFhirClient: RestFhirClient,
                     dataPath: String,

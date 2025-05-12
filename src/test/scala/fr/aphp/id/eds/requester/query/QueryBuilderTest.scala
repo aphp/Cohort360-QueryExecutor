@@ -19,16 +19,30 @@ import org.mockito.{AdditionalAnswers, ArgumentMatchersSugar}
 import org.mockito.MockitoSugar.{doAnswer, mock, when}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuiteLike
 
+import java.nio.file.Files
 import scala.io.Source
 
-class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer {
+class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer with BeforeAndAfterAll {
   System.setProperty("config.resource", "application.test.conf")
-  val sparkSession: SparkSession = SparkSession
-    .builder()
-    .master("local[*]")
-    .getOrCreate()
+  var sparkSession: SparkSession = _
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    sparkSession = SparkSession
+      .builder()
+      .master("local[*]")
+      .getOrCreate()
+  }
+
+  override def afterAll(): Unit = {
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
+    super.afterAll()
+  }
 
   def testCaseEvaluate(folderCase: String,
                        withOrganizationsDetail: Boolean = false,

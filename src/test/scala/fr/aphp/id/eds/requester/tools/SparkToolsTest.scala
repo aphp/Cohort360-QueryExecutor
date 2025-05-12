@@ -2,14 +2,26 @@ package fr.aphp.id.eds.requester.tools
 
 import com.github.mrpowers.spark.fast.tests.DatasetComparer
 import org.apache.spark.sql.SparkSession
+import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuiteLike
 
-class SparkToolsTest extends AnyFunSuiteLike with DatasetComparer {
+class SparkToolsTest extends AnyFunSuiteLike with DatasetComparer with BeforeAndAfter {
   System.setProperty("config.resource", "application.test.conf")
-  val sparkSession: SparkSession = SparkSession
-    .builder()
-    .master("local[*]")
-    .getOrCreate()
+  var sparkSession: SparkSession = _
+
+  before {
+    // Create SparkSession
+    sparkSession = SparkSession.builder()
+      .appName("Spark Unit Testing")
+      .master("local[*]")
+      .getOrCreate()
+  }
+
+  after {
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
+  }
 
   test("cache") {
     val someDf = sparkSession.createDataFrame(Seq((1, "foo"), (2, "bar"))).toDF("id", "name")

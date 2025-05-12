@@ -4,7 +4,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.col
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.testcontainers.containers.PostgreSQLContainer
@@ -12,16 +12,18 @@ import org.scalatest.funsuite.AnyFunSuiteLike
 
 import java.nio.file.{Files, Path}
 
-class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll {
-  val sparkSession: SparkSession = SparkSession
-    .builder()
-    .master("local[*]")
-    .getOrCreate()
+class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll with BeforeAndAfter {
+  var sparkSession: SparkSession = _
+
   private var tempDir: java.nio.file.Path = _
   private val postgresContainer = new PostgreSQLContainer("postgres:15.3")
 
   override def beforeAll(): Unit = {
     super.beforeAll()
+    sparkSession = SparkSession.builder()
+      .appName("Spark Unit Testing")
+      .master("local[*]")
+      .getOrCreate()
     tempDir = Files.createTempDirectory("test-temp-dir")
     postgresContainer.start()
     postgresContainer.withPassword("test")
@@ -34,10 +36,14 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll {
     super.afterAll()
     FileUtils.deleteDirectory(tempDir.toFile)
     postgresContainer.stop()
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
   }
 
   test("testOutputBulk") {
-    import sparkSession.implicits._
+    val spark = sparkSession
+    import spark.implicits._
     val pgUrl = s"jdbc:postgresql://${postgresContainer.getHost}:${postgresContainer.getFirstMappedPort}/${postgresContainer.getDatabaseName}?user=${postgresContainer.getUsername}&currentSchema=public"
     val pgTool = PGTool(sparkSession, pgUrl, tempDir.toString, pgPassFile = new org.apache.hadoop.fs.Path(tempDir.resolve(".pgpass").toString))
     val createTableQuery = """
