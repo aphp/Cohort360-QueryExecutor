@@ -52,6 +52,7 @@ class JobManagerTest extends AnyFunSuiteLike with BeforeAndAfterEach with Before
     sparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .config("spark.sql.session.timeZone", "Europe/Paris")
       .getOrCreate()
     jobManager = new JobManager(sparkSession)

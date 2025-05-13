@@ -23,6 +23,7 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll wi
     sparkSession = SparkSession.builder()
       .appName("Spark Unit Testing")
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
     tempDir = Files.createTempDirectory("test-temp-dir")
     postgresContainer.start()

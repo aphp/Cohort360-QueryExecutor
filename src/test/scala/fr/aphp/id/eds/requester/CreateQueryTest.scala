@@ -29,6 +29,7 @@ class CreateQueryTest extends AnyFunSuiteLike with BeforeAndAfterAll with Datase
     sparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .appName("PGCohortCreationTest")
       .getOrCreate()
   }

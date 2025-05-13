@@ -55,6 +55,7 @@ class CountQueryTest extends AnyFunSuiteLike {
     val sparkSession: SparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
 
     val queryBuilderMock = mock[QueryBuilder]
@@ -102,6 +103,7 @@ class CountQueryTest extends AnyFunSuiteLike {
     val sparkSession: SparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
 
     val queryBuilderMock = mock[QueryBuilder]
@@ -153,6 +155,7 @@ class CountQueryTest extends AnyFunSuiteLike {
     val sparkSession: SparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
 
     val queryBuilderMock = mock[QueryBuilder]

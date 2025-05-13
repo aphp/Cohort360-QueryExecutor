@@ -13,6 +13,7 @@ class SparkToolsTest extends AnyFunSuiteLike with DatasetComparer with BeforeAnd
     // Create SparkSession
     sparkSession = SparkSession.builder()
       .appName("Spark Unit Testing")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .master("local[*]")
       .getOrCreate()
   }

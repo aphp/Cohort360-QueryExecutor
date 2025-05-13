@@ -1,19 +1,23 @@
 package fr.aphp.id.eds.requester.cohort.fhir
 
-import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.types.{BooleanType, LongType, StructField, StructType}
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
-import fr.aphp.id.eds.requester.{FhirServerConfig, ResultColumn}
 import fr.aphp.id.eds.requester.query.resolver.rest.DefaultRestFhirClient
-import org.apache.spark.sql.SparkSession
+import fr.aphp.id.eds.requester.{FhirServerConfig, ResultColumn}
+import org.apache.spark.sql.types.{BooleanType, LongType, StructField, StructType}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.hl7.fhir.r4.model.ListResource.ListMode
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.funsuite.AnyFunSuiteLike
 import org.scalatest.matchers.should.Matchers
 
-class FhirCohortCreationTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterEach {
+class FhirCohortCreationTest
+    extends AnyFunSuiteLike
+    with Matchers
+    with BeforeAndAfterEach
+    with BeforeAndAfterAll {
+  implicit var sparkSession: SparkSession = _
   val Port = 8080
   val Host = "localhost"
   val wireMockServer = new WireMockServer(wireMockConfig().port(Port))
@@ -26,6 +30,22 @@ class FhirCohortCreationTest extends AnyFunSuiteLike with Matchers with BeforeAn
     println(request)
     println(response)
   })
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    sparkSession = SparkSession
+      .builder()
+      .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
+      .getOrCreate()
+  }
+
+  override def afterAll(): Unit = {
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
+    super.afterAll()
+  }
 
   override def beforeEach: Unit = {
     wireMockServer.start()
@@ -248,7 +268,11 @@ class FhirCohortCreationTest extends AnyFunSuiteLike with Matchers with BeforeAn
     )
 
     implicit val sparkSession: SparkSession =
-      SparkSession.builder().master("local[*]").getOrCreate()
+      SparkSession
+        .builder()
+        .master("local[*]")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .getOrCreate()
 
     val data = Seq(
       Row(1L, false),
@@ -282,8 +306,6 @@ class FhirCohortCreationTest extends AnyFunSuiteLike with Matchers with BeforeAn
   }
 
   test("testReadCohortEntries") {
-    implicit val sparkSession: SparkSession =
-      SparkSession.builder().master("local[*]").getOrCreate()
     wireMockServer.addStubMapping(
       WireMock
         .get(WireMock.urlEqualTo("/List/1"))

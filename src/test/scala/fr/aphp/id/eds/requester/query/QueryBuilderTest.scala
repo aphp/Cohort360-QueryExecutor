@@ -34,6 +34,7 @@ class QueryBuilderTest extends AnyFunSuiteLike with DatasetComparer with BeforeA
     sparkSession = SparkSession
       .builder()
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
   }
 

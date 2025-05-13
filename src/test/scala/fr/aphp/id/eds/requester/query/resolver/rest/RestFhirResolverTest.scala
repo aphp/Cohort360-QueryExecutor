@@ -23,6 +23,7 @@ class RestFhirResolverTest extends AnyFunSuiteLike with DatasetComparer with Bef
     sparkSession = SparkSession.builder()
       .appName("Spark Unit Testing")
       .master("local[*]")
+      .config("spark.driver.bindAddress", "127.0.0.1")
       .config("spark.sql.session.timeZone", "Europe/Paris")
       .getOrCreate()
   }
