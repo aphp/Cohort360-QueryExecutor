@@ -65,6 +65,12 @@ class QueryBuilderBasicResource(val querySolver: ResourceResolver) {
     // check patient age at the date of the resource / WARNING : what date to choose : encounter start date is forced now
     if (basicResource.patientAge.isDefined) {
       val patientAge = basicResource.patientAge.get
+      if (patientAge.maxAge.isEmpty && patientAge.minAge.isEmpty) {
+        logger.warn(
+          s"Basic Resource with _id=$criterionId : filterByPatientAge : " +
+            s"patientAge is defined but minAge and maxAge are not defined, no filtering will be applied")
+        return criterionDataFrame
+      }
 
       val datePreference =
         patientAge.datePreference.getOrElse(
