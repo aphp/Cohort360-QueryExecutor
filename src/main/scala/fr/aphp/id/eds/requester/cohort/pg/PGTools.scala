@@ -232,7 +232,8 @@ object PGTool extends java.io.Serializable with LazyLogging {
             "Bulk load failed, retrying with filtering existing items"
           )
           // try again with filtering the original dataframe with existing items
-          val selectedColumns = if (primaryKeys.isEmpty) "*" else primaryKeys.map(sanP).mkString(",")
+          val selectedColumns =
+            if (primaryKeys.isEmpty) "*" else primaryKeys.map(sanP).mkString(",")
           val existingItems = sqlExecWithResult(
             spark,
             url,
@@ -240,13 +241,14 @@ object PGTool extends java.io.Serializable with LazyLogging {
             password
           )
           val existingItemsSet = existingItems.collect().map(_.mkString(",")).toSet
-          val dfWithSelectedColumns = if (primaryKeys.isEmpty) df else df.select(primaryKeys.map(col): _*)
+          val dfWithSelectedColumns =
+            if (primaryKeys.isEmpty) df else df.select(primaryKeys.map(col): _*)
           val dfFiltered = dfWithSelectedColumns
             .filter(
               row =>
                 !existingItemsSet.contains(
                   row.mkString(",")
-                )
+              )
             )
           outputBulk(
             spark,
@@ -298,27 +300,28 @@ object PGTool extends java.io.Serializable with LazyLogging {
       val conn = connOpen(url, password)
       val res = Try {
         x.map { s =>
-          {
-            val stream: InputStream = FileSystem
-              .get(new Configuration())
-              .open(new Path(s._2))
-              .getWrappedStream
-            val copyManager: CopyManager =
-              new CopyManager(conn.asInstanceOf[BaseConnection])
-            copyManager.copyIn(sqlCopy, stream, bulkLoadBufferSize)
-          }
+          val stream: InputStream = FileSystem
+            .get(new Configuration())
+            .open(new Path(s._2))
+            .getWrappedStream
+          val copyManager: CopyManager =
+            new CopyManager(conn.asInstanceOf[BaseConnection])
+          copyManager.copyIn(sqlCopy, stream, bulkLoadBufferSize)
         }.toList
       }
       conn.close()
       res match {
-        case Success(_) => Iterator(true)  // Partition succeeded
-        case Failure(error) => {
-          logger.error("Partition output loading failed", error)
-          Iterator(false) // Partition failed
-        }
+        case Success(_) => Iterator((true, None: Option[String])) // Partition succeeded
+        case Failure(error) =>
+          Iterator((false, Some(error.getMessage))) // Partition failed, return error message
       }
     })
-    !statusRdd.collect().contains(false)
+    val statusResults = statusRdd.collect()
+    val errors = statusResults.collect { case (false, Some(msg)) => msg }
+    if (errors.nonEmpty) {
+      errors.foreach(msg => logger.error(s"Partition output loading failed: $msg"))
+    }
+    !statusResults.exists(_._1 == false)
   }
 
   def outputBulkCsvLow(
