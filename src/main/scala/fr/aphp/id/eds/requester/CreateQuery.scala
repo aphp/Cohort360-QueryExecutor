@@ -81,7 +81,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
           .filter(c => cohort.columns.contains(c))
           .map(c => F.col(c)): _*)
       .dropDuplicates()
-      .withColumn("deleted", F.lit(false))
+      // TODO re add this optional column when the cohort table will have a deleted column
+      //.withColumn("deleted", F.lit(false))
 
     if (data.modeOptions.contains(CreateOptions.sampling)) {
       val sampling = data.modeOptions(CreateOptions.sampling).toDouble
@@ -135,13 +136,9 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
             .join(cohort,
                   baseCohortItems("_itemreferenceid") === cohort(ResultColumn.SUBJECT),
                   "full_outer")
-            .filter(
-              baseCohortItems("_itemreferenceid").isNull || F
-                .col(ResultColumn.SUBJECT)
-                .isNull)
+            .filter(baseCohortItems("_itemreferenceid").isNull || F.col(ResultColumn.SUBJECT).isNull)
             .select(
-              F.coalesce(baseCohortItems("_itemreferenceid"), cohort(ResultColumn.SUBJECT))
-                .as(ResultColumn.SUBJECT),
+              F.coalesce(baseCohortItems("_itemreferenceid"), cohort(ResultColumn.SUBJECT)).as(ResultColumn.SUBJECT),
               F.when(cohort(ResultColumn.SUBJECT).isNull, true).otherwise(false).as("deleted")
             )
         } else {
