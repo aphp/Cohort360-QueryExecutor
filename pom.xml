@@ -26,7 +26,7 @@
     <sparkfasttest.version>1.3.0</sparkfasttest.version>
     <fasterxml.version>2.15.4</fasterxml.version>
     <scalatra.version>2.7.1</scalatra.version>
-    <solr.version>8.11.0</solr.version>
+    <solr.version>9.8.0</solr.version>
     <hapifhir.version>7.2.1</hapifhir.version>
     <hadoop.version>2.6.5</hadoop.version>
     <spark-solr.version>4.0.4</spark-solr.version>
