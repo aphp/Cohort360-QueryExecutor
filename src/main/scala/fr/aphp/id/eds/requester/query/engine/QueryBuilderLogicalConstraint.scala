@@ -101,7 +101,7 @@ class QueryBuilderLogicalConstraint(val options: QueryExecutionOptions) {
         val filteredDf = groupDataFrame.join(
           patientListDataFrame,
           groupDataFrame(groupIdColumnName) === patientListDataFrame(groupIdColumnName),
-          "left_semi_join")
+          "left_semi")
         qbUtils.cleanDataFrame(filteredDf,
                                isGroupInTemporalConstraint,
                                selectedColumns,
