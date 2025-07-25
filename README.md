@@ -76,6 +76,8 @@ The job query format is as follows :
 
 with `mode` being one of the following values:
 - `count` : Return the number of patients that match the criteria of the `cohortDefinitionSyntax`
+- `count_all`: Return the number of patients that match the criteria of the `cohortDefinitionSyntax` and an estimation minimum and maximum bounds
+- `count_with_details`: Return the number of patients that match the criteria of the `cohortDefinitionSyntax` with a detailed count per organization
 - `create`: Create a cohort of patients that match the criteria of the `cohortDefinitionSyntax`
 - `create_diff`: Create a change list from a base cohort of patients (defined in `modeOptions`) and the new/deleted ones that match the criteria of the `cohortDefinitionSyntax`
 
