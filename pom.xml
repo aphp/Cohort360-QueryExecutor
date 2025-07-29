@@ -16,8 +16,8 @@
     <encoding>UTF-8</encoding>
 
     <scala.tools.version>2.12</scala.tools.version>
-    <scala.version>2.12.15</scala.version>
-    <spark.version>3.4.0</spark.version>
+    <scala.version>2.12.18</scala.version>
+    <spark.version>3.5.5</spark.version>
     <scala-logging.version>3.9.2</scala-logging.version>
     <postgres.version>42.4.4</postgres.version>
     <scalactic.version>3.2.10</scalactic.version>
@@ -26,10 +26,10 @@
     <sparkfasttest.version>1.3.0</sparkfasttest.version>
     <fasterxml.version>2.15.4</fasterxml.version>
     <scalatra.version>2.7.1</scalatra.version>
-    <solr.version>8.11.0</solr.version>
+    <solr.version>9.8.1</solr.version>
     <hapifhir.version>7.2.1</hapifhir.version>
     <hadoop.version>2.6.5</hadoop.version>
-    <spark-solr.version>4.0.4</spark-solr.version>
+    <spark-solr.version>4.1.0</spark-solr.version>
     <wiremock.version>3.3.1</wiremock.version>
     <postgrestest.version>1.20.4</postgrestest.version>
     <!--  Sonar  -->
@@ -38,12 +38,26 @@
     <release.name>RELEASE</release.name>
     <snapshot.name>SNAPSHOT</snapshot.name>
     <compiler.plugin.version>3.6.2</compiler.plugin.version>
-    <scoverage.plugin.version>1.4.11</scoverage.plugin.version>
+    <scoverage.plugin.version>2.0.3</scoverage.plugin.version>
     <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
 
   </properties>
 
-
+  <dependencyManagement>
+    <dependencies>
+      <!-- Force consistent ZooKeeper versions -->
+      <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper</artifactId>
+        <version>3.6.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.zookeeper</groupId>
+        <artifactId>zookeeper-jute</artifactId>
+        <version>3.6.3</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -57,6 +71,22 @@
       <version>1.0.2</version>
     </dependency>
 
+    <!-- Log4j dependencies - ensure all are same version -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>2.20.0</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-layout-template-json</artifactId>
@@ -68,16 +98,39 @@
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.tools.version}</artifactId>
       <version>${spark.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.tools.version}</artifactId>
       <version>${spark.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-buffer</artifactId>
-      <version>4.1.86.Final</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
 
@@ -118,10 +171,49 @@
       <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>com.lucidworks.spark</groupId>
+      <groupId>io.github.pl-buiquang</groupId>
       <artifactId>spark-solr</artifactId>
       <version>${spark-solr.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-kqueue</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-hive_2.12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-streaming_2.12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-auth</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-hdfs-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-reload4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+
     <dependency>
       <groupId>org.apache.solr</groupId>
       <artifactId>solr-core</artifactId>
@@ -233,7 +325,12 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-webapp</artifactId>
-      <version>9.4.51.v20230217</version>
+      <version>10.0.22</version>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+      <version>10.0.22</version>
     </dependency>
 
 
@@ -303,8 +400,6 @@
       <version>${postgrestest.version}</version>
       <scope>test</scope>
     </dependency>
-
-
 
 
 

@@ -486,32 +486,32 @@ object PGTool extends java.io.Serializable with LazyLogging {
       obj match {
         case s: String       => st.setString(i + 1, s)
         case Some(s: String) => st.setString(i + 1, s)
-        case s: Option[String] if s.isEmpty =>
+        case s: Option[String] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.VARCHAR)
         case b: Boolean       => st.setBoolean(i + 1, b)
         case Some(b: Boolean) => st.setBoolean(i + 1, b)
-        case s: Option[Boolean] if s.isEmpty =>
+        case s: Option[Boolean] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.BOOLEAN)
         case l: Long       => st.setLong(i + 1, l)
         case Some(l: Long) => st.setLong(i + 1, l)
-        case s: Option[Long] if s.isEmpty =>
+        case s: Option[Long] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.BIGINT)
         case i: Integer       => st.setInt(i + 1, i)
         case Some(i: Integer) => st.setInt(i + 1, i)
-        case s: Option[Integer] if s.isEmpty =>
+        case s: Option[Integer] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.INTEGER)
         case b: java.math.BigDecimal => st.setDouble(i + 1, b.doubleValue())
         case Some(b: java.math.BigDecimal) =>
           st.setDouble(i + 1, b.doubleValue())
-        case s: Option[java.math.BigDecimal] if s.isEmpty =>
+        case s: Option[java.math.BigDecimal] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.DOUBLE)
         case d: java.sql.Date       => st.setDate(i + 1, d)
         case Some(d: java.sql.Date) => st.setDate(i + 1, d)
-        case s: Option[java.sql.Date] if s.isEmpty =>
+        case s: Option[java.sql.Date] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.DATE)
         case t: Timestamp       => st.setTimestamp(i + 1, t)
         case Some(t: Timestamp) => st.setTimestamp(i + 1, t)
-        case s: Option[Timestamp] if s.isEmpty =>
+        case s: Option[Timestamp] @unchecked if s.isEmpty =>
           st.setNull(i + 1, java.sql.Types.TIMESTAMP)
         case _ =>
           throw new UnsupportedEncodingException(
