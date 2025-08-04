@@ -13,7 +13,7 @@ echo -e "httpBasicAuthUser=$SOLR_USER\nhttpBasicAuthPassword=$SOLR_PASSWORD" > s
 # additional driver JVM option
 #envsubst < log4j-jobserver.properties > tmp.properties && mv tmp.properties log4j-jobserver.properties
 #export LOG_OPT="-Dlog4j.configuration=file:log4j-jobserver.properties"
-export JAVA_SOLR_OPT="-Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=solr_auth.txt"
+export JAVA_SOLR_OPT="-Dlog4j.logger.com.lucidworks.spark=DEBUG -Dlog4j.logger.org.apache.solr=DEBUG -Dsolr.httpclient.builder.factory=org.apache.solr.client.solrj.impl.PreemptiveBasicAuthClientBuilderFactory -Dsolr.httpclient.config=solr_auth.txt"
 
 echo $LOG_OPT
 # start server

@@ -23,7 +23,7 @@ class DefaultSolrSparkReader(solrConfig: SolrConfig) extends SolrSparkReader {
       fn
     } match {
       case util.Success(x) => x
-      case _ if n > 1      => retry(n - 1)(fn)
+      case _ if n > 1 => retry(n - 1)(fn)
       case util.Failure(e) =>
         throw e
     }
@@ -38,7 +38,11 @@ class DefaultSolrSparkReader(solrConfig: SolrConfig) extends SolrSparkReader {
     val mapRequest = solrConf.filter(c => c._1 != "max_try") ++ Map(
       "collection" -> solrCollection,
       "fields" -> solrFilterList,
-      "solr.params" -> solrFilterQuery)
+      "solr.params" -> solrFilterQuery,
+      "zkClientTimeout" -> "5000", // 5 seconds
+      "zkConnectTimeout" -> "10000", // 10 seconds
+      "httpTimeout" -> "30000" // 30 seconds
+    )
 
     import com.lucidworks.spark.util.SolrDataFrameImplicits._
     val df: DataFrame = retry(solrConf.getOrElse("max_try", "1").toInt) {
