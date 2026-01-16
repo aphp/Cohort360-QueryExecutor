@@ -41,7 +41,7 @@ package object solr {
     }
 
     object Condition {
-      final val RECORDED_DATE = "recordedDate"
+      final val RECORDED_DATE = "onsetDateTime"
       final val CODE = "code.coding.display"
     }
 
