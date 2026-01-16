@@ -43,7 +43,7 @@ class SolrQueryElementsConfig extends ResourceConfig {
     FhirResource.OBSERVATION -> buildDefaultMap(List(SolrColumn.Observation.EFFECTIVE_DATETIME),
       codeCol = Some(List(SolrColumn.Observation.CODE))
     ),
-    FhirResource.CONDITION -> buildDefaultMap(List(SolrColumn.Condition.RECORDED_DATE),
+    FhirResource.CONDITION -> buildDefaultMap(List(SolrColumn.Condition.ONSET_DATETIME),
       codeCol = Some(List(SolrColumn.Condition.CODE))
     ),
     FhirResource.PATIENT -> Map(QueryColumn.PATIENT -> List(SolrColumn.PATIENT),
