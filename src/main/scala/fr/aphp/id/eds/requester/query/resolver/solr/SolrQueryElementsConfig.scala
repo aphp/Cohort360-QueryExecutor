@@ -53,9 +53,6 @@ class SolrQueryElementsConfig extends ResourceConfig {
     FhirResource.COMPOSITION -> buildDefaultMap(List(SolrColumn.Document.DATE)),
     FhirResource.GROUP -> Map(QueryColumn.PATIENT -> List(SolrColumn.Group.RESOURCE_ID),
                               QueryColumn.ID -> List(SolrColumn.ID)),
-    FhirResource.CLAIM -> buildDefaultMap(List(SolrColumn.Claim.CREATED),
-      codeCol = Some(List(SolrColumn.Claim.CODE))
-    ),
     FhirResource.PROCEDURE -> buildDefaultMap(List(SolrColumn.Procedure.DATE),
       codeCol = Some(List(SolrColumn.Procedure.CODE))
     ),

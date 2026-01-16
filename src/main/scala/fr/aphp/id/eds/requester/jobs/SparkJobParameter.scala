@@ -35,7 +35,6 @@ object JobType extends Enumeration {
 
 object ResourceType extends Enumeration {
   type ResourceType = String
-  val claim = "Claim"
   val condition = "Condition"
   val documentReference = "DocumentReference"
   val encounter = "Encounter"
@@ -48,7 +47,6 @@ object ResourceType extends Enumeration {
   val questionnaireResponse = "QuestionnaireResponse"
 
   val all: Seq[ResourceType] = Seq(
-    claim,
     condition,
     documentReference,
     encounter,
