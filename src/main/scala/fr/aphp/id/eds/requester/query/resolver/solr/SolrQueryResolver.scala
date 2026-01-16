@@ -49,7 +49,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader,
       if (codeColumns.nonEmpty) {
         criterionDataFrame = criterionDataFrame.withColumn(
           QueryColumn.CODE,
-          array_join(array(codeColumns.map((c) => col(s"`${c}`")): _*), ",")
+          array_join(array(codeColumns.map(c => col(s"`$c`")): _*), ",")
         )
       }
     }
@@ -79,7 +79,7 @@ class SolrQueryResolver(solrSparkReader: SolrSparkReader,
       return ""
     }
     val list = sourcePopulation.cohortList.get.map(x => x.toString).mkString(" ")
-    s"_list:(${list}) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:(${list})' score=none method=crossCollection})"
+    s"_list:($list) OR ({!join from=resourceId to=_subject fromIndex=groupAphp v='groupId:($list)' score=none method=crossCollection})"
   }
 
   /**
@@ -136,7 +136,6 @@ object SolrCollections {
     FhirResource.CONDITION -> CONDITION_APHP,
     FhirResource.PROCEDURE -> PROCEDURE_APHP,
     FhirResource.DOCUMENT_REFERENCE -> DOCUMENTREFERENCE_APHP,
-    FhirResource.CLAIM -> CLAIM_APHP,
     FhirResource.COMPOSITION -> COMPOSITION_APHP,
     FhirResource.GROUP -> GROUP_APHP,
     FhirResource.MEDICATION_REQUEST -> MEDICATIONREQUEST_APHP,

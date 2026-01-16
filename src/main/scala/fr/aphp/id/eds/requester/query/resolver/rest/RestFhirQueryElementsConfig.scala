@@ -49,8 +49,6 @@ class RestFhirQueryElementsConfig extends ResourceConfig {
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("effectivePeriod.start"), codeColumn = Some("medicationCodeableConcept.coding.code"))),
     FhirResource.DOCUMENT_REFERENCE -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"))),
-    FhirResource.CLAIM -> addJoinedResourceColumns(
-      defaultResourceMapping(Some("subject"), Some("encounter"), Some("created"), codeColumn = Some("diagnosis.diagnosisCodeableConcept.coding.code"))),
     FhirResource.PROCEDURE -> addJoinedResourceColumns(
       defaultResourceMapping(Some("subject"), Some("encounter"), Some("date"), codeColumn = Some("code.coding.code"))),
     FhirResource.IMAGING_STUDY -> addJoinedResourceColumns(
