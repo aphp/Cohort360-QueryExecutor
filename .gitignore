@@ -55,3 +55,4 @@ solr_auth*
 postgresql.jar
 log/
 cre.env
+.env

@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+    container_name: sjs-app-local
+    environment:
+      - PG_HOST=db
+      - SPARK_MASTER=spark://spark-master:7077
+    ports:
+      - 8091:8091
+    env_file:
+      - .env
+
+  spark-master:
+    container_name: spark-master-local
+
+  worker-1:
+    container_name: spark-worker-1-local
+
+  worker-2:
+    container_name: spark-worker-2-local
+
+  # Optional: PostgreSQL for local development
+  db:
+    image: postgres:15
+    container_name: sjs-db-local
+    environment:
+      POSTGRES_DB: omop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5555:5555

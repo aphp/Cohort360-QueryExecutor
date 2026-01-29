@@ -10,21 +10,30 @@ The Cohort Requester is a spark application server for querying FHIR data with a
 
 ## Quick Start
 
+### 1. Configuration
+
 Fill in the configuration file `src/main/resources/application.conf` with the appropriate values.
-Or use the following minimal needed environment variables:
+Or use environment variables. For local development, you can create a `.env` file at the root of the project:
+
 ```bash
-# The URL of the FHIR server
-export FHIR_URL=http://localhost:8080/fhir
+# The URL of the FHIR server 
+export FHIR_URL=http://localhost:XXXX # "if FHIR local otherwise put the URL of your FHIR server (for a test with a public FHIR #http://hapi.fhir.org/baseR4)"
+# URL of the associated Django API for callbacks
+export DJANGO_CALLBACK_URL=http://localhost:8000
 ```
+
+### 2. Build
 
 Build the project with maven:
 ```bash
-mvn clean package
+./mvnw clean package -DskipTests
 ```
+
+### 3. Run
 
 Run the application server:
 ```bash
-java \ 
+java \
   --add-opens=java.base/java.lang=ALL-UNNAMED \
   --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
   --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
@@ -52,6 +61,23 @@ curl -X POST http://localhost:8090/jobs -H "Content-Type: application/json" -d '
 }'
 ```
 
+### Check Job Status
+
+You can list all jobs:
+```bash
+curl http://localhost:8090/jobs
+```
+
+Or check the status of a specific job using its `jobId` (returned in the POST response):
+```bash
+curl http://localhost:8090/jobs/<jobId>
+```
+
+To cancel a job:
+```bash
+curl -X DELETE http://localhost:8090/jobs/<jobId>
+```
+
 ## Job Queries
 
 The job query format is as follows :
@@ -60,16 +86,12 @@ The job query format is as follows :
     "input": {
         "cohortDefinitionSyntax": "<cohort definition syntax>",
         "mode": "<mode>",
-        "modeOptions": { // optional mode options
-          // optional list of criteria ids separated by commas or "all", this will activate a detailed count of the patients per criteria
-          // or "ratio", this will activate a detailed count of final matched patients per criteria
+        "modeOptions": {
            "details": "<details>",
-          // optional sampling ratio value between 0.0 and 1.0 to limit the number of patients of the cohort to create (it can be used to sample an existing cohort)
            "sampling": "<sampling>",
-          // optional cohort id to use as a base for the "createDiff" mode
            "baseCohortId": "<base cohort id>"
         },
-        "callbackUrl": "<callback url>" // optional callback url to retrieve the result
+        "callbackUrl": "<callback url>"
     }
 }
 ```
