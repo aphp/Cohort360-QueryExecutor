@@ -40,13 +40,8 @@ package object solr {
       final val CODE = "code.coding.display.anabio"
     }
 
-    object Claim {
-      final val CREATED = "created"
-      final val CODE = "diagnosis.diagnosisCodeableConcept.coding.display"
-    }
-
     object Condition {
-      final val RECORDED_DATE = "recordedDate"
+      final val RECORDED_DATE = "onsetDateTime"
       final val CODE = "code.coding.display"
     }
 
