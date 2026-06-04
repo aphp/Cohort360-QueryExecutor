@@ -41,8 +41,8 @@ class PGCohortCreationTest
       pgTools.sqlExecWithResult(
         """
         |insert into list_cohort360
-        |(hash, title, note__text, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size)
-        |values (-1, ?, ?, ?, ?, 'Cohort360', 'Practitioner', 'snapshot', 'retired', ?, now(), ?)
+        |(hash, title, note__text, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size, _key)
+        |values (-1, ?, ?, ?, ?, 'Cohort360', 'Practitioner', 'snapshot', 'retired', ?, now(), ?, '-1')
         |returning id
         |""".stripMargin,
         List("test", "test", "test", "Practitioner/test", "test", 1)
@@ -53,6 +53,31 @@ class PGCohortCreationTest
                                   "test",
                                   "test",
                                   None,
+                                  ListMode.SNAPSHOT,
+                                  1)
+  }
+
+  test("testCreateCohortWithBaseCohort") {
+    val pgTools = mock[PGTool]
+    val pgCohortCreation = new PGCohortCreation(pgTools)
+    val expectedResult: Dataset[Row] = mock[Dataset[Row]]
+    when(expectedResult.collect()).thenReturn(Array(Row(1L)))
+    when(
+      pgTools.sqlExecWithResult(
+        """
+        |insert into list_cohort360
+        |(hash, title, note__text, identifier, _sourcereferenceid, source__reference, _provider, source__type, mode, status, subject__type, date, _size, _key)
+        |values (-1, ?, ?, 42, ?, ?, 'Cohort360', 'Practitioner', 'snapshot', 'retired', ?, now(), ?, '42')
+        |returning id
+        |""".stripMargin,
+        List("test", "test", "test", "Practitioner/test", "test", 1)
+      )).thenReturn(expectedResult)
+    pgCohortCreation.createCohort("test",
+                                  Some("test"),
+                                  "test",
+                                  "test",
+                                  "test",
+                                  Some(42L),
                                   ListMode.SNAPSHOT,
                                   1)
   }

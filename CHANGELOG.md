@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🚀 Features
+
+- *(health)* Return 503 error if spark context is stopped
+- Add local development documentation (#21)
+
+### 🚜 Refactor
+
+- Mep BC 3.1 - add _key field in list table omop pg
+- Resource pmsi changes (#16)
+
+### 📚 Documentation
+
+- Add missing mode documentation
+
 ## [2.10.0] - 2025-07-01
 
 ### 🚀 Features
