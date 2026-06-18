@@ -33,7 +33,7 @@ class PGCohortCreation(pg: PGTool) extends CohortCreation with LazyLogging {
     } else {
       ("", "")
     }
-    val key_col = baseCohortId.map(_.toString).get
+    val key_col = baseCohortId.map(_.toString).getOrElse("-1")
     val stmt =
       s"""
          |insert into $cohort_table_rw

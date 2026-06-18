@@ -42,7 +42,7 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
     val autoRetry = AppConfig.get.business.jobs.autoRetry
     val jobExec = Future {
       logger.info(s"Job $jobId started")
-      sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
+      sparkSession.sparkContext.setJobGroup(jobId, s"new job $jobId", interruptOnCancel = true)
       sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
       jobExecutor.runJob(sparkSession, JobEnv(jobId, AppConfig.get), jobData)
     }
