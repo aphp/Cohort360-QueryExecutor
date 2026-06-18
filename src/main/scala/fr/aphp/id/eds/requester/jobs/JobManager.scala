@@ -36,9 +36,12 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
   def execJob(jobExecutor: JobBase, jobData: SparkJobParameter, retry: Int = 0): JobStatus = {
     val jobId = UUID.randomUUID().toString
     logger.info(s"Starting new job ${jobId}")
+    logger.info(
+      s"[${jobData.mode}] Job $jobId requested by user '${jobData.ownerEntityId}'" +
+        s" for cohort '${jobData.cohortDefinitionName}' - input query: ${jobData.cohortDefinitionSyntax}")
     val autoRetry = AppConfig.get.business.jobs.autoRetry
     val jobExec = Future {
-      logger.info(s"Job ${jobId} started")
+      logger.info(s"Job $jobId started")
       sparkSession.sparkContext.setJobGroup(jobId, s"new job ${jobId}", interruptOnCancel = true)
       sparkSession.sparkContext.setLocalProperty("spark.scheduler.pool", "fair")
       jobExecutor.runJob(sparkSession, JobEnv(jobId, AppConfig.get), jobData)
@@ -56,12 +59,17 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
     val job = jobs(jobId)
     jobExec.andThen {
       case Success(result) =>
-        logger.info(s"Job ${jobId} successfully executed")
+        logger.info(
+          s"[${jobData.mode}] Job ${jobId} requested by user '${jobData.ownerEntityId}'" +
+            s" finished successfully in ${formatElapsed(jobs(jobId).startTime)}")
         finalizeJob(jobId, Right(result), jobExecutor, jobData.mode, jobData)
       case Failure(wrapped: Throwable) =>
-        logger.error(s"Job ${jobId} failed", wrapped)
+        logger.error(
+          s"[${jobData.mode}] Job $jobId requested by user '${jobData.ownerEntityId}'" +
+            s" failed after ${formatElapsed(jobs(jobId).startTime)}",
+          wrapped)
         if (retry < autoRetry && !isACancellationError(wrapped)) {
-          logger.info(s"Retrying job ${jobId}")
+          logger.info(s"""Retrying job $jobId - Retry: $retry """)
           updateJob(jobId, Left(wrapped), jobExecutor, jobData.mode)
           execJob(jobExecutor, jobData, retry + 1)
         } else {
@@ -69,12 +77,12 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
         }
     }
     JobStatus(job.status,
-              job.jobId,
-              job.context,
-              job.startTime.toString,
-              job.duration,
-              job.result.getOrElse(""),
-              job.classPath)
+      job.jobId,
+      job.context,
+      job.startTime.toString,
+      job.duration,
+      job.result.getOrElse(""),
+      job.classPath)
   }
 
   private def finalizeJob(jobId: String,
@@ -93,7 +101,7 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
     val callbackResult = result match {
       case Left(wrapped) =>
         Map("request_job_status" -> jobs(jobId).status,
-            "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
+          "message" -> wrapped.getMessage.replaceAll("[^\\x20-\\x7E]", ""))
       case Right(value) => {
         Map("request_job_status" -> value.status) ++ value.data ++ Map("extra" -> value.extra)
       }
@@ -133,20 +141,28 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
             (JobExecutionStatus.ERROR, Future.failed(wrappedError.getCause))
           }
         }
-        case Right(value)       => (JobExecutionStatus.FINISHED, Future.successful(value))
+        case Right(value) => (JobExecutionStatus.FINISHED, Future.successful(value))
       }
     jobs(jobId) = JobInfo(status,
-                          jobId,
-                          "",
-                          updatedJob.startTime,
-                          duration,
-                          Some(List(formattedResult)),
-                          jobExecutor.getClass.getCanonicalName,
-                          execution)
+      jobId,
+      "",
+      updatedJob.startTime,
+      duration,
+      Some(List(formattedResult)),
+      jobExecutor.getClass.getCanonicalName,
+      execution)
   }
 
   private def isACancellationError(wrappedError: Throwable): Boolean = {
     wrappedError.getMessage.contains("cancelled part of cancelled job group")
+  }
+
+  /** Formats the elapsed time since the given start as "Xm Ys" (minutes and seconds). */
+  private def formatElapsed(startTime: OffsetDateTime): String = {
+    val elapsedMillis =
+      OffsetDateTime.now(ZoneId.of("UTC")).toInstant.toEpochMilli - startTime.toInstant.toEpochMilli
+    val totalSeconds = elapsedMillis / 1000
+    s"${totalSeconds / 60}m ${totalSeconds % 60}s"
   }
 
   private def buildResult(result: Either[Throwable, JobBaseResult],
@@ -189,24 +205,24 @@ class JobManager(val sparkSession: SparkSession = SparkConfig.sparkSession) {
       .map(
         job =>
           JobStatus(job.status,
-                    job.jobId,
-                    job.context,
-                    job.startTime.toString,
-                    job.duration,
-                    job.result.orNull,
-                    job.classPath))
+            job.jobId,
+            job.context,
+            job.startTime.toString,
+            job.duration,
+            job.result.orNull,
+            job.classPath))
       .toList
   }
 
   def status(jobId: String): JobStatus = {
     val job = jobs(jobId)
     JobStatus(job.status,
-              job.jobId,
-              job.context,
-              job.startTime.toString,
-              job.duration,
-              job.result.orNull,
-              job.classPath)
+      job.jobId,
+      job.context,
+      job.startTime.toString,
+      job.duration,
+      job.result.orNull,
+      job.classPath)
   }
 
   def cancelJob(jobId: String): JobStatus = {
