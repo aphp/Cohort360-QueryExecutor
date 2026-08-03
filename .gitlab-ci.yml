@@ -1,0 +1,114 @@
+stages:
+    - lint
+    - test
+    - dependency-check
+    - deploy
+
+variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
+
+# pipelines only run for merge requests, tags, main branch pushes, or manual web triggers
+workflow:
+    rules:
+        -   if: $CI_PIPELINE_SOURCE == "web"
+        -   if: $CI_PIPELINE_SOURCE == "merge_request_event"
+        -   if: $CI_COMMIT_TAG
+        -   if: $CI_COMMIT_BRANCH == "main"
+
+lint-job:
+    stage: lint
+    image: harbor.eds.aphp.fr/plateforme-bigdata/commitlint:latest
+    script:
+        - echo "${CI_MERGE_REQUEST_TITLE}" | sed -E 's/^(D|d)raft\s*:\s*//' | npx commitlint
+    rules:
+        - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+
+unit-test-job:
+    variables:
+        GIT_DEPTH: '0'
+    image: harbor.eds.aphp.fr/plateforme-bigdata/openjdk:17-jdk
+    stage: test
+    script:
+        - ./mvnw clean package
+        - cp target/cohort-requester.jar cohort-requester.jar
+        - echo "VERSION=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)" >> build.env
+    cache:
+        key: bigdata_m2_cache
+        paths:
+            - ".m2/repository"
+    artifacts:
+        reports:
+            dotenv: build.env
+        paths:
+            - cohort-requester.jar
+
+dependency-check-job:
+    stage: dependency-check
+    needs:
+        -   job: unit-test-job
+    dependencies:
+        - unit-test-job
+    image:
+        name: harbor.eds.aphp.fr/plateforme-bigdata/dependency-check
+        entrypoint: [ "" ]
+    script:
+        # See https://jeremylong.github.io/DependencyCheck/dependency-check-cli/arguments.html
+        - /usr/share/dependency-check/bin/dependency-check.sh --project QueryExecutor --disableOssIndex --out . --scan cohort-requester.jar --failOnCVSS 7 --noupdate
+    artifacts:
+        paths:
+            - dependency-check-report.html
+    allow_failure: true
+    rules:
+        # only run for the merge request and main pipelines
+        -   if: $CI_PIPELINE_SOURCE == 'merge_request_event' || $CI_COMMIT_BRANCH == "main"
+
+harbor-robot-credentials:
+    stage: deploy
+    image: buildpack-deps:bookworm-scm
+    variables:
+        SCRIPTS_REPO: "https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.data.aphp.fr/ID/pfm/bigdata/data-engineering-ci-templates.git"
+        FILE_PATH: ".env"
+        VARIABLE_LIST: "HARBOR_ROBOT:USERNAME,HARBOR_ROBOT:PASSWORD"
+        ENV: "SHARED"
+    script:
+        - git clone --branch main --depth 1 "$SCRIPTS_REPO" data-engineering-ci-templates
+        - ./data-engineering-ci-templates/bin/get_environment_variables_from_vault.sh
+    artifacts:
+        paths:
+            - .env
+        expire_in: 1 hour
+    rules:
+        -   if: $CI_PIPELINE_SOURCE == "merge_request_event"
+            when: never
+        -   when: always
+
+deploy-job:
+    image: gcr.io/kaniko-project/executor:v1.23.2-debug
+    timeout: 20m
+    stage: deploy
+    retry:
+        max: 2
+        when:
+            - script_failure
+            - job_execution_timeout
+            - stuck_or_timeout_failure
+            - runner_system_failure
+    needs:
+        -   job: unit-test-job
+        -   job: harbor-robot-credentials
+            artifacts: true
+    dependencies:
+        - unit-test-job
+        - harbor-robot-credentials
+    script:
+        - mkdir -p /kaniko/.docker
+        - rm -rf ${CI_PROJECT_DIR}/.m2 ${CI_PROJECT_DIR}/target
+        - . ./.env
+        - |-
+            KANIKOCFG="{ \"auths\":{\"harbor.eds.aphp.fr\":{\"username\":\"${HARBOR_ROBOT_USERNAME}\",\"password\":\"${HARBOR_ROBOT_PASSWORD}\"}} }"
+            echo "${KANIKOCFG}" > /kaniko/.docker/config.json
+            /kaniko/executor --context ${CI_PROJECT_DIR} --dockerfile ${CI_PROJECT_DIR}/Dockerfile --destination harbor.eds.aphp.fr/plateforme-bigdata/sjs-requester:${VERSION} --skip-tls-verify --skip-tls-verify-pull --use-new-run --verbosity=debug
+    rules:
+        -   if: $CI_PIPELINE_SOURCE == "merge_request_event"
+            when: never
+        -   when: always
