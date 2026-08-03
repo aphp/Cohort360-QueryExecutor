@@ -26,7 +26,11 @@ lint-job:
 unit-test-job:
     variables:
         GIT_DEPTH: '0'
+        DOCKER_HOST: tcp://docker:2375
+        DOCKER_TLS_CERTDIR: ""
     image: harbor.eds.aphp.fr/plateforme-bigdata/openjdk:17-jdk
+    services:
+        - docker:24.0.5-dind
     stage: test
     script:
         - ./mvnw clean package
