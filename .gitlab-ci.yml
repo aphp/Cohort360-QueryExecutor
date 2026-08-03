@@ -26,11 +26,19 @@ lint-job:
 unit-test-job:
     variables:
         GIT_DEPTH: '0'
-        DOCKER_HOST: tcp://docker:2375
-        DOCKER_TLS_CERTDIR: ""
+        POSTGRES_DB: test
+        POSTGRES_USER: test
+        POSTGRES_PASSWORD: test
+        # Kubernetes executor runs services in the same pod as the build container,
+        # so they're reachable via localhost (no Docker-in-Docker needed).
+        PG_TEST_HOST: localhost
+        PG_TEST_PORT: "5432"
+        PG_TEST_DB: test
+        PG_TEST_USER: test
+        PG_TEST_PASSWORD: test
     image: harbor.eds.aphp.fr/plateforme-bigdata/openjdk:17-jdk
     services:
-        - docker:24.0.5-dind
+        - postgres:15.3
     stage: test
     script:
         - ./mvnw clean package

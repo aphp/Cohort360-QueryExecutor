@@ -86,14 +86,8 @@ case class CreateQuery(queryBuilder: QueryBuilder = new DefaultQueryBuilder(),
 
     if (data.modeOptions.contains(CreateOptions.sampling)) {
       val sampling = data.modeOptions(CreateOptions.sampling).toDouble
-      // https://stackoverflow.com/questions/37416825/dataframe-sample-in-apache-spark-scala#comment62349780_37418684
-      // to be sure to have the right number of rows
-      val safeSampling = if (sampling + 0.1 >= 1.0) {
-        1.0
-      } else {
-        sampling + 0.1
-      }
-      cohort = cohort.sample(safeSampling).limit((sampling * cohort.count()).round.toInt)
+      val targetCount = (sampling * cohort.count()).round.toInt
+      cohort = cohort.orderBy(F.rand()).limit(targetCount)
     }
     cohort.cache()
     count = cohort.count()

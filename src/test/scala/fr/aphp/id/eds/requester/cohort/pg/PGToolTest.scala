@@ -16,7 +16,20 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll wi
   var sparkSession: SparkSession = _
 
   private var tempDir: java.nio.file.Path = _
-  private val postgresContainer = new PostgreSQLContainer("postgres:15.3")
+
+  private val externalHost = sys.env.get("PG_TEST_HOST")
+  private val postgresContainer =
+    if (externalHost.isDefined) None else Some(new PostgreSQLContainer("postgres:15.3"))
+
+  private def pgHost: String = externalHost.getOrElse(postgresContainer.get.getHost)
+  private def pgPort: String =
+    sys.env.getOrElse("PG_TEST_PORT", postgresContainer.get.getFirstMappedPort.toString)
+  private def pgDb: String =
+    sys.env.getOrElse("PG_TEST_DB", postgresContainer.get.getDatabaseName)
+  private def pgUser: String =
+    sys.env.getOrElse("PG_TEST_USER", postgresContainer.get.getUsername)
+  private def pgPassword: String =
+    sys.env.getOrElse("PG_TEST_PASSWORD", postgresContainer.get.getPassword)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -26,17 +39,15 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll wi
       .config("spark.driver.bindAddress", "127.0.0.1")
       .getOrCreate()
     tempDir = Files.createTempDirectory("test-temp-dir")
-    postgresContainer.start()
-    postgresContainer.withPassword("test")
-    postgresContainer.withUsername("test")
+    postgresContainer.foreach(_.start())
     val pgPassFile = tempDir.resolve(".pgpass")
-    Files.write(pgPassFile, s"${postgresContainer.getHost}:${postgresContainer.getFirstMappedPort}:*:${postgresContainer.getUsername}:${postgresContainer.getPassword}".getBytes)
+    Files.write(pgPassFile, s"$pgHost:$pgPort:*:$pgUser:$pgPassword".getBytes)
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
     FileUtils.deleteDirectory(tempDir.toFile)
-    postgresContainer.stop()
+    postgresContainer.foreach(_.stop())
     if (sparkSession != null) {
       sparkSession.stop()
     }
@@ -45,7 +56,7 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll wi
   test("testOutputBulk") {
     val spark = sparkSession
     import spark.implicits._
-    val pgUrl = s"jdbc:postgresql://${postgresContainer.getHost}:${postgresContainer.getFirstMappedPort}/${postgresContainer.getDatabaseName}?user=${postgresContainer.getUsername}&currentSchema=public"
+    val pgUrl = s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=public"
     val pgTool = PGTool(sparkSession, pgUrl, tempDir.toString, pgPassFile = new org.apache.hadoop.fs.Path(tempDir.resolve(".pgpass").toString))
     val createTableQuery = """
       CREATE TABLE test_table (
