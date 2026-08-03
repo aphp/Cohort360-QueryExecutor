@@ -58,6 +58,7 @@ class PGToolTest extends AnyFunSuiteLike with Matchers with BeforeAndAfterAll wi
     import spark.implicits._
     val pgUrl = s"jdbc:postgresql://$pgHost:$pgPort/$pgDb?user=$pgUser&currentSchema=public"
     val pgTool = PGTool(sparkSession, pgUrl, tempDir.toString, pgPassFile = new org.apache.hadoop.fs.Path(tempDir.resolve(".pgpass").toString))
+    pgTool.sqlExec("DROP TABLE IF EXISTS test_table")
     val createTableQuery = """
       CREATE TABLE test_table (
         id INT PRIMARY KEY,
